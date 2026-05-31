@@ -1,0 +1,184 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace "com.android.attack"
+    compileSdkVersion 33
+    defaultConfig {
+        applicationId "com.android.attack"
+        minSdkVersion 19
+        //noinspection EditedTargetSdkVersion
+        targetSdkVersion 33
+        versionCode 1
+        versionName "3.2"
+        multiDexEnabled false
+        ndk {
+            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86'
+        }
+        signingConfig signingConfigs.debug
+    }
+    buildTypes {
+        release {
+            shrinkResources false
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            ndk {
+                debugSymbolLevel 'NONE'
+            }
+            externalNativeBuild {
+                ndkBuild {
+                    arguments "APP_OPTIM=release", "NDK_DEBUG=0"
+                }
+            }
+        }
+        debug {
+            shrinkResources false
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            ndk {
+                debugSymbolLevel 'FULL'
+            }
+            externalNativeBuild {
+                ndkBuild {
+                    arguments "APP_OPTIM=debug", "NDK_DEBUG=1"
+                }
+            }
+        }
+    }
+    externalNativeBuild {
+        ndkBuild {
+            path file('src/main/jni/Android.mk')
+        }
+    }
+    lint {
+        disable 'EditedTargetSdkVersion'
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+}
+
+def bridgeJavaDir = file("${projectDir}/bridge/java")
+def bridgeClassesDir = file("${buildDir}/bridge/classes")
+def bridgeDexFile = file("${buildDir}/bridge/bridge.dex")
+def bridgeDexHeader = file("${projectDir}/src/main/jni/UI/BridgeDex.h")
+
+task compileBridge(type: JavaCompile) {
+    source = fileTree(dir: bridgeJavaDir, include: "**/*.java")
+    destinationDirectory = bridgeClassesDir
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+    options.compilerArgs += ["-Xlint:-options"]
+    inputs.dir(bridgeJavaDir).withPathSensitivity(PathSensitivity.RELATIVE)
+    outputs.dir(bridgeClassesDir)
+}
+
+task bridgeJar(type: Jar) {
+    dependsOn compileBridge
+    from bridgeClassesDir
+    archiveFileName = "bridge.jar"
+    destinationDirectory = file("${buildDir}/bridge")
+    inputs.dir(bridgeClassesDir).withPathSensitivity(PathSensitivity.RELATIVE)
+    outputs.file("${buildDir}/bridge/bridge.jar")
+}
+
+task dexBridge {
+    dependsOn bridgeJar
+    inputs.files(bridgeJar.outputs.files, bridgeClassesDir).withPathSensitivity(PathSensitivity.RELATIVE)
+    outputs.file(bridgeDexFile)
+    doLast {
+        def bridgeDexOutDir = file("${buildDir}/bridge/dexout")
+        if (bridgeDexOutDir.exists()) bridgeDexOutDir.deleteDir()
+        bridgeDexOutDir.mkdirs()
+        def d8 = new File(android.sdkDirectory, "build-tools/${android.buildToolsVersion}/d8.bat")
+        if (!d8.exists()) d8 = new File(android.sdkDirectory, "build-tools/${android.buildToolsVersion}/d8")
+        if (!d8.exists()) throw new GradleException("d8 not found under build-tools/${android.buildToolsVersion}")
+        exec { commandLine d8.absolutePath, "--output", bridgeDexOutDir.absolutePath, bridgeJar.archiveFile.get().asFile.absolutePath; workingDir projectDir }
+        def classesDex = new File(bridgeDexOutDir, "classes.dex")
+        if (!classesDex.exists()) throw new GradleException("d8 did not produce classes.dex")
+        bridgeDexFile.parentFile.mkdirs()
+        if (bridgeDexFile.exists()) bridgeDexFile.delete()
+        classesDex.renameTo(bridgeDexFile)
+    }
+}
+
+task genBridgeHeader {
+    dependsOn dexBridge
+    inputs.files(bridgeDexFile, bridgeJavaDir).withPathSensitivity(PathSensitivity.RELATIVE)
+    outputs.file(bridgeDexHeader)
+    doLast {
+        if (!bridgeDexFile.exists()) throw new GradleException("genBridgeHeader: bridge.dex missing (run dexBridge first)")
+        def bytes = bridgeDexFile.bytes
+        def sb = new StringBuilder()
+        sb.append("#ifndef BRIDGE_DEX_H\n#define BRIDGE_DEX_H\n")
+        sb.append("inline constexpr unsigned char kBridgeDex[] = {\n")
+        bytes.eachWithIndex { b, i ->
+            sb.append(String.format("0x%02X", (int) (b & 0xff)))
+            if (i < bytes.length - 1) sb.append(",")
+            if ((i + 1) % 16 == 0) sb.append("\n")
+            else if (i < bytes.length - 1) sb.append(" ")
+        }
+        sb.append("\n};\ninline constexpr unsigned int kBridgeDexLen = ").append(bytes.length).append(";\n#endif\n")
+        bridgeDexHeader.text = sb.toString()
+    }
+}
+
+afterEvaluate {
+    tasks.named("compileBridge", JavaCompile).configure { classpath = files(android.bootClasspath) }
+    tasks.named("externalNativeBuildDebug").configure { dependsOn genBridgeHeader }
+    tasks.named("externalNativeBuildRelease").configure { dependsOn genBridgeHeader }
+}
+
+preBuild.dependsOn genBridgeHeader
+tasks.configureEach { t ->
+    if (t.name.startsWith("configureNdkBuild") || t.name.startsWith("buildNdkBuild")) t.dependsOn genBridgeHeader
+}
+
+afterEvaluate {
+    tasks.named("assembleDebug").configure {
+        inputs.dir("src/main/jni").withPropertyName("jniSources")
+        dependsOn genBridgeHeader
+    }
+    android.applicationVariants.all { variant ->
+        variant.assembleProvider.get().doLast {
+            def variantName = variant.name
+            def capVariant = variant.name.capitalize()
+            def debuggable = variant.buildType.debuggable
+            def module = "MyLibName"
+            def abis = ["armeabi-v7a", "arm64-v8a", "x86"]
+            def dexDir = rootProject.file("out/dex")
+            def libDir = rootProject.file("out/lib")
+            if (dexDir.exists()) dexDir.deleteDir()
+            if (libDir.exists()) libDir.deleteDir()
+            dexDir.mkdirs()
+            libDir.mkdirs()
+            def dexPaths = [
+                "${buildDir}/intermediates/dex/${variantName}/mergeDex${capVariant}/classes.dex",
+                "${buildDir}/intermediates/dex/${variantName}/mergeProjectDex${capVariant}/classes.dex",
+            ]
+            def dex = dexPaths.collect { file(it) }.find { it.exists() }
+            if (dex == null) throw new GradleException("DEX not found for ${variantName}")
+            copy { from dex; into dexDir; rename { "classes.dex" } }
+            abis.each { abi ->
+                def libPaths = debuggable ? [
+                    "${buildDir}/intermediates/ndkBuild/${variantName}/obj/local/${abi}/lib${module}.so",
+                    "${buildDir}/intermediates/merged_native_libs/${variantName}/out/lib/${abi}/lib${module}.so",
+                ] : [
+                    "${buildDir}/intermediates/stripped_native_libs/${variantName}/out/lib/${abi}/lib${module}.so",
+                    "${buildDir}/intermediates/merged_native_libs/${variantName}/out/lib/${abi}/lib${module}.so",
+                ]
+                def lib = libPaths.collect { file(it) }.find { it.exists() }
+                if (lib != null) copy { from lib; into libDir; rename { "lib${abi}.so" } }
+            }
+        }
+    }
+}
+
+tasks.named("clean", Delete) {
+    delete rootProject.file("out")
+    delete rootProject.file(".idea/caches")
+    delete rootProject.file("captures")
+    delete file("${projectDir}/.externalNativeBuild")
+    delete file("${projectDir}/.cxx")
+    delete file("${buildDir}/bridge")
+}

@@ -1,0 +1,17 @@
+---
+description: Code style
+alwaysApply: true
+---
+
+# Code Style
+
+Never break a single statement across multiple lines. Keep every statement on one line regardless of length.
+
+In C++:
+- Dùng `(void*)` và `(void**)` thay vì `reinterpret_cast<void*>` / `reinterpret_cast<void**>`.
+- Con trỏ hàm gốc hook: `RetType (*old_Foo)(...);` — prefix `old_`, chỉ giữ return type + `(...)`, không liệt kê full args, không `= nullptr`. Gán từ `GET_METHOD`: `(RetType (*)(...))(void*)GET_METHOD(...)`.
+- Hook + `old_*` trong `namespace { }` file-local: không cần `static`.
+- Không dùng `using XxxFn = ...` typedef — khai báo con trỏ hàm trực tiếp.
+- Dùng `Object` / `Object*` thay vì `Il2CppObject` / `Il2CppObject*` (`API/Il2cpp_Struct.h`).
+- Dùng `Dictionary<K, V>` từ `Il2cpp_Struct.h` — gọi trực tiếp `set_Item`, `Add`, `ContainsKey`, v.v.; không GET_METHOD generic `Dictionary`2`.
+- IL2CPP object field: `obj->get_field_value<T>("field")` / `set_field_value`; nested object: `get_field_object<Object*>`.
