@@ -1,0 +1,34 @@
+---
+description: Keep code minimal — no over-engineering
+alwaysApply: true
+---
+
+# Keep it simple
+
+## Default
+- Solve the **smallest working problem** first; extend only when user asks.
+- Prefer **one file / one function path** over layers, headers, and "future-proof" APIs.
+- No abstractions for hypothetical use (server download, multi-plugin registry, etc.) until needed.
+
+## Do not
+- Split into `.hpp` + `.cpp` + `entry.cpp` for <100 lines of logic.
+- Add `namespace foo::bar`, typedef aliases, or helper classes for one-off calls.
+- Duplicate null-check + log on every line; guard once at entry.
+- Export Java bridge in a native-only module when `JNI_OnLoad` or implicit JNI is enough.
+- Add config/registry/plugin-manager before a second real consumer exists.
+
+## Do
+- **Loader/native:** one `JNI_OnLoad`, one `dlopen` path, one register hook — see `loader/src/main/cpp/loader.cpp`.
+- **App glue:** `System.loadLibrary("loader")` + native methods; no extra bootstrap unless required.
+- Reuse existing patterns in the same module before inventing new ones.
+- Follow `code-style.mdc` for C++ (compact lines, no verbose casts).
+
+## Before adding code, ask
+1. Can this be **inline** in the caller?
+2. Will this run **more than once** or in **more than one file**?
+3. If no → keep it local; if yes → smallest shared helper only.
+
+## Refactor trigger (only then split files)
+- File > ~200 lines **and** clear boundaries, or
+- Same logic copied in **2+ modules**, or
+- User explicitly requests structure.
