@@ -41,6 +41,10 @@ android {
     }
 
     prefab {
+        create("includes") {
+            // Export cpp root so consumers can #include <Includes/Logger.h> (LGL style).
+            headers = "src/main/cpp"
+        }
         create("dobby") {
             headers = "src/main/cpp/dobby"
         }
