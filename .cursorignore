@@ -27,8 +27,6 @@ gradle/wrapper/dists/
 gradle/wrapper/*.zip
 
 # --- Local config (paths máy cá nhân) ---
-local.properties
-**/local.properties
 secrets.properties
 key.properties
 signing.properties
