@@ -2,12 +2,15 @@
 
 #include <imgui.h>
 
+struct ImDrawList;
+struct ImVec2;
+
 namespace modui {
 
-/** `stbi_load` file local → GL texture trên render thread. `path == nullptr` xóa texture. */
-ImTextureID LoadIcon(const char *path);
+/** FAB: poll download (background) + load GL on render thread; cache texture. */
+ImTextureID GetFabIcon();
 
-/** Tải URL → `save_path` nếu file chưa có (không GL). Trả true khi file tồn tại. */
-bool DownloadIcon(const char *url, const char *save_path);
+/** Draw FAB icon (rounded) or black placeholder when not ready. */
+void DrawFabIcon(ImDrawList *dl, const ImVec2 &p0, const ImVec2 &p1, float rounding);
 
 } // namespace modui

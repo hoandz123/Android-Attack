@@ -4,10 +4,8 @@
 #include "Icon.hpp"
 #include <imgui.h>
 #include <algorithm>
-#include <atomic>
 #include <cmath>
 #include <cstring>
-#include <thread>
 
 namespace modui {
 
@@ -160,10 +158,10 @@ void DrawContentPanel(const AppUi &ui, int selected, ImVec2 panel_size) {
     ImGui::PopStyleColor();
 }
 
-void DrawMenuFab(const AppUi &, ImTextureID icon_tex) {
+void DrawMenuFab(const AppUi &) {
     const float fab = DpToPx(kFabDp);
     const ImVec2 fab_sz(fab, fab);
-    const bool has_tex = icon_tex != (ImTextureID) 0;
+    const bool has_tex = GetFabIcon() != (ImTextureID) 0;
 
     const ImGuiViewport *vp = ImGui::GetMainViewport();
     const ImVec2 safe = ImGui::GetStyle().DisplaySafeAreaPadding;
@@ -193,13 +191,7 @@ void DrawMenuFab(const AppUi &, ImTextureID icon_tex) {
 
     const ImVec2 p0 = ImGui::GetCursorScreenPos();
     const ImVec2 p1(p0.x + fab_sz.x, p0.y + fab_sz.y);
-    if (has_tex) {
-        ImGui::GetWindowDrawList()->AddImageRounded(
-            icon_tex, p0, p1, ImVec2(0, 0), ImVec2(1, 1), IM_COL32_WHITE, fab * 0.5f,
-            ImDrawFlags_RoundCornersAll);
-    } else {
-        ImGui::GetWindowDrawList()->AddRectFilled(p0, p1, IM_COL32(0, 0, 0, 255), fab * 0.5f);
-    }
+    DrawFabIcon(ImGui::GetWindowDrawList(), p0, p1, fab * 0.5f);
     ImGui::Dummy(fab_sz);
 
     if (ImGui::IsWindowHovered() && ImGui::IsMouseReleased(0)) {
@@ -219,32 +211,11 @@ void DrawMenuFab(const AppUi &, ImTextureID icon_tex) {
 
 } // namespace
 
-static ImTextureID g_fab_icon = (ImTextureID) 0;
-static std::atomic<bool> g_fab_downloading{false};
-static std::atomic<bool> g_fab_file_ready{false};
-static constexpr const char *kFabIconUrl = "https://files.catbox.moe/vpu7cc.png";
-static constexpr const char *kFabIconPath = "/data/user/0/com.android.attack/fab.png";
-
 void DrawMenuShell(const AppUi &ui) {
     if (!MenuVisible()) return;
 
-    if (!g_fab_icon) {
-        if (!g_fab_file_ready.load(std::memory_order_acquire)) {
-            bool expected = false;
-            if (g_fab_downloading.compare_exchange_strong(expected, true)) {
-                std::thread([] {
-                    const bool ok = DownloadIcon(kFabIconUrl, kFabIconPath);
-                    g_fab_file_ready.store(ok, std::memory_order_release);
-                    g_fab_downloading.store(false, std::memory_order_release);
-                }).detach();
-            }
-        } else {
-            g_fab_icon = LoadIcon(kFabIconPath);
-        }
-    }
-
     if (!MenuExpanded()) {
-        DrawMenuFab(ui, g_fab_icon);
+        DrawMenuFab(ui);
         return;
     }
 
