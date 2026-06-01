@@ -2,6 +2,7 @@ package com.android.attack.nativedex;
 
 import android.app.Activity;
 import android.os.Build;
+import android.os.Looper;
 import android.util.Log;
 import android.view.DisplayCutout;
 import android.view.KeyEvent;
@@ -162,10 +163,12 @@ public final class TouchInputBridge {
             }
             final int fl = l, ft = t, fr = r, fb = b;
             final float density = activity.getResources().getDisplayMetrics().density;
-            decor.post(() -> {
+            Runnable apply = () -> {
                 nativeUpdateInsets(fl, ft, fr, fb);
                 nativeUpdateDisplayMetrics(density);
-            });
+            };
+            if (Looper.myLooper() == Looper.getMainLooper()) apply.run();
+            else decor.post(apply);
         } catch (Throwable t) {
             Log.w(TAG, "refreshInsets", t);
         }

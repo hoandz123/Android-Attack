@@ -17,6 +17,7 @@ add_library(modui STATIC
     mod_ui_theme.cpp
     mod_ui_layout.cpp
     mod_ui_shell.cpp
+    mod_ui_icon.cpp
     mod_ui_render.cpp
     mod_ui_touch.cpp
     mod_ui_keyboard.cpp
@@ -31,9 +32,15 @@ target_include_directories(modui PUBLIC
 
 target_compile_definitions(modui PUBLIC IMGUI_IMPL_OPENGL_ES3)
 
+target_include_directories(modui PRIVATE
+    ${NATIVE_CORE_CPP}/HttpClient
+    ${NATIVE_CORE_CPP}/FileManager)
+
 target_link_libraries(modui PUBLIC
     native-core::jnihelper
     native-core::imgui
+    native-core::httpclient
+    native-core::filemanager
     native-core::lgl
     ${log-lib}
     ${android-lib}

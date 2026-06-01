@@ -19,6 +19,8 @@ void end_frame();
 
 void set_menu_visible(bool visible);
 bool menu_visible();
+void set_menu_expanded(bool expanded);
+bool menu_expanded();
 
 void feed_touch(int action, float x, float y);
 void set_safe_insets(float left, float top, float right, float bottom);

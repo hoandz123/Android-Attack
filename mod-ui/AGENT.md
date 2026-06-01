@@ -16,7 +16,7 @@ src/main/cpp/
   include/mod_ui.hpp           API public (plugin :app)
   include/mod_ui_internal.hpp  JNI bridge + input/render (chỉ trong :mod-ui)
   mod_ui.cpp           init / glue
-  mod_ui_theme.cpp     colors + metrics + ui scale
+  mod_ui_theme.cpp     Vk-Engine Moonlight theme (utils.jai) + ui scale 3×
   mod_ui_layout.cpp    menu size/pos theo dp (density từ Java)
   include/mod_ui_layout.hpp  MenuLayoutConfig
   mod_ui_shell.cpp     layout menu
@@ -32,11 +32,15 @@ Phụ thuộc compile: `-DNATIVE_CORE_CPP` (imgui headers từ native-core).
 ## API public (`mod_ui.hpp`)
 
 - `init()` — ImGui context + JNI `RegisterNatives` (gọi `register_surface_natives` trong `surface_bridge.cpp`)
-- `AppUi` / `set_app_ui()` / `app_ui()` — plugin menu (`app_menu.cpp`)
+- `AppUi` — `add_tab(id, label, draw)`, `set_window_title`
+- Menu: **X** ImGui (`Begin(..., &p_open)`) thu gọn → FAB; bấm FAB mở lại (`set_menu_expanded`)
+- Icon: chỉ `mod_ui_icon.cpp` / `mod_ui_icon.hpp` (shell/app không gọi)
+- Theme: title bar căn giữa (`WindowTitleAlign` trong `mod_ui_theme.cpp`)
+- Shell: sidebar tab **ribbon phải** (gradient → accent, `draw_sidebar_tab_ribbon`) + panel content (`mod_ui_shell.cpp`)
 
 `mod_ui_internal.hpp`: `feed_*`, `begin_frame`, … — không dùng từ `:app`.
 
-Menu size mặc định (`MenuLayoutConfig`): 320×400 dp, clamp theo `WorkSize` và min/max dp. `TouchInputBridge.refreshInsets` gửi `DisplayMetrics.density`.
+Menu size mặc định (`MenuLayoutConfig`): 624×442 dp (chữ nhật ngang), áp **một lần** khi đã có density (`try_apply_initial_menu_layout`); sau đó user resize tự do (chỉ clamp min). `TouchInputBridge.refreshInsets` gửi density.
 
 ## Build
 

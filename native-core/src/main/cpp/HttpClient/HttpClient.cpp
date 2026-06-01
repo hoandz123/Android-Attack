@@ -1,0 +1,99 @@
+#include "HttpClient.hpp"
+#include <cstdio>
+#include <curl/curl.h>
+#include <mutex>
+
+namespace http {
+namespace {
+
+std::once_flag g_once;
+
+size_t vec_write(char *p, size_t sz, size_t n, void *out) {
+    auto *v = static_cast<std::vector<uint8_t> *>(out);
+    v->insert(v->end(), reinterpret_cast<uint8_t *>(p), reinterpret_cast<uint8_t *>(p) + sz * n);
+    return sz * n;
+}
+
+size_t file_write(char *p, size_t sz, size_t n, void *out) {
+    return fwrite(p, 1, sz * n, static_cast<FILE *>(out));
+}
+
+void setup_common(CURL *c, const std::string &url, long timeout) {
+    curl_easy_setopt(c, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(c, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(c, CURLOPT_TIMEOUT, timeout);
+    curl_easy_setopt(c, CURLOPT_NOSIGNAL, 1L);
+}
+
+Response finish(CURL *c, CURLcode e, Response r) {
+    if (e != CURLE_OK)
+        r.error = curl_easy_strerror(e);
+    else
+        curl_easy_getinfo(c, CURLINFO_RESPONSE_CODE, &r.status);
+    curl_easy_cleanup(c);
+    return r;
+}
+
+Response request(bool post, const std::string &url, const void *body, size_t body_len,
+                 const char *ctype, long timeout) {
+    std::call_once(g_once, [] { curl_global_init(CURL_GLOBAL_DEFAULT); });
+    Response r;
+    CURL *c = curl_easy_init();
+    if (!c) {
+        r.error = "curl init";
+        return r;
+    }
+
+    std::vector<uint8_t> buf;
+    setup_common(c, url, timeout);
+    curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, vec_write);
+    curl_easy_setopt(c, CURLOPT_WRITEDATA, &buf);
+
+    curl_slist *hdrs = nullptr;
+    if (post) {
+        curl_easy_setopt(c, CURLOPT_POST, 1L);
+        curl_easy_setopt(c, CURLOPT_POSTFIELDS, body && body_len ? body : "");
+        curl_easy_setopt(c, CURLOPT_POSTFIELDSIZE, static_cast<long>(body_len));
+        if (ctype) {
+            std::string h = std::string("Content-Type: ") + ctype;
+            hdrs = curl_slist_append(hdrs, h.c_str());
+            curl_easy_setopt(c, CURLOPT_HTTPHEADER, hdrs);
+        }
+    }
+    r = finish(c, curl_easy_perform(c), r);
+    curl_slist_free_all(hdrs);
+    if (r.ok()) r.body = std::move(buf);
+    return r;
+}
+
+} // namespace
+
+Response get(const std::string &url, long t) { return request(false, url, nullptr, 0, nullptr, t); }
+
+Response post(const std::string &url, const void *body, size_t n, const char *ctype, long t) {
+    return request(true, url, body, n, ctype, t);
+}
+
+Response download(const std::string &url, const std::string &path, long t) {
+    std::call_once(g_once, [] { curl_global_init(CURL_GLOBAL_DEFAULT); });
+    Response r;
+    FILE *f = std::fopen(path.c_str(), "wb");
+    if (!f) {
+        r.error = "fopen failed";
+        return r;
+    }
+    CURL *c = curl_easy_init();
+    if (!c) {
+        std::fclose(f);
+        r.error = "curl init";
+        return r;
+    }
+    setup_common(c, url, t);
+    curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, file_write);
+    curl_easy_setopt(c, CURLOPT_WRITEDATA, f);
+    r = finish(c, curl_easy_perform(c), r);
+    std::fclose(f);
+    return r;
+}
+
+} // namespace http

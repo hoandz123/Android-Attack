@@ -1,7 +1,6 @@
 #include "mod_ui.hpp"
 #include "mod_ui_internal.hpp"
 #include "mod_ui_theme.hpp"
-
 #include <JNIHelper/JNIHelper.hpp>
 #include <android/log.h>
 #include <imgui.h>
@@ -16,6 +15,7 @@ static AppUi g_app_ui;
 static bool g_ctx = false;
 static bool g_natives = false;
 static bool g_visible = true;
+static bool g_expanded = true;
 
 bool init() {
     if (!g_ctx) {
@@ -52,5 +52,9 @@ const AppUi &app_ui() { return g_app_ui; }
 void set_menu_visible(bool visible) { g_visible = visible; }
 
 bool menu_visible() { return g_visible; }
+
+void set_menu_expanded(bool expanded) { g_expanded = expanded; }
+
+bool menu_expanded() { return g_expanded; }
 
 } // namespace modui

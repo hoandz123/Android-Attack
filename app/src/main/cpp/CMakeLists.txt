@@ -41,10 +41,11 @@ target_link_libraries(attack PRIVATE
     native-core::activitytracker
     native-core::dobby
     native-core::curl
+    native-core::httpclient
 )
 
 link_prefab_static(attack ${MOD_UI_PREFAB} modui)
-link_prefab_static(attack ${NATIVE_CORE_PREFAB} imgui jnihelper dexloader activitytracker)
+link_prefab_static(attack ${NATIVE_CORE_PREFAB} imgui jnihelper dexloader activitytracker httpclient filemanager)
 link_native_core_prebuilts(attack ${NATIVE_CORE_CPP})
 
 target_compile_features(attack PRIVATE cxx_std_20)

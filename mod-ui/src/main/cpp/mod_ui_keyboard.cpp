@@ -5,7 +5,6 @@
 #include <android/log.h>
 #include <imgui.h>
 #include <jni.h>
-#include <mutex>
 #include <string>
 #include <vector>
 
@@ -17,7 +16,6 @@ ImGuiKey android_key_to_imgui(int key_code);
 
 namespace {
 
-std::mutex g_mtx;
 jclass g_kb_cls;
 jmethodID g_sync_ime;
 
@@ -44,19 +42,16 @@ void backspaces(ImGuiIO &io, int n) {
 } // namespace
 
 void feed_key(int key_code, int action, int meta, int unicode) {
-    std::lock_guard lock(g_mtx);
     g_keys.push_back({key_code, action, meta, unicode});
 }
 
 void feed_text_utf8(const char *utf8) {
     if (!utf8 || !*utf8) return;
-    std::lock_guard lock(g_mtx);
     g_text.emplace_back(utf8);
 }
 
 void feed_replace_tail(int delete_chars, const char *utf8) {
     if (delete_chars < 0) delete_chars = 0;
-    std::lock_guard lock(g_mtx);
     ReplaceEvt e;
     e.delete_chars = delete_chars;
     if (utf8 && *utf8) e.insert = utf8;
@@ -67,12 +62,9 @@ void apply_pending_keyboard() {
     std::vector<KeyEvt> keys;
     std::vector<std::string> texts;
     std::vector<ReplaceEvt> reps;
-    {
-        std::lock_guard lock(g_mtx);
-        keys.swap(g_keys);
-        texts.swap(g_text);
-        reps.swap(g_replace);
-    }
+    keys.swap(g_keys);
+    texts.swap(g_text);
+    reps.swap(g_replace);
 
     ImGuiIO &io = ImGui::GetIO();
     for (const auto &r : reps) {

@@ -63,6 +63,7 @@ public final class EglOverlay {
                 TouchInputBridge.refreshInsets(activity);
                 return insets;
             });
+            TouchInputBridge.refreshInsets(activity);
             decor.post(() -> TouchInputBridge.refreshInsets(activity));
             Log.i(TAG, "attached " + activity.getClass().getSimpleName());
         } catch (Throwable t) {

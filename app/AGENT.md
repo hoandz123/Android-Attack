@@ -18,7 +18,7 @@ Module **application** duy nhất. Build ra `libattack.so` (plugin thật) + APK
 | File | Việc |
 |------|------|
 | `native-lib.cpp` | `JNI_OnLoad`: dex → tracker → `modui::init()` → menu app |
-| `app_menu.cpp` | Widget ImGui riêng của app |
+| `app_menu.cpp` | `set_window_title`, `add_tab` |
 | `CMakeLists.txt` | Link `attack` SHARED; include `EMBEDDED_DEX_DIR` |
 
 ### Thứ tự `JNI_OnLoad` (giữ nguyên thứ tự)

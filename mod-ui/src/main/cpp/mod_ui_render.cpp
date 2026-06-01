@@ -1,6 +1,6 @@
 #include "mod_ui.hpp"
 #include "mod_ui_internal.hpp"
-
+#include "mod_ui_layout.hpp"
 #include <GLES3/gl3.h>
 #include <android/log.h>
 #include <imgui.h>
@@ -21,6 +21,7 @@ bool set_surface(ANativeWindow *window) {
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplAndroid_Shutdown();
         g_backend = false;
+        reset_menu_initial_layout();
     }
     if (!window) return true;
     if (!ImGui_ImplAndroid_Init(window)

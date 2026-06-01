@@ -57,6 +57,12 @@ android {
         create("curl") {
             headers = "src/main/cpp/curl/include"
         }
+        create("httpclient") {
+            headers = "src/main/cpp/HttpClient"
+        }
+        create("filemanager") {
+            headers = "src/main/cpp/FileManager"
+        }
         create("jnihelper") {
             headers = "src/main/cpp"
         }

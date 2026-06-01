@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mod Menu — 20 kiểu tab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :root {
+      --page-bg: #0c0d10;
+      --page-text: #e8eaef;
+      --page-muted: #8b92a5;
+      --card-bg: #14161c;
+      --card-border: #252a36;
+      --pick: #0c7cd5;
+      --bg-window: #14161a;
+      --bg-title: #0c0e12;
+      --bg-sidebar: #1c1e26;
+      --bg-content: #21242c;
+      --bg-frame: #1c2028;
+      --border: rgba(255,255,255,0.08);
+      --accent: #0c7cd5;
+      --accent-soft: rgba(12,124,213,0.35);
+      --pill-bg: rgba(12,124,213,0.12);
+      --text: #f4f6fa;
+      --text-muted: #9aa3b5;
+    }
+    body {
+      margin: 0;
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: var(--page-bg);
+      color: var(--page-text);
+      line-height: 1.5;
+    }
+    .page { max-width: 1400px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+    header h1 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 600; letter-spacing: -0.03em; margin: 0 0 0.5rem; }
+    header p { color: var(--page-muted); margin: 0; max-width: 54rem; font-size: 0.95rem; }
+    .pick-bar {
+      position: sticky; top: 0; z-index: 100;
+      margin: 1.5rem 0 2rem; padding: 0.85rem 1.25rem;
+      background: rgba(20,22,28,0.92); border: 1px solid var(--card-border);
+      border-radius: 12px; backdrop-filter: blur(12px);
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem; font-size: 0.875rem;
+    }
+    .pick-bar #picked-name { color: #7eb8ff; font-weight: 600; }
+    .pick-bar code {
+      font-family: "JetBrains Mono", monospace; font-size: 0.8rem;
+      background: #1a1d26; padding: 0.2rem 0.5rem; border-radius: 6px; color: #b8c0d4;
+    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+    .card {
+      background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px;
+      padding: 1rem; cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+    }
+    .card:hover { border-color: #3a4256; transform: translateY(-2px); }
+    .card.selected { border-color: var(--pick); box-shadow: 0 0 0 1px var(--pick), 0 12px 40px rgba(12,124,213,0.15); }
+    .card h2 { margin: 0 0 0.35rem; font-size: 0.95rem; font-weight: 600; }
+    .card .desc { margin: 0 0 0.75rem; font-size: 0.75rem; color: var(--page-muted); }
+    .card .id-tag { font-family: "JetBrains Mono", monospace; font-size: 0.68rem; color: #6a7285; }
+
+    /* —— Menu shell (cố định Moonlight — chỉ tab đổi) —— */
+    .mod-window {
+      --radius: 10px; --title-h: 36px; --sidebar-w: 32%;
+      --gap: 6px; --tab-h: 38px; --tab-gap: 5px;
+      width: 100%; aspect-ratio: 624/442; max-height: 240px;
+      display: flex; flex-direction: column;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      background: var(--bg-window); overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+    }
+    .titlebar {
+      height: var(--title-h); display: flex; align-items: center; justify-content: center;
+      background: var(--bg-title); border-bottom: 1px solid var(--border);
+      color: var(--text); font-size: 0.72rem; font-weight: 500;
+    }
+    .body { flex: 1; display: flex; min-height: 0; padding: var(--gap); gap: var(--gap); }
+    .sidebar {
+      width: var(--sidebar-w); flex-shrink: 0;
+      background: var(--bg-sidebar); border: 1px solid var(--border);
+      border-radius: calc(var(--radius) - 2px);
+      padding: var(--gap); position: relative;
+      display: flex; flex-direction: column; gap: var(--tab-gap);
+    }
+    .content {
+      flex: 1; min-width: 0; background: var(--bg-content);
+      border: 1px solid var(--border); border-radius: calc(var(--radius) - 2px);
+      padding: 10px 12px; color: var(--text-muted); font-size: 0.65rem;
+    }
+    .content strong { color: var(--text); display: block; margin-bottom: 4px; font-size: 0.7rem; }
+
+    /* Tab base */
+    .tab {
+      position: relative; z-index: 1; height: var(--tab-h);
+      border: none; background: transparent; color: var(--text-muted);
+      font: inherit; font-size: 0.66rem; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center;
+      transition: color 0.2s, background 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+      width: 100%; text-align: left; padding: 0 10px;
+    }
+    .tab.active { color: var(--text); }
+    .tab:active { transform: scale(0.98); }
+    .tab .ico { font-size: 0.85rem; margin-right: 6px; line-height: 1; opacity: 0.85; }
+    .tab.active .ico { opacity: 1; }
+
+    .movable { pointer-events: none; position: absolute; z-index: 0; transition: top 0.35s cubic-bezier(0.22,1,0.36,1), left 0.35s cubic-bezier(0.22,1,0.36,1), width 0.35s cubic-bezier(0.22,1,0.36,1); }
+
+    /* 1 pill-slide — app hiện tại */
+    .tabs-pill-slide .movable.pill {
+      left: var(--gap); right: var(--gap); height: var(--tab-h);
+      background: var(--pill-bg); border-radius: 10px;
+    }
+    .tabs-pill-slide .tab.active { background: var(--accent-soft); box-shadow: 0 0 0 1px rgba(12,124,213,0.2); }
+    .tabs-pill-slide .tab.active::before {
+      content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px;
+      background: var(--accent); border-radius: 3px;
+    }
+
+    /* 2 accent-bar — chỉ vạch trái */
+    .tabs-accent-bar .tab { padding-left: 14px; }
+    .tabs-accent-bar .tab.active::before {
+      content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+      background: var(--accent); border-radius: 0 3px 3px 0;
+    }
+    .tabs-accent-bar .tab.active { background: transparent; font-weight: 600; }
+
+    /* 3 fill-solid */
+    .tabs-fill-solid .tab { border-radius: 10px; justify-content: center; }
+    .tabs-fill-solid .tab.active { background: var(--accent); color: #fff; font-weight: 600; }
+
+    /* 4 underline */
+    .tabs-underline .tab { border-radius: 6px; }
+    .tabs-underline .movable.underline {
+      left: var(--gap); height: 3px; background: var(--accent); border-radius: 2px;
+    }
+    .tabs-underline .tab.active { background: rgba(12,124,213,0.08); }
+
+    /* 5 segmented — 1 khối 2 ô */
+    .tabs-segmented { gap: 0; }
+    .tabs-segmented .segment-wrap {
+      display: flex; position: relative; background: var(--bg-frame);
+      border-radius: 10px; padding: 3px; border: 1px solid var(--border);
+    }
+    .tabs-segmented .segment-wrap .tab { flex: 1; justify-content: center; height: 34px; z-index: 1; }
+    .tabs-segmented .movable.seg-pill {
+      top: 3px; height: 34px; background: var(--accent); border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(12,124,213,0.35);
+    }
+    .tabs-segmented .tab.active { color: #fff; background: transparent; }
+
+    /* 6 icon-text */
+    .tabs-icon-text .tab { padding-left: 8px; gap: 2px; }
+    .tabs-icon-text .tab.active { background: var(--accent-soft); border-radius: 10px; }
+
+    /* 7 dot-minimal */
+    .tabs-dot-minimal .tab::before {
+      content: ""; width: 6px; height: 6px; border-radius: 50%;
+      background: transparent; margin-right: 8px; flex-shrink: 0;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    .tabs-dot-minimal .tab.active::before {
+      background: var(--accent); box-shadow: 0 0 8px var(--accent);
+    }
+    .tabs-dot-minimal .tab.active { background: transparent; padding-left: 6px; }
+
+    /* 8 outline */
+    .tabs-outline .tab { border: 1px solid transparent; border-radius: 10px; }
+    .tabs-outline .tab.active {
+      border-color: var(--accent); background: rgba(12,124,213,0.06);
+      box-shadow: inset 0 0 0 1px rgba(12,124,213,0.15);
+    }
+
+    /* 9 gradient */
+    .tabs-gradient .tab { border-radius: 10px; overflow: hidden; }
+    .tabs-gradient .tab.active {
+      background: linear-gradient(135deg, #0a5a9e 0%, #0c7cd5 50%, #3aa0ff 100%);
+      color: #fff; box-shadow: 0 4px 14px rgba(12,124,213,0.4);
+    }
+
+    /* 10 inset */
+    .tabs-inset .tab {
+      border-radius: 10px; background: rgba(0,0,0,0.2);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.35);
+    }
+    .tabs-inset .tab.active {
+      background: var(--bg-frame);
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.5), 0 0 0 1px var(--accent);
+    }
+
+    /* 11 ribbon — thanh phải */
+    .tabs-ribbon .tab { padding-right: 12px; }
+    .tabs-ribbon .tab.active::after {
+      content: ""; position: absolute; right: 0; top: 6px; bottom: 6px; width: 4px;
+      background: var(--accent); border-radius: 3px 0 0 3px;
+    }
+    .tabs-ribbon .tab.active { background: linear-gradient(90deg, transparent, rgba(12,124,213,0.15)); }
+
+    /* 12 chip — nhỏ gọn giữa */
+    .tabs-chip { align-items: center; }
+    .tabs-chip .tab {
+      width: auto; align-self: center; padding: 0 14px; height: 30px;
+      border-radius: 999px; font-size: 0.62rem;
+    }
+    .tabs-chip .tab.active { background: var(--accent); color: #fff; }
+
+    /* 13 ios — thanh trượt ngang trong track */
+    .tabs-ios .segment-wrap {
+      display: flex; background: rgba(0,0,0,0.25); border-radius: 999px; padding: 2px;
+    }
+    .tabs-ios .segment-wrap .tab { flex: 1; justify-content: center; height: 32px; border-radius: 999px; font-size: 0.62rem; }
+    .tabs-ios .movable.seg-pill { border-radius: 999px; background: var(--bg-content); box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+    .tabs-ios .tab.active { color: var(--text); font-weight: 600; }
+
+    /* 14 material — indicator full-width mảnh */
+    .tabs-material .tab { flex-direction: column; align-items: flex-start; justify-content: center; height: 42px; }
+    .tabs-material .tab .label { line-height: 1.2; }
+    .tabs-material .tab .bar { height: 2px; width: 0; background: var(--accent); margin-top: 4px; border-radius: 1px; transition: width 0.3s ease; }
+    .tabs-material .tab.active .bar { width: 100%; }
+    .tabs-material .tab.active { background: rgba(12,124,213,0.06); border-radius: 8px; }
+
+    /* 15 double-frame */
+    .tabs-double-frame .tab { border-radius: 8px; border: 2px solid transparent; }
+    .tabs-double-frame .tab.active {
+      border-color: var(--accent);
+      outline: 2px solid rgba(12,124,213,0.25); outline-offset: 1px;
+      background: rgba(12,124,213,0.1);
+    }
+
+    /* 16 icon-only */
+    .tabs-icon-only { align-items: stretch; gap: 8px; }
+    .tabs-icon-only .tab {
+      justify-content: center; padding: 0; font-size: 1rem;
+      border-radius: 12px; aspect-ratio: 1; height: auto; min-height: 44px;
+    }
+    .tabs-icon-only .tab .label { display: none; }
+    .tabs-icon-only .tab.active { background: var(--accent-soft); box-shadow: 0 0 12px rgba(12,124,213,0.25); }
+
+    /* 17 card */
+    .tabs-card .tab {
+      border-radius: 8px; border: 1px solid var(--border);
+      background: var(--bg-frame); box-shadow: 0 2px 0 rgba(0,0,0,0.2);
+    }
+    .tabs-card .tab.active {
+      border-color: var(--accent); background: var(--bg-content);
+      box-shadow: 0 4px 12px rgba(12,124,213,0.2); transform: translateY(-1px);
+    }
+    .tabs-card .tab:active { transform: translateY(0); }
+
+    /* 18 list-chevron */
+    .tabs-list-chevron .tab { justify-content: space-between; border-bottom: 1px solid var(--border); border-radius: 0; height: 40px; }
+    .tabs-list-chevron .tab:last-child { border-bottom: none; }
+    .tabs-list-chevron .tab::after { content: "›"; opacity: 0.35; font-size: 1rem; }
+    .tabs-list-chevron .tab.active { background: rgba(12,124,213,0.1); font-weight: 600; }
+    .tabs-list-chevron .tab.active::after { opacity: 1; color: var(--accent); }
+
+    /* 19 toggle-row */
+    .tabs-toggle-row .tab {
+      justify-content: space-between; background: var(--bg-frame);
+      border-radius: 10px; padding: 0 10px;
+    }
+    .tabs-toggle-row .tab .fake-switch {
+      width: 28px; height: 16px; border-radius: 999px; background: #3a4050;
+      position: relative; flex-shrink: 0; transition: background 0.25s;
+    }
+    .tabs-toggle-row .tab .fake-switch::after {
+      content: ""; position: absolute; width: 12px; height: 12px; border-radius: 50%;
+      background: #888; top: 2px; left: 2px; transition: transform 0.25s, background 0.25s;
+    }
+    .tabs-toggle-row .tab.active .fake-switch { background: rgba(12,124,213,0.5); }
+    .tabs-toggle-row .tab.active .fake-switch::after { transform: translateX(12px); background: var(--accent); }
+    .tabs-toggle-row .tab.active { color: var(--text); }
+
+    /* 20 neon-glow */
+    .tabs-neon-glow .tab { border-radius: 10px; border: 1px solid transparent; }
+    .tabs-neon-glow .tab.active {
+      border-color: rgba(60,200,255,0.6);
+      color: #b8f0ff;
+      box-shadow: 0 0 12px rgba(12,124,213,0.5), inset 0 0 20px rgba(12,124,213,0.08);
+      text-shadow: 0 0 8px rgba(100,200,255,0.5);
+    }
+
+    footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--card-border); font-size: 0.8rem; color: var(--page-muted); }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>Mod Menu — 20 kiểu nút tab</h1>
+      <p>
+        Cùng nền Moonlight, chỉ khác <strong>cách hiển thị / chuyển tab</strong> (sidebar).
+        Click thẻ để chọn — trong preview có thể bấm tab để thử. Gửi <code>tab id</code> để port sang <code>mod_ui_shell.cpp</code>.
+      </p>
+    </header>
+
+    <div class="pick-bar" id="pick-bar" hidden>
+      <strong>Đã chọn:</strong> <span id="picked-name">—</span>
+      <code id="picked-id">—</code>
+    </div>
+
+    <div class="grid" id="gallery"></div>
+
+    <footer>
+      File: <code>mod-ui/preview/menu-style-gallery.html</code> —
+      App đang dùng: <strong>ribbon</strong> (gradient + accent phải).
+    </footer>
+  </div>
+
+  <script>
+    const ICONS = ["⚔", "ℹ"];
+
+    const TAB_STYLES = [
+      { id: "pill-slide", name: "Pill trượt + accent", desc: "Như app hiện tại — nền pill + vạch xanh trái.", kind: "pill" },
+      { id: "accent-bar", name: "Accent bar", desc: "Chỉ vạch dọc trái, không nền đặc.", kind: "plain" },
+      { id: "fill-solid", name: "Fill solid", desc: "Tab active = nút xanh đặc, chữ trắng.", kind: "plain" },
+      { id: "underline", name: "Underline", desc: "Gạch dưới trượt theo tab.", kind: "underline" },
+      { id: "segmented", name: "Segmented", desc: "Hai ô trong một track — kiểu iOS/Material segment.", kind: "segment" },
+      { id: "icon-text", name: "Icon + text", desc: "Emoji/icon cạnh nhãn, nền nhẹ khi chọn.", kind: "icon" },
+      { id: "dot-minimal", name: "Dot minimal", desc: "Chấm sáng trước chữ — tối giản.", kind: "plain" },
+      { id: "outline", name: "Outline", desc: "Viền xanh + nền trong suốt.", kind: "plain" },
+      { id: "gradient", name: "Gradient", desc: "Nền gradient + shadow — nổi bật.", kind: "plain" },
+      { id: "inset", name: "Inset / pressed", desc: "Cảm giác lõm/xuống — neumorphism nhẹ.", kind: "plain" },
+      { id: "ribbon", name: "Ribbon phải", desc: "Vạch accent bên phải + gradient ngang.", kind: "plain" },
+      { id: "chip", name: "Chip", desc: "Viên thuốc nhỏ, căn giữa sidebar.", kind: "plain" },
+      { id: "ios", name: "iOS pill segment", desc: "Track bo tròn, cục trắng trượt ngang.", kind: "segment-ios" },
+      { id: "material", name: "Material indicator", desc: "Thanh ngang dưới chữ (MD3 navigation).", kind: "material" },
+      { id: "double-frame", name: "Double frame", desc: "Viền đôi + outline glow.", kind: "plain" },
+      { id: "icon-only", name: "Icon only", desc: "Ô vuông chỉ icon — tiết kiệm chỗ.", kind: "icon-only" },
+      { id: "card", name: "Card stack", desc: "Mỗi tab như thẻ nhỏ có shadow.", kind: "plain" },
+      { id: "list-chevron", name: "List + chevron", desc: "Danh sách setting, mũi tên phải.", kind: "plain" },
+      { id: "toggle-row", name: "Toggle row", desc: "Hàng có switch giả bên phải.", kind: "toggle" },
+      { id: "neon-glow", name: "Neon glow", desc: "Viền phát sáng — game/cyber.", kind: "plain" },
+    ];
+
+    const labels = ["Attack", "About"];
+
+    function tabHtml(style, i, active) {
+      const cls = active ? "tab active" : "tab";
+      const icon = style.kind === "icon" || style.kind === "icon-only" ? `<span class="ico">${ICONS[i]}</span>` : "";
+      const label = style.kind === "icon-only" ? `<span class="label">${labels[i]}</span>` : labels[i];
+      const sw = style.kind === "toggle" ? `<span class="fake-switch" aria-hidden="true"></span>` : "";
+      const inner = style.kind === "material"
+        ? `<span class="label">${labels[i]}</span><span class="bar"></span>`
+        : `${icon}${label}${sw}`;
+      return `<button type="button" class="${cls}" data-i="${i}">${inner}</button>`;
+    }
+
+    function sidebarHtml(style) {
+      const t0 = tabHtml(style, 0, true);
+      const t1 = tabHtml(style, 1, false);
+      const cls = `sidebar tabs-${style.id}`;
+      switch (style.kind) {
+        case "pill":
+          return `<aside class="${cls}"><div class="movable pill"></div>${t0}${t1}</aside>`;
+        case "underline":
+          return `<aside class="${cls}"><div class="movable underline"></div>${t0}${t1}</aside>`;
+        case "segment":
+        case "segment-ios":
+          return `<aside class="${cls}"><div class="segment-wrap"><div class="movable seg-pill"></div>${t0}${t1}</div></aside>`;
+        default:
+          return `<aside class="${cls}">${t0}${t1}</aside>`;
+      }
+    }
+
+    function wireTabs(card, style) {
+      const root = card.querySelector(".mod-window");
+      const sidebar = root.querySelector(".sidebar");
+      const tabs = sidebar.querySelectorAll(".tab");
+      const contentTitle = root.querySelector(".content strong");
+      const movable = sidebar.querySelector(".movable");
+      const gap = 5;
+      const tabH = 38;
+
+      function moveIndicator(idx) {
+        if (!movable) return;
+        const tab = tabs[idx];
+        const r = tab.getBoundingClientRect();
+        const s = sidebar.getBoundingClientRect();
+        if (style.kind === "pill" || style.kind === "underline") {
+          movable.style.top = `${tab.offsetTop}px`;
+          movable.style.width = "";
+          movable.style.left = style.kind === "underline" ? `${tab.offsetLeft}px` : "";
+          if (style.kind === "underline") {
+            movable.style.width = `${tab.offsetWidth}px`;
+          }
+        } else if (style.kind === "segment" || style.kind === "segment-ios") {
+          movable.style.top = `${tab.offsetTop}px`;
+          movable.style.left = `${tab.offsetLeft}px`;
+          movable.style.width = `${tab.offsetWidth}px`;
+        }
+      }
+
+      tabs.forEach((tab, idx) => {
+        tab.addEventListener("click", (e) => {
+          e.stopPropagation();
+          tabs.forEach((t) => t.classList.remove("active"));
+          tab.classList.add("active");
+          if (contentTitle) contentTitle.textContent = labels[idx];
+          moveIndicator(idx);
+        });
+      });
+      moveIndicator(0);
+    }
+
+    const gallery = document.getElementById("gallery");
+    const pickBar = document.getElementById("pick-bar");
+    let selectedCard = null;
+
+    TAB_STYLES.forEach((style) => {
+      const card = document.createElement("article");
+      card.className = "card";
+      card.innerHTML = `
+        <h2>${style.name}</h2>
+        <p class="desc">${style.desc}</p>
+        <p class="id-tag">tab: ${style.id}</p>
+        <div class="mod-window">
+          <div class="titlebar">Android Attack</div>
+          <div class="body">
+            ${sidebarHtml(style)}
+            <main class="content"><strong>Attack</strong>Nhấn tab bên trái để thử.</main>
+          </div>
+        </div>`;
+      gallery.appendChild(card);
+      wireTabs(card, style);
+
+      card.addEventListener("click", (e) => {
+        if (e.target.closest(".tab")) return;
+        if (selectedCard) selectedCard.classList.remove("selected");
+        selectedCard = card;
+        card.classList.add("selected");
+        pickBar.hidden = false;
+        document.getElementById("picked-name").textContent = style.name;
+        document.getElementById("picked-id").textContent = style.id;
+      });
+    });
+  </script>
+</body>
+</html>

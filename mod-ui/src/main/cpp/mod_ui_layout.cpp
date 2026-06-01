@@ -1,6 +1,7 @@
 #include "mod_ui_layout.hpp"
 
 #include <algorithm>
+#include <cfloat>
 #include <imgui.h>
 
 namespace modui {
@@ -9,16 +10,40 @@ namespace {
 
 MenuLayoutConfig g_menu_layout;
 float g_density = 1.f;
+bool g_metrics_ready = false;
+bool g_initial_layout_done = false;
 
 } // namespace
 
 const MenuLayoutConfig &menu_layout_config() { return g_menu_layout; }
 
 void set_display_density(float density) {
-    if (density > 0.1f && density < 10.f) g_density = density;
+    if (density > 0.1f && density < 10.f) {
+        g_density = density;
+        g_metrics_ready = true;
+    }
 }
 
 float display_density() { return g_density; }
+
+bool display_metrics_ready() { return g_metrics_ready; }
+
+void reset_menu_initial_layout() { g_initial_layout_done = false; }
+
+bool try_apply_initial_menu_layout() {
+    if (!g_metrics_ready || g_initial_layout_done) return false;
+    const ImVec2 size = menu_window_size();
+    ImGui::SetNextWindowPos(menu_window_pos(size), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(size, ImGuiCond_Always);
+    g_initial_layout_done = true;
+    return true;
+}
+
+void menu_apply_resize_constraints() {
+    const MenuLayoutConfig &cfg = g_menu_layout;
+    const ImVec2 min_sz(dp_to_px(cfg.min_width_dp), dp_to_px(cfg.min_height_dp));
+    ImGui::SetNextWindowSizeConstraints(min_sz, ImVec2(FLT_MAX, FLT_MAX));
+}
 
 float dp_to_px(float dp) { return dp * g_density; }
 

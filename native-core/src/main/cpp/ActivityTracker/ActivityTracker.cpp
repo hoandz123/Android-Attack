@@ -2,7 +2,6 @@
 
 #include <JNIHelper/JNIHelper.hpp>
 #include <android/log.h>
-#include <mutex>
 #include <unistd.h>
 #include <vector>
 
@@ -12,7 +11,6 @@
 
 namespace activity_tracker {
 
-static std::mutex g_mutex;
 static std::vector<jobject> g_activities;
 static jobject g_current = nullptr;
 
@@ -49,7 +47,6 @@ static void log_activity(JNIEnv *env, jobject activity, const char *event) {
 void on_activity_resumed(JNIEnv *env, jobject activity) {
     if (!activity) return;
     log_activity(env, activity, "resumed");
-    std::lock_guard lock(g_mutex);
     clear_ref(env, g_current);
     g_current = env->NewGlobalRef(activity);
 
@@ -62,14 +59,12 @@ void on_activity_resumed(JNIEnv *env, jobject activity) {
 void on_activity_paused(JNIEnv *env, jobject activity) {
     if (!activity) return;
     log_activity(env, activity, "paused");
-    std::lock_guard lock(g_mutex);
     if (g_current && env->IsSameObject(g_current, activity)) clear_ref(env, g_current);
 }
 
 void on_activity_destroyed(JNIEnv *env, jobject activity) {
     if (!activity) return;
     log_activity(env, activity, "destroyed");
-    std::lock_guard lock(g_mutex);
     if (g_current && env->IsSameObject(g_current, activity)) clear_ref(env, g_current);
 
     for (auto it = g_activities.begin(); it != g_activities.end(); ++it) {
@@ -152,7 +147,6 @@ bool init(JavaVM *vm) {
 }
 
 std::vector<jobject> activities(JNIEnv *env) {
-    std::lock_guard lock(g_mutex);
     std::vector<jobject> out;
     out.reserve(g_activities.size());
     for (jobject a : g_activities) out.push_back(env->NewLocalRef(a));
@@ -160,7 +154,6 @@ std::vector<jobject> activities(JNIEnv *env) {
 }
 
 jobject current_activity(JNIEnv *env) {
-    std::lock_guard lock(g_mutex);
     return g_current ? env->NewLocalRef(g_current) : nullptr;
 }
 
