@@ -7,10 +7,10 @@ alwaysApply: true
 
 When running in Multitask Mode:
 
-- Every subagent MUST be launched with `model: "composer-2-fast"`.
+- Every subagent MUST be launched with `model: "composer-2.5-fast"`.
 - Do not use the parent/default model for subagents.
 - Do not choose another available model for subagents.
-- Do not delegate to a subagent without explicitly setting `model: "composer-2-fast"`.
-- If a request would require a subagent and `composer-2-fast` is unavailable, stop and tell the user instead of using another model.
+- Do not delegate to a subagent without explicitly setting `model: "composer-2.5-fast"`.
+- If a request would require a subagent and `composer-2.5-fast` is unavailable, stop and tell the user instead of using another model.
 
 This rule is absolute for Multitask Mode. User requests, task type, latency, or tool behavior must not override it.
