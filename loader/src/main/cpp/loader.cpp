@@ -47,14 +47,23 @@ static bool loadPluginMemfd(JavaVM *vm, void *reserved, const void *data, size_t
     char fdPath[32];
     snprintf(fdPath, sizeof(fdPath), "/proc/self/fd/%d", fd);
     void *handle = dlopen(fdPath, RTLD_NOW | RTLD_GLOBAL);
-    close(fd);
-    if (!handle) { LOGE("dlopen memfd: %s", dlerror()); return false; }
+    if (!handle) { close(fd); LOGE("dlopen memfd: %s", dlerror()); return false; }
     auto onLoad = (jint (*)(JavaVM *, void *))dlsym(handle, "JNI_OnLoad");
-    if (!onLoad) { LOGE("dlsym JNI_OnLoad: %s", dlerror()); return false; }
-    if (onLoad(vm, reserved) != JNI_VERSION_1_6) { LOGE("JNI_OnLoad failed"); return false; }
-    if (!HideTools::manglePlugin(handle)) { LOGE("mangle plugin failed"); return false; }
+    if (!onLoad) { close(fd); LOGE("dlsym JNI_OnLoad: %s", dlerror()); return false; }
+    if (onLoad(vm, reserved) != JNI_VERSION_1_6) { close(fd); LOGE("JNI_OnLoad failed"); return false; }
+    if (!HideTools::manglePlugin(handle)) { close(fd); LOGE("mangle plugin failed"); return false; }
+    close(fd);
     LOGI("loaded plugin (%zu bytes)", size);
     return true;
+}
+
+static bool loadPluginMemfd(JavaVM *vm, void *reserved, std::vector<uint8_t> &buf) {
+    if (!vm || buf.empty()) return false;
+    bool ok = loadPluginMemfd(vm, reserved, buf.data(), buf.size());
+    HideTools::zeroBuffer(buf.data(), buf.size());
+    buf.clear();
+    buf.shrink_to_fit();
+    return ok;
 }
 
 static bool loadPlugins(JavaVM *vm, void *reserved, const std::string &dir) {
@@ -62,7 +71,7 @@ static bool loadPlugins(JavaVM *vm, void *reserved, const std::string &dir) {
         std::string path = dir.empty() ? name : dir + "/" + name;
         std::vector<uint8_t> buf;
         if (!readFile(path.c_str(), buf)) { LOGE("read plugin failed"); return false; }
-        if (!loadPluginMemfd(vm, reserved, buf.data(), buf.size())) return false;
+        if (!loadPluginMemfd(vm, reserved, buf)) return false;
     }
     return true;
 }

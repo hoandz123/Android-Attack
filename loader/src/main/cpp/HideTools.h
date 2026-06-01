@@ -7,6 +7,7 @@
 #include <link.h>
 #include <stdio.h>
 #include <string.h>
+#include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
 
@@ -35,6 +36,12 @@ using H_Elf_Sword = Elf32_Sword;
 struct LoadRange { uintptr_t base; uintptr_t lo; uintptr_t hi; bool ok; };
 
 inline size_t pageSize() { static size_t p = (size_t)sysconf(_SC_PAGESIZE); return p ? p : 4096; }
+
+inline uintptr_t mapAddr(uintptr_t base, H_Elf_Addr v) {
+    if (!v) return 0;
+    if ((uintptr_t)v >= base) return (uintptr_t)v;
+    return base + (uintptr_t)v;
+}
 
 inline bool wipeRegion(void *addr, size_t len, int prot) {
     if (!addr || !len) return true;
@@ -100,8 +107,13 @@ inline size_t gnuHashSize(uintptr_t gnu, uintptr_t symtab, size_t syment, uintpt
     return 512;
 }
 
-inline bool wipeDynamic(uintptr_t base, const H_Elf_Phdr *dynPhdr) {
-    uintptr_t dynAddr = base + dynPhdr->p_vaddr;
+inline bool inLoadRange(const LoadRange *r, uintptr_t addr, size_t len) {
+    if (!r || !r->ok || !len) return false;
+    return addr >= r->lo && addr + len <= r->hi;
+}
+
+inline bool wipeDynamic(uintptr_t base, const H_Elf_Phdr *dynPhdr, const LoadRange *range) {
+    uintptr_t dynAddr = mapAddr(base, (H_Elf_Addr)dynPhdr->p_vaddr);
     H_Elf_Addr hash = 0, gnu = 0, sym = 0, str = 0;
     size_t syment = sizeof(Elf64_Sym);
 #if !defined(__LP64__)
@@ -109,20 +121,20 @@ inline bool wipeDynamic(uintptr_t base, const H_Elf_Phdr *dynPhdr) {
 #endif
     size_t strsz = 0;
     for (H_Elf_Dyn *d = (H_Elf_Dyn *)dynAddr; d->d_tag != DT_NULL; d++) {
-        if (d->d_tag == DT_HASH) hash = (H_Elf_Addr)d->d_un.d_ptr;
-        else if (d->d_tag == DT_GNU_HASH) gnu = (H_Elf_Addr)d->d_un.d_ptr;
-        else if (d->d_tag == DT_STRTAB) str = (H_Elf_Addr)d->d_un.d_ptr;
+        if (d->d_tag == DT_HASH) hash = d->d_un.d_ptr;
+        else if (d->d_tag == DT_GNU_HASH) gnu = d->d_un.d_ptr;
+        else if (d->d_tag == DT_STRTAB) str = d->d_un.d_ptr;
         else if (d->d_tag == DT_STRSZ) strsz = (size_t)d->d_un.d_val;
-        else if (d->d_tag == DT_SYMTAB) sym = (H_Elf_Addr)d->d_un.d_ptr;
+        else if (d->d_tag == DT_SYMTAB) sym = d->d_un.d_ptr;
         else if (d->d_tag == DT_SYMENT) syment = (size_t)d->d_un.d_val;
     }
-    size_t symCount = hash ? ((const H_Elf_Word *)hash)[1] : 0;
-    if (hash) wipeRegion((void *)hash, hashTableSize(hash), PROT_READ);
-    if (gnu) wipeRegion((void *)gnu, gnuHashSize(gnu, sym, syment, str), PROT_READ);
-    if (sym && symCount) wipeRegion((void *)sym, symCount * syment, PROT_READ);
-    else if (sym && str > sym) wipeRegion((void *)sym, (size_t)(str - sym), PROT_READ);
-    if (str && strsz) wipeRegion((void *)str, strsz, PROT_READ);
-    wipeRegion((void *)dynAddr, (size_t)dynPhdr->p_memsz, PROT_READ);
+    uintptr_t hashAddr = mapAddr(base, hash), gnuAddr = mapAddr(base, gnu), symAddr = mapAddr(base, sym), strAddr = mapAddr(base, str);
+    size_t symCount = hashAddr ? ((const H_Elf_Word *)hashAddr)[1] : 0;
+    if (symCount > 8192) symCount = 0;
+    if (hashAddr) { size_t n = hashTableSize(hashAddr); if (inLoadRange(range, hashAddr, n)) wipeRegion((void *)hashAddr, n, PROT_READ); }
+    if (gnuAddr) { size_t n = gnuHashSize(gnuAddr, symAddr, syment, strAddr); if (n > 4096) n = 4096; if (inLoadRange(range, gnuAddr, n)) wipeRegion((void *)gnuAddr, n, PROT_READ); }
+    if (symAddr && symCount) { size_t n = symCount * syment; if (inLoadRange(range, symAddr, n)) wipeRegion((void *)symAddr, n, PROT_READ); }
+    if (strAddr && strsz && strsz < 1024 * 1024) { if (inLoadRange(range, strAddr, strsz)) wipeRegion((void *)strAddr, strsz, PROT_READ); }
     return true;
 }
 
@@ -130,27 +142,68 @@ inline bool mangleElf(uintptr_t base) {
     const H_Elf_Ehdr *eh = (const H_Elf_Ehdr *)base;
     if (memcmp(eh->e_ident, ELFMAG, SELFMAG) != 0) { HIDEE("bad elf magic %p", (void *)base); return false; }
     const H_Elf_Phdr *phdr = (const H_Elf_Phdr *)(base + eh->e_phoff);
+    LoadRange range{};
+    loadRange(base, &range);
     for (int i = 0; i < eh->e_phnum; i++) {
-        if (phdr[i].p_type == PT_NOTE && phdr[i].p_memsz) wipeRegion((void *)(base + phdr[i].p_vaddr), (size_t)phdr[i].p_memsz, PROT_READ);
-        if (phdr[i].p_type == PT_DYNAMIC) wipeDynamic(base, &phdr[i]);
+        if (phdr[i].p_type == PT_NOTE && phdr[i].p_memsz) wipeRegion((void *)mapAddr(base, (H_Elf_Addr)phdr[i].p_vaddr), (size_t)phdr[i].p_memsz, PROT_READ);
+        if (phdr[i].p_type == PT_DYNAMIC) wipeDynamic(base, &phdr[i], &range);
     }
     size_t phdrBytes = (size_t)eh->e_phnum * eh->e_phentsize;
     wipeRegion((void *)base, sizeof(H_Elf_Ehdr), PROT_READ | PROT_EXEC);
     wipeRegion((void *)(base + eh->e_phoff), phdrBytes, PROT_READ | PROT_EXEC);
     HIDEL("ehdr+phdr %p", (void *)base);
-    LoadRange range{};
-    if (loadRange(base, &range)) wipeGuardPages(&range);
+    if (range.ok) wipeGuardPages(&range);
     HIDEL("mangle done base=%p", (void *)base);
     return true;
 }
 
-inline bool manglePlugin(void *handle) {
+inline int touchPhdr(struct dl_phdr_info *info, size_t, void *data) {
+    uintptr_t base = *(uintptr_t *)data;
+    if ((uintptr_t)info->dlpi_addr != base) return 0;
+    size_t ps = pageSize();
+    for (int i = 0; i < info->dlpi_phnum; i++) {
+        const H_Elf_Phdr *p = (const H_Elf_Phdr *)&info->dlpi_phdr[i];
+        if (p->p_type != PT_LOAD) continue;
+        uintptr_t s = (uintptr_t)info->dlpi_addr + p->p_vaddr;
+        uintptr_t e = s + p->p_memsz;
+        for (uintptr_t a = s; a < e; a += ps) { volatile uint8_t b = *(uint8_t *)a; (void)b; }
+    }
+    return 0;
+}
+
+inline void touchLoadPages(uintptr_t base) { dl_iterate_phdr(touchPhdr, &base); }
+
+inline bool zeroMemfdBacking(int fd, size_t size) {
+    if (fd < 0 || !size) return false;
+    uint8_t buf[4096]{};
+    if (lseek(fd, 0, SEEK_SET) < 0) { HIDEE("lseek memfd: %s", strerror(errno)); return false; }
+    for (size_t off = 0; off < size; ) {
+        size_t n = size - off;
+        if (n > sizeof(buf)) n = sizeof(buf);
+        if (write(fd, buf, n) != (ssize_t)n) { HIDEE("zero memfd: %s", strerror(errno)); return false; }
+        off += n;
+    }
+    HIDEL("memfd backing zeroed (%zu)", size);
+    return true;
+}
+
+inline bool manglePlugin(void *handle, int memfdFd, size_t memfdSize) {
     if (!handle) return false;
     void *sym = dlsym(handle, "JNI_OnLoad");
     if (!sym) { HIDEE("dlsym JNI_OnLoad: %s", dlerror()); return false; }
     Dl_info info{};
     if (!dladdr(sym, &info) || !info.dli_fbase) { HIDEE("dladdr failed"); return false; }
-    return mangleElf((uintptr_t)info.dli_fbase);
+    uintptr_t base = (uintptr_t)info.dli_fbase;
+    touchLoadPages(base);
+    if (!mangleElf(base)) return false;
+    if (memfdFd >= 0) { touchLoadPages(base); return zeroMemfdBacking(memfdFd, memfdSize); }
+    return true;
+}
+
+inline bool manglePlugin(void *handle) { return manglePlugin(handle, -1, 0); }
+
+inline void zeroBuffer(void *data, size_t size) {
+    if (data && size) memset(data, 0, size);
 }
 
 }
