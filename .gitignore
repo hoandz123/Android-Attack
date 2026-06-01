@@ -1,33 +1,140 @@
-﻿*.iml
-.gradle
-/local.properties
-/.idea/
+﻿# --- OS / editor junk ---
 .DS_Store
-/build
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+*~
+*.swp
+*.swo
+*.bak
+*.tmp
+*.temp
+
+# --- Android Studio / IntelliJ ---
+*.iml
+.idea/
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+.idea/deploymentTargetDropDown.xml
+.idea/misc.xml
+.idea/compiler.xml
+.idea/gradle.xml
+.idea/jarRepositories.xml
+.idea/kotlinc.xml
+.idea/vcs.xml
+*.ipr
+*.iws
+out/
+.navigation/
+captures/
+*.hprof
+
+# --- VS Code (local only) ---
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+
+# --- Gradle ---
+.gradle/
+**/.gradle/
+build/
 **/build/
-/captures
-.externalNativeBuild
-.cxx
+gradle-app.setting
+.gradletasknamecache
+
+# --- Local SDK / secrets (never commit) ---
+local.properties
+**/local.properties
+secrets.properties
+*.jks
+*.keystore
+*.p12
+*.pem
+key.properties
+signing.properties
+
+# --- Android build outputs ---
 *.apk
 *.ap_
 *.aab
+*.aar
 *.dex
 *.class
 bin/
 gen/
-out/
-*.log
+generated/
+**/generated/
+**/intermediates/
+**/outputs/
+**/tmp/
+lint/intermediates/
+lint/generated/
+lint/outputs/
+lint/tmp/
+test-results/
+androidTest-results/
 
-# Android Studio
-.navigation/
-*.hprof
-
-# Keystore
-*.jks
-*.keystore
-
-# NDK
+# --- Native / NDK / CMake ---
+.externalNativeBuild/
+**/.externalNativeBuild/
+.cxx/
+**/.cxx/
 obj/
+**/obj/
+*.o
+*.obj
+*.so
+*.dylib
+*.dll
+*.a
+*.lib
+*.exp
+*.pdb
+*.idb
+*.ilk
+*.map
+*.sym
 
-# Gradle wrapper jar is committed
+# --- Kotlin ---
+.kotlin/
+**/.kotlin/
+
+# --- Logs / diagnostics ---
+*.log
+*.log.*
+logcat.txt
+crashlytics-build.properties
+fabric.properties
+
+# --- ProGuard / R8 (generated) ---
+proguard/
+**/proguard/
+mapping.txt
+**/mapping.txt
+seeds.txt
+usage.txt
+configuration.txt
+
+# --- Fastlane / CI artifacts ---
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+*.xcresult
+
+# --- Misc project artifacts ---
+*.orig
+*.rej
+*.patch.bak
+skills-lock.json
+
+# --- Keep Gradle wrapper ---
 !gradle/wrapper/gradle-wrapper.jar

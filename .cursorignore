@@ -1,0 +1,116 @@
+﻿# Cursor indexing ignore — giảm noise, tránh đọc file build/binary/generated
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+*~
+*.swp
+*.bak
+*.tmp
+
+# --- IDE metadata ---
+.idea/
+*.iml
+.vscode/
+.navigation/
+captures/
+*.hprof
+
+# --- Gradle cache & build ---
+.gradle/
+**/.gradle/
+build/
+**/build/
+.gradletasknamecache
+gradle/wrapper/dists/
+gradle/wrapper/*.zip
+
+# --- Local config (paths máy cá nhân) ---
+local.properties
+**/local.properties
+secrets.properties
+key.properties
+signing.properties
+*.jks
+*.keystore
+
+# --- Android artifacts ---
+*.apk
+*.ap_
+*.aab
+*.aar
+*.dex
+*.class
+bin/
+gen/
+generated/
+**/generated/
+**/intermediates/
+**/outputs/
+**/tmp/
+lint/
+test-results/
+androidTest-results/
+out/
+
+# --- Native / NDK / CMake ---
+.externalNativeBuild/
+**/.externalNativeBuild/
+.cxx/
+**/.cxx/
+obj/
+**/obj/
+*.o
+*.obj
+*.so
+*.a
+*.lib
+*.map
+*.sym
+
+# --- Kotlin compiler cache ---
+.kotlin/
+**/.kotlin/
+
+# --- Logs ---
+*.log
+*.log.*
+logcat.txt
+
+# --- ProGuard / R8 output ---
+proguard/
+**/proguard/
+mapping.txt
+**/mapping.txt
+seeds.txt
+usage.txt
+
+# --- Large binaries ---
+gradle/wrapper/gradle-wrapper.jar
+*.zip
+*.7z
+*.tar
+*.gz
+*.rar
+
+# --- Fonts / media / assets nặng (nếu có sau này) ---
+*.ttf
+*.otf
+*.woff
+*.woff2
+*.mp4
+*.mp3
+*.wav
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.ico
+*.pdf
+
+# --- Lock / cache phụ ---
+skills-lock.json
+fastlane/report.xml
+fastlane/screenshots/
