@@ -35,6 +35,32 @@ target_compile_features(kitty PUBLIC cxx_std_17)
 target_link_libraries(kitty PUBLIC lgl ${log-lib})
 
 # =============================================================================
+# JNIHelper — JavaVM + JNIEnv thống nhất (không Detach thread đã attach)
+# =============================================================================
+add_library(jnihelper STATIC JNIHelper/JNIHelper.cpp)
+target_include_directories(jnihelper PUBLIC ${D})
+target_compile_features(jnihelper PUBLIC cxx_std_20)
+target_link_libraries(jnihelper PUBLIC ${log-lib})
+
+# =============================================================================
+# DexLoader — in-memory DEX into PathClassLoader (makeInMemoryDexElements)
+# =============================================================================
+add_library(dexloader STATIC
+    DexLoader/DexLoader.cpp
+    DexLoader/JniReflect.cpp)
+target_include_directories(dexloader PUBLIC ${D})
+target_compile_features(dexloader PUBLIC cxx_std_20)
+target_link_libraries(dexloader PUBLIC jnihelper lgl ${log-lib})
+
+# =============================================================================
+# ActivityTracker — JVM + running Activity contexts
+# =============================================================================
+add_library(activitytracker STATIC ActivityTracker/ActivityTracker.cpp)
+target_include_directories(activitytracker PUBLIC ${D})
+target_compile_features(activitytracker PUBLIC cxx_std_20)
+target_link_libraries(activitytracker PUBLIC jnihelper lgl ${log-lib})
+
+# =============================================================================
 # ImGui — Android + GLES3 backend
 # =============================================================================
 add_library(imgui STATIC

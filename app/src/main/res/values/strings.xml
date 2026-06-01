@@ -1,4 +1,27 @@
 <resources>
     <string name="app_name">Android Attack</string>
-    <string name="loading">Loading native…</string>
+
+    <string name="main_title">Main — test overlay chặn touch</string>
+    <string name="main_hint">Nếu menu ImGui bắt chuột: nút/input dưới không hoạt động. Tắt/click vùng trống menu để thử app.</string>
+    <string name="input_hint">Nhập text thử bàn phím</string>
+    <string name="btn_submit">Gửi (Toast)</string>
+    <string name="btn_counter">Đếm: 0</string>
+    <string name="btn_counter_fmt">Đếm: %1$d</string>
+    <string name="btn_clear">Xóa log / đếm</string>
+    <string name="btn_open_second">Mở Activity 2</string>
+    <string name="toast_submit">Submit: %1$s</string>
+    <string name="touch_log_initial">dispatchTouch: (chưa có)</string>
+    <string name="touch_dispatch_fmt">dispatchTouch #%1$d (%2$.0f, %3$.0f)\n→ Nếu tăng khi chạm menu ImGui = overlay KHÔNG chặn hết</string>
+    <string name="touch_cleared">Đã xóa</string>
+
+    <string name="second_activity_label">Overlay test 2</string>
+    <string name="second_title">Activity 2</string>
+    <string name="second_hint">Vùng xanh = tap test. Overlay chặn thì số không tăng.</string>
+    <string name="second_counter_initial">Tap: 0</string>
+    <string name="second_counter_fmt">Tap: %1$d</string>
+    <string name="btn_tap_zone">Chạm vùng này (+1)</string>
+    <string name="btn_second_action">Toast từ Activity 2</string>
+    <string name="second_input_hint">Input Activity 2</string>
+    <string name="btn_back">← Main</string>
+    <string name="toast_second">Activity2: %1$s</string>
 </resources>

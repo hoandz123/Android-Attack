@@ -8,21 +8,34 @@
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
 
 static const char *kPlugins[] = {"libattack.so"};
+static void *s_plugin_handle = nullptr;
 
 static bool loadPlugin(JavaVM *vm, void *reserved, const char *path) {
+    if (s_plugin_handle) return true;
     void *handle = dlopen(path, RTLD_NOW | RTLD_GLOBAL);
     if (!handle) { LOGE("dlopen %s: %s", path, dlerror()); return false; }
     auto onLoad = (jint (*)(JavaVM *, void *))dlsym(handle, "JNI_OnLoad");
     if (!onLoad) { LOGE("dlsym JNI_OnLoad: %s", dlerror()); return false; }
-    if (onLoad(vm, reserved) != JNI_VERSION_1_6) { LOGE("JNI_OnLoad failed"); return false; }
+    if (onLoad(vm, reserved) != JNI_VERSION_1_6) {
+        LOGE("JNI_OnLoad failed");
+        dlclose(handle);
+        return false;
+    }
+    s_plugin_handle = handle;
     LOGI("loaded plugin %s", path);
     return true;
 }
 
 static bool loadPlugins(JavaVM *vm, void *reserved, const std::string &dir) {
     for (const char *name : kPlugins) {
-        std::string path = dir.empty() ? name : dir + "/" + name;
-        if (!loadPlugin(vm, reserved, path.c_str())) return false;
+        // APK libs are often mmap'd from base.apk (extractNativeLibs=false); basename works.
+        if (loadPlugin(vm, reserved, name)) continue;
+        if (!dir.empty()) {
+            std::string path = dir + "/" + name;
+            if (loadPlugin(vm, reserved, path.c_str())) continue;
+        }
+        LOGE("failed to load plugin %s", name);
+        return false;
     }
     return true;
 }

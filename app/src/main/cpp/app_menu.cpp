@@ -8,6 +8,8 @@ static void draw_plugin_menu() {
         ImGui::TextUnformatted("Custom widgets live in :app");
         static bool demo = true;
         ImGui::Checkbox("Example toggle", &demo);
+        static char buf[128] = "";
+        ImGui::InputText("ImGui text", buf, sizeof(buf));
     }
 }
 

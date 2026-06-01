@@ -57,6 +57,15 @@ android {
         create("curl") {
             headers = "src/main/cpp/curl/include"
         }
+        create("jnihelper") {
+            headers = "src/main/cpp"
+        }
+        create("dexloader") {
+            headers = "src/main/cpp"
+        }
+        create("activitytracker") {
+            headers = "src/main/cpp"
+        }
     }
 
     externalNativeBuild {

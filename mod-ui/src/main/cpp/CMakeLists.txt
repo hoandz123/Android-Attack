@@ -13,17 +13,26 @@ find_library(GLESv3-lib GLESv3)
 
 add_library(modui STATIC
     mod_ui.cpp
+    mod_ui_font.cpp
+    mod_ui_theme.cpp
+    mod_ui_layout.cpp
     mod_ui_shell.cpp
-    mod_ui_render.cpp)
+    mod_ui_render.cpp
+    mod_ui_touch.cpp
+    mod_ui_keyboard.cpp
+    mod_ui_android_keys.cpp
+    surface_bridge.cpp)
 
 target_include_directories(modui PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/fonts
     ${NATIVE_CORE_CPP}
     ${NATIVE_CORE_CPP}/imgui/backends)
 
 target_compile_definitions(modui PUBLIC IMGUI_IMPL_OPENGL_ES3)
 
 target_link_libraries(modui PUBLIC
+    native-core::jnihelper
     native-core::imgui
     native-core::lgl
     ${log-lib}
