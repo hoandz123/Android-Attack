@@ -1,0 +1,26 @@
+[versions]
+agp = "9.2.0"
+kotlin = "2.3.21"
+core = "1.18.0"
+appcompat = "1.7.1"
+material = "1.14.0"
+activity = "1.13.0"
+constraintlayout = "2.2.1"
+compileSdk = "36"
+compileSdkMinor = "1"
+targetSdk = "36"
+targetSdkMinor = "1"
+minSdk = "24"
+ndk = "28.2.13676358"
+cmake = "3.22.1"
+gradle = "9.5.1"
+
+[libraries]
+androidx-core = { group = "androidx.core", name = "core-ktx", version.ref = "core" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
+androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }

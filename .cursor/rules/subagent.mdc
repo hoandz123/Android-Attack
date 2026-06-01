@@ -7,16 +7,10 @@ alwaysApply: true
 
 When running in Multitask Mode:
 
-- Every subagent MUST be launched with `model: "composer-2.5-fast"`.
+- Every subagent MUST be launched with `model: "composer-2-fast"`.
 - Do not use the parent/default model for subagents.
 - Do not choose another available model for subagents.
-- Do not delegate to a subagent without explicitly setting `model: "composer-2.5-fast"`.
-- If a request would require a subagent and `composer-2.5-fast` is unavailable, stop and tell the user instead of using another model.
-
-
-## Truyền rules vào subagent
-
-- Mỗi khi BẮT ĐẦU một subagent (launch mới), PHẢI truyền nội dung rule `.cursor/rules/karpathy-guidelines.mdc` vào prompt của subagent (vì subagent không tự kế thừa rules của workspace).
-- Đưa các nguyên tắc karpathy (Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution) vào phần đầu prompt hoặc một mục "Ràng buộc" để subagent tuân theo.
+- Do not delegate to a subagent without explicitly setting `model: "composer-2-fast"`.
+- If a request would require a subagent and `composer-2-fast` is unavailable, stop and tell the user instead of using another model.
 
 This rule is absolute for Multitask Mode. User requests, task type, latency, or tool behavior must not override it.
