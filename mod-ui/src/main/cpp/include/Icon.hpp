@@ -10,6 +10,9 @@ namespace modui {
 /** FAB: poll download (background) + load GL on render thread; cache texture. */
 ImTextureID GetFabIcon();
 
+/** Drop cached GL texture after EGL/GL context recreate (no re-download). */
+void InvalidateIcon();
+
 /** Draw FAB icon (rounded) or black placeholder when not ready. */
 void DrawFabIcon(ImDrawList *dl, const ImVec2 &p0, const ImVec2 &p1, float rounding);
 

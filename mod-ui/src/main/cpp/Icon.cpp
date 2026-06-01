@@ -29,22 +29,25 @@ constexpr const char *kFabIconPath = "/data/user/0/com.android.attack/fab.png";
 std::atomic<bool> g_fab_downloading{false};
 std::atomic<bool> g_fab_file_ready{false};
 ImTextureID g_fab_icon = (ImTextureID) 0;
+GLuint g_load_icon_tex = 0;
+char g_load_icon_path[8192]{};
+
+void DropLoadIconCache() {
+    g_load_icon_tex = 0;
+    g_load_icon_path[0] = '\0';
+}
 
 ImTextureID LoadIcon(const char *path) {
-    static char cached[8192]{};
-    static GLuint tex = 0;
-
     if (!path) {
-        if (tex) glDeleteTextures(1, &tex);
-        tex = 0;
-        cached[0] = '\0';
+        if (g_load_icon_tex) glDeleteTextures(1, &g_load_icon_tex);
+        DropLoadIconCache();
         LOGI("LoadIcon cleared cached texture");
         return (ImTextureID) 0;
     }
     if (!path[0]) return (ImTextureID) 0;
-    if (tex && strncmp(cached, path, sizeof(cached)) == 0) {
-        LOGI("LoadIcon cache hit path=%s tex=%u", path, tex);
-        return (ImTextureID) (intptr_t) tex;
+    if (g_load_icon_tex && strncmp(g_load_icon_path, path, sizeof(g_load_icon_path)) == 0) {
+        LOGI("LoadIcon cache hit path=%s tex=%u", path, g_load_icon_tex);
+        return (ImTextureID) (intptr_t) g_load_icon_tex;
     }
 
     LOGI("LoadIcon stbi_load begin path=%s size=%lld", path, (long long) fs::FileSize(path));
@@ -56,9 +59,9 @@ ImTextureID LoadIcon(const char *path) {
         return (ImTextureID) 0;
     }
 
-    if (tex) glDeleteTextures(1, &tex);
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
+    if (g_load_icon_tex) glDeleteTextures(1, &g_load_icon_tex);
+    glGenTextures(1, &g_load_icon_tex);
+    glBindTexture(GL_TEXTURE_2D, g_load_icon_tex);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 #ifdef GL_UNPACK_ROW_LENGTH
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
@@ -70,10 +73,10 @@ ImTextureID LoadIcon(const char *path) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, px);
     stbi_image_free(px);
 
-    strncpy(cached, path, sizeof(cached) - 1);
-    cached[sizeof(cached) - 1] = '\0';
-    LOGI("LoadIcon OK path=%s %dx%d ch=%d tex=%u", path, w, h, ch, tex);
-    return (ImTextureID) (intptr_t) tex;
+    strncpy(g_load_icon_path, path, sizeof(g_load_icon_path) - 1);
+    g_load_icon_path[sizeof(g_load_icon_path) - 1] = '\0';
+    LOGI("LoadIcon OK path=%s %dx%d ch=%d tex=%u", path, w, h, ch, g_load_icon_tex);
+    return (ImTextureID) (intptr_t) g_load_icon_tex;
 }
 
 bool DownloadIcon(const char *url, const char *save_path) {
@@ -127,6 +130,12 @@ void PollFabDownload() {
 }
 
 } // namespace
+
+void InvalidateIcon() {
+    LOGI("InvalidateIcon: dropping stale texture for context recreate");
+    g_fab_icon = (ImTextureID) 0;
+    DropLoadIconCache();
+}
 
 ImTextureID GetFabIcon() {
     if (!g_fab_icon) {

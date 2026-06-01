@@ -1,6 +1,7 @@
 #include "ModUi.hpp"
 #include "Internal.hpp"
 #include "Layout.hpp"
+#include "Icon.hpp"
 #include <GLES3/gl3.h>
 #include <android/log.h>
 #include <imgui.h>
@@ -30,6 +31,7 @@ bool SetSurface(ANativeWindow *window) {
         ImGui_ImplAndroid_Shutdown();
         return false;
     }
+    InvalidateIcon();
     g_backend = true;
     return true;
 }
