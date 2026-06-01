@@ -191,6 +191,8 @@ namespace ay
 // ay::obfuscated_data object with global lifetime that has functions for
 // decrypting the string and is also implicitly convertable to a char*
 #define OBFUSCATE(data) OBFUSCATE_KEY(data, AY_OBFUSCATE_DEFAULT_KEY)
+#define OBF(data) (static_cast<const char *>(OBFUSCATE(data)))
+#define OBFS(data) std::string(OBFUSCATE(data))
 
 // Obfuscates the string 'data' with 'key' at compile-time and returns a
 // reference to a ay::obfuscated_data object with global lifetime that has

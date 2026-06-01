@@ -24,9 +24,9 @@ enum LogType {
 #define LOG_TAG TAG
 #endif
 
-#define LOGD(...) ((void)__android_log_print(oDEBUG, LOG_TAG, __VA_ARGS__))
-#define LOGE(...) ((void)__android_log_print(oERROR, LOG_TAG, __VA_ARGS__))
-#define LOGI(...) ((void)__android_log_print(oINFO,  LOG_TAG, __VA_ARGS__))
-#define LOGW(...) ((void)__android_log_print(oWARN,  LOG_TAG, __VA_ARGS__))
+#define LOGD(...) do { _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wformat-security\"") (void)__android_log_print(oDEBUG, LOG_TAG, __VA_ARGS__); _Pragma("clang diagnostic pop") } while(0)
+#define LOGE(...) do { _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wformat-security\"") (void)__android_log_print(oERROR, LOG_TAG, __VA_ARGS__); _Pragma("clang diagnostic pop") } while(0)
+#define LOGI(...) do { _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wformat-security\"") (void)__android_log_print(oINFO, LOG_TAG, __VA_ARGS__); _Pragma("clang diagnostic pop") } while(0)
+#define LOGW(...) do { _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wformat-security\"") (void)__android_log_print(oWARN, LOG_TAG, __VA_ARGS__); _Pragma("clang diagnostic pop") } while(0)
 
 #endif /* Logger_h */

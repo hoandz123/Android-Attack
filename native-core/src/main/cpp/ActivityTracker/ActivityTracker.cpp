@@ -1,6 +1,6 @@
 #include "ActivityTracker.hpp"
 
-#define LOG_TAG "ActivityTracker"
+#define LOG_TAG OBF("ActivityTracker")
 #include <Includes/Logger.h>
 
 #include <JNIHelper/JNIHelper.hpp>
@@ -25,12 +25,12 @@ static void LogActivity(JNIEnv *env, jobject activity, const char *event) {
         env->ExceptionClear();
         return;
     }
-    jclass class_cls = env->FindClass("java/lang/Class");
+    jclass class_cls = env->FindClass(OBF("java/lang/Class"));
     if (!class_cls || env->ExceptionCheck()) {
         env->ExceptionClear();
         return;
     }
-    jmethodID get_name = env->GetMethodID(class_cls, "getName", "()Ljava/lang/String;");
+    jmethodID get_name = env->GetMethodID(class_cls, OBF("getName"), OBF("()Ljava/lang/String;"));
     if (!get_name) return;
     jstring jname = (jstring)env->CallObjectMethod(cls, get_name);
     if (!jname || env->ExceptionCheck()) {
@@ -38,13 +38,13 @@ static void LogActivity(JNIEnv *env, jobject activity, const char *event) {
         return;
     }
     const char *name = env->GetStringUTFChars(jname, nullptr);
-    LOGI("%s %s", event, name ? name : "?");
+    LOGI(OBF("%s %s"), event, name ? name : OBF("?"));
     if (name) env->ReleaseStringUTFChars(jname, name);
 }
 
 void OnActivityResumed(JNIEnv *env, jobject activity) {
     if (!activity) return;
-    LogActivity(env, activity, "resumed");
+    LogActivity(env, activity, OBF("resumed"));
     ClearRef(env, g_current);
     g_current = env->NewGlobalRef(activity);
 
@@ -56,13 +56,13 @@ void OnActivityResumed(JNIEnv *env, jobject activity) {
 
 void OnActivityPaused(JNIEnv *env, jobject activity) {
     if (!activity) return;
-    LogActivity(env, activity, "paused");
+    LogActivity(env, activity, OBF("paused"));
     if (g_current && env->IsSameObject(g_current, activity)) ClearRef(env, g_current);
 }
 
 void OnActivityDestroyed(JNIEnv *env, jobject activity) {
     if (!activity) return;
-    LogActivity(env, activity, "destroyed");
+    LogActivity(env, activity, OBF("destroyed"));
     if (g_current && env->IsSameObject(g_current, activity)) ClearRef(env, g_current);
 
     for (auto it = g_activities.begin(); it != g_activities.end(); ++it) {
@@ -95,17 +95,17 @@ static bool RegisterNatives(JNIEnv *env) {
         {"nativeOnPaused", "(Landroid/app/Activity;)V", (void *)BridgePaused},
         {"nativeOnDestroyed", "(Landroid/app/Activity;)V", (void *)BridgeDestroyed},
     };
-    if (!jni::RegisterNatives(env, "com/android/attack/nativedex/ActivityTrackerBridge", methods, 3)) {
-        LOGE("RegisterNatives ActivityTrackerBridge failed");
+    if (!jni::RegisterNatives(env, OBF("com/android/attack/nativedex/ActivityTrackerBridge"), methods, 3)) {
+        LOGE(OBF("RegisterNatives ActivityTrackerBridge failed"));
         return false;
     }
     return true;
 }
 
 static bool CallJavaInstallOnce(JNIEnv *env) {
-    jclass bridge = jni::FindClass(env, "com/android/attack/nativedex/ActivityTrackerBridge");
+    jclass bridge = jni::FindClass(env, OBF("com/android/attack/nativedex/ActivityTrackerBridge"));
     if (!bridge) return false;
-    jmethodID install = env->GetStaticMethodID(bridge, "install", "()Z");
+    jmethodID install = env->GetStaticMethodID(bridge, OBF("install"), OBF("()Z"));
     if (!install || env->ExceptionCheck()) {
         env->ExceptionClear();
         return false;
@@ -122,12 +122,12 @@ static bool CallJavaInstallOnce(JNIEnv *env) {
 static bool CallJavaInstall(JNIEnv *env) {
     for (int i = 0; i < 10; ++i) {
         if (CallJavaInstallOnce(env)) {
-            if (i > 0) LOGI("ActivityTrackerBridge.install ok after retry %d", i);
+            if (i > 0) LOGI(OBF("ActivityTrackerBridge.install ok after retry %d"), i);
             return true;
         }
         usleep(20000);
     }
-    LOGE("ActivityTrackerBridge.install failed — dex loaded? rebuild generateEmbeddedDex");
+    LOGE(OBF("ActivityTrackerBridge.install failed — dex loaded? rebuild generateEmbeddedDex"));
     return false;
 }
 
@@ -140,7 +140,7 @@ bool Init(JavaVM *vm) {
     if (!RegisterNatives(env)) return false;
     if (!CallJavaInstall(env)) return false;
 
-    LOGI("init ok");
+    LOGI(OBF("init ok"));
     return true;
 }
 

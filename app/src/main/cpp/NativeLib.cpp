@@ -2,7 +2,7 @@
 #include <jni.h>
 #include "Menu.hpp"
 
-#define LOG_TAG "AttackPlugin"
+#define LOG_TAG OBF("AttackPlugin")
 #include <Includes/Logger.h>
 
 #include <ActivityTracker/ActivityTracker.hpp>
@@ -23,7 +23,7 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
     if (!activity_tracker::Init(vm)) return JNI_ERR;
     if (!modui::Init()) return JNI_ERR;
     appui::RegisterMenu();
-    LOGI("curl %s, mod-ui ready, page=%ld", curl_version(), (long) _SYS_PAGE_SIZE_);
+    LOGI(OBF("curl %s, mod-ui ready, page=%ld"), curl_version(), (long) _SYS_PAGE_SIZE_);
     s_plugin_ready = true;
     return JNI_VERSION_1_6;
 }

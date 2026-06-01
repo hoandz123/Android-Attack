@@ -99,5 +99,6 @@ target_link_libraries(httpclient PUBLIC curl filemanager lgl ${log-lib})
 # FileManager — đọc/ghi, thư mục, copy, xóa (std::filesystem)
 # =============================================================================
 add_library(filemanager STATIC FileManager/FileManager.cpp)
-target_include_directories(filemanager PUBLIC ${D}/FileManager)
+target_include_directories(filemanager PUBLIC ${D}/FileManager ${D})
 target_compile_features(filemanager PUBLIC cxx_std_20)
+target_link_libraries(filemanager PUBLIC lgl)

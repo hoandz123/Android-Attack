@@ -1,5 +1,6 @@
 #include "JNIHelper/JNIHelper.hpp"
 
+#include <Includes/obfuscate.h>
 #include <string>
 
 namespace jni {
@@ -48,28 +49,28 @@ jclass FindClass(JNIEnv *e, const char *slash_name) {
     if (cls && !e->ExceptionCheck()) return cls;
     ClearException(e);
 
-    jclass at = e->FindClass("android/app/ActivityThread");
+    jclass at = e->FindClass(OBF("android/app/ActivityThread"));
     if (!at || e->ExceptionCheck()) {
         ClearException(e);
         return nullptr;
     }
     jmethodID current_app =
-        e->GetStaticMethodID(at, "currentApplication", "()Landroid/app/Application;");
+        e->GetStaticMethodID(at, OBF("currentApplication"), OBF("()Landroid/app/Application;"));
     jobject app = e->CallStaticObjectMethod(at, current_app);
     if (!app || e->ExceptionCheck()) {
         ClearException(e);
         return nullptr;
     }
     jclass ctx = e->GetObjectClass(app);
-    jmethodID get_cl = e->GetMethodID(ctx, "getClassLoader", "()Ljava/lang/ClassLoader;");
+    jmethodID get_cl = e->GetMethodID(ctx, OBF("getClassLoader"), OBF("()Ljava/lang/ClassLoader;"));
     jobject loader = e->CallObjectMethod(app, get_cl);
     if (!loader || e->ExceptionCheck()) {
         ClearException(e);
         return nullptr;
     }
-    jclass cl_cls = e->FindClass("java/lang/ClassLoader");
+    jclass cl_cls = e->FindClass(OBF("java/lang/ClassLoader"));
     jmethodID load =
-        e->GetMethodID(cl_cls, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
+        e->GetMethodID(cl_cls, OBF("loadClass"), OBF("(Ljava/lang/String;)Ljava/lang/Class;"));
     std::string dotted = slash_name;
     for (char &c : dotted) {
         if (c == '/') c = '.';

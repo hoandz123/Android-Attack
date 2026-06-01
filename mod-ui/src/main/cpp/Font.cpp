@@ -1,7 +1,7 @@
 #include "Internal.hpp"
 #include "Theme.hpp"
 
-#define LOG_TAG "ModUi"
+#define LOG_TAG OBF("ModUi")
 #include <Includes/Logger.h>
 
 #include <imgui.h>
@@ -35,7 +35,7 @@ void SetupUiFonts() {
         &cfg,
         ranges);
     if (!font) {
-        LOGE("FreeSans load failed, using default font");
+        LOGE(OBF("FreeSans load failed, using default font"));
         io.Fonts->AddFontDefault();
     }
 }

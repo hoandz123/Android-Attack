@@ -2,6 +2,7 @@
 #include "Internal.hpp"
 #include "Layout.hpp"
 #include "Icon.hpp"
+#include <Includes/obfuscate.h>
 #include <imgui.h>
 #include <algorithm>
 #include <cmath>
@@ -26,8 +27,8 @@ constexpr float kFabEdgePadDp = 14.f;
 constexpr int kMaxTabAnim = 16;
 constexpr float kAnimSpeed = 16.f;
 
-constexpr const char *kDefaultWindowTitle = "Mod Menu##modui_shell";
-constexpr const char *kFabWindowId = "##modui_fab";
+const char *DefaultWindowTitle() { return OBF("Mod Menu##modui_shell"); }
+const char *FabWindowId() { return OBF("##modui_fab"); }
 
 struct SidebarTabAnimState {
     float blend[kMaxTabAnim]{};
@@ -76,7 +77,7 @@ bool DrawSidebarTabRibbon(int index, const char *label, bool selected, float row
     const ImVec2 size(width, row_h);
 
     ImGui::PushID(index);
-    const bool pressed = ImGui::InvisibleButton("##tab", size);
+    const bool pressed = ImGui::InvisibleButton(OBF("##tab"), size);
     const bool held = ImGui::IsItemActive();
     ImGui::PopID();
 
@@ -127,7 +128,7 @@ void DrawSidebar(const AppUi &ui, int &selected, ImVec2 panel_size) {
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.11f, 0.12f, 0.145f, 1.f));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(gap, gap));
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.f, tab_gap));
-    if (ImGui::BeginChild("modui_sidebar", panel_size, ImGuiChildFlags_Borders)) {
+    if (ImGui::BeginChild(OBF("modui_sidebar"), panel_size, ImGuiChildFlags_Borders)) {
         const float tab_w = ImGui::GetContentRegionAvail().x;
 
         for (int i = 0; i < ui.tab_count; ++i) {
@@ -147,7 +148,7 @@ void DrawContentPanel(const AppUi &ui, int selected, ImVec2 panel_size) {
 
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.13f, 0.14f, 0.17f, 1.f));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(gap * 1.25f, gap * 1.25f));
-    if (ImGui::BeginChild("modui_content", panel_size, ImGuiChildFlags_Borders)) {
+    if (ImGui::BeginChild(OBF("modui_content"), panel_size, ImGuiChildFlags_Borders)) {
         if (selected >= 0 && selected < ui.tab_count) {
             const MenuTab &tab = ui.tabs[selected];
             if (tab.draw) tab.draw();
@@ -182,7 +183,7 @@ void DrawMenuFab(const AppUi &) {
     } else {
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.f, 0.f, 0.f, 1.f));
     }
-    if (!ImGui::Begin(kFabWindowId, nullptr, flags)) {
+    if (!ImGui::Begin(FabWindowId(), nullptr, flags)) {
         if (!has_tex) ImGui::PopStyleColor();
         ImGui::PopStyleVar(3);
         return;
@@ -227,7 +228,7 @@ void DrawMenuShell(const AppUi &ui) {
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(DpToPx(10.f), DpToPx(10.f)));
-    const char *title = (ui.window_title && ui.window_title[0]) ? ui.window_title : kDefaultWindowTitle;
+    const char *title = (ui.window_title && ui.window_title[0]) ? ui.window_title : DefaultWindowTitle();
     const bool begun = ImGui::Begin(title, &s_shell_open, flags);
     ImGui::PopStyleVar();
 

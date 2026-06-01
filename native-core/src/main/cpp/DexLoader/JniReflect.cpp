@@ -1,6 +1,6 @@
 #include "JniReflect.hpp"
 
-#define LOG_TAG "JniReflect"
+#define LOG_TAG OBF("JniReflect")
 #include <Includes/Logger.h>
 
 #include <cstring>
@@ -9,20 +9,20 @@ namespace jni_reflect {
 
 static jclass ClassClass(JNIEnv *env) {
     static jclass cached = nullptr;
-    if (!cached) cached = (jclass)env->NewGlobalRef(env->FindClass("java/lang/Class"));
+    if (!cached) cached = (jclass)env->NewGlobalRef(env->FindClass(OBF("java/lang/Class")));
     return cached;
 }
 
 static void SetAccessible(JNIEnv *env, jobject member) {
     jclass cls = env->GetObjectClass(member);
-    jmethodID set = env->GetMethodID(cls, "setAccessible", "(Z)V");
+    jmethodID set = env->GetMethodID(cls, OBF("setAccessible"), OBF("(Z)V"));
     env->CallVoidMethod(member, set, JNI_TRUE);
 }
 
 bool HasFieldObject(JNIEnv *env, jobject instance, const char *name) {
     if (!instance || !name) return false;
     jclass cursor = (jclass)env->NewLocalRef(env->GetObjectClass(instance));
-    jmethodID get_declared = env->GetMethodID(ClassClass(env), "getDeclaredField", "(Ljava/lang/String;)Ljava/lang/reflect/Field;");
+    jmethodID get_declared = env->GetMethodID(ClassClass(env), OBF("getDeclaredField"), OBF("(Ljava/lang/String;)Ljava/lang/reflect/Field;"));
     jstring jname = env->NewStringUTF(name);
 
     while (cursor) {
@@ -46,7 +46,7 @@ bool HasFieldObject(JNIEnv *env, jobject instance, const char *name) {
 jobject FindFieldObject(JNIEnv *env, jobject instance, const char *name) {
     if (!instance || !name) return nullptr;
     jclass cursor = (jclass)env->NewLocalRef(env->GetObjectClass(instance));
-    jmethodID get_declared = env->GetMethodID(ClassClass(env), "getDeclaredField", "(Ljava/lang/String;)Ljava/lang/reflect/Field;");
+    jmethodID get_declared = env->GetMethodID(ClassClass(env), OBF("getDeclaredField"), OBF("(Ljava/lang/String;)Ljava/lang/reflect/Field;"));
     jstring jname = env->NewStringUTF(name);
 
     while (cursor) {
@@ -64,17 +64,16 @@ jobject FindFieldObject(JNIEnv *env, jobject instance, const char *name) {
         cursor = parent;
     }
     env->DeleteLocalRef(jname);
-    LOGE("field not found: %s", name);
+    LOGE(OBF("field not found: %s"), name);
     return nullptr;
 }
 
 jobject FindMethod(JNIEnv *env, jobject instance, const char *name, const char *signature) {
     if (!instance || !name) return nullptr;
     jclass cursor = (jclass)env->NewLocalRef(env->GetObjectClass(instance));
-    jmethodID get_declared = env->GetMethodID(ClassClass(env), "getDeclaredMethod",
-                                                "(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;");
-    jmethodID get_methods = env->GetMethodID(ClassClass(env), "getDeclaredMethods", "()[Ljava/lang/reflect/Method;");
-    jmethodID get_name = env->GetMethodID(env->FindClass("java/lang/reflect/Method"), "getName", "()Ljava/lang/String;");
+    jmethodID get_declared = env->GetMethodID(ClassClass(env), OBF("getDeclaredMethod"), OBF("(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;"));
+    jmethodID get_methods = env->GetMethodID(ClassClass(env), OBF("getDeclaredMethods"), OBF("()[Ljava/lang/reflect/Method;"));
+    jmethodID get_name = env->GetMethodID(env->FindClass(OBF("java/lang/reflect/Method")), OBF("getName"), OBF("()Ljava/lang/String;"));
     jstring jname = env->NewStringUTF(name);
 
     while (cursor) {
@@ -115,7 +114,7 @@ jobject FindMethod(JNIEnv *env, jobject instance, const char *name, const char *
         cursor = parent;
     }
     env->DeleteLocalRef(jname);
-    LOGE("method not found: %s", name);
+    LOGE(OBF("method not found: %s"), name);
     return nullptr;
 }
 

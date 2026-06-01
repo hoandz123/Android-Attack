@@ -2,7 +2,7 @@
 #include "Internal.hpp"
 #include "Theme.hpp"
 
-#define LOG_TAG "ModUi"
+#define LOG_TAG OBF("ModUi")
 #include <Includes/Logger.h>
 
 #include <JNIHelper/JNIHelper.hpp>
@@ -26,12 +26,12 @@ bool Init() {
         SetupTheme();
         SetupUiFonts();
         g_ctx = true;
-        LOGI("context ready (%s)", IMGUI_VERSION);
+        LOGI(OBF("context ready (%s)"), IMGUI_VERSION);
     }
     if (g_natives) return true;
     JNIEnv *env = jni::Env();
     if (!env || !RegisterSurfaceNatives(env)) {
-        LOGE("RegisterSurfaceNatives failed");
+        LOGE(OBF("RegisterSurfaceNatives failed"));
         return false;
     }
     g_natives = true;

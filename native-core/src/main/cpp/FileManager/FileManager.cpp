@@ -1,5 +1,6 @@
 #include "FileManager.hpp"
 
+#include <Includes/obfuscate.h>
 #include <filesystem>
 #include <fstream>
 
@@ -88,34 +89,34 @@ std::vector<std::string> ListDir(const std::string &dir) {
 
 Result WriteBytes(const std::string &path, const void *data, size_t len) {
     std::ofstream f(path, std::ios::binary | std::ios::trunc);
-    if (!f) return Fail("fopen write");
+    if (!f) return Fail(OBFS("fopen write"));
     if (data && len) f.write(static_cast<const char *>(data), static_cast<std::streamsize>(len));
-    return f.good() ? Ok() : Fail("write failed");
+    return f.good() ? Ok() : Fail(OBFS("write failed"));
 }
 
 Result AppendBytes(const std::string &path, const void *data, size_t len) {
     std::ofstream f(path, std::ios::binary | std::ios::app);
-    if (!f) return Fail("fopen append");
+    if (!f) return Fail(OBFS("fopen append"));
     if (data && len) f.write(static_cast<const char *>(data), static_cast<std::streamsize>(len));
-    return f.good() ? Ok() : Fail("append failed");
+    return f.good() ? Ok() : Fail(OBFS("append failed"));
 }
 
 std::vector<uint8_t> ReadBytes(const std::string &path, Result *out) {
     std::ifstream f(path, std::ios::binary | std::ios::ate);
     if (!f) {
-        if (out) *out = Fail("fopen read");
+        if (out) *out = Fail(OBFS("fopen read"));
         return {};
     }
     const auto n = f.tellg();
     if (n < 0) {
-        if (out) *out = Fail("tellg");
+        if (out) *out = Fail(OBFS("tellg"));
         return {};
     }
     std::vector<uint8_t> buf(static_cast<size_t>(n));
     f.seekg(0);
     f.read(reinterpret_cast<char *>(buf.data()), static_cast<std::streamsize>(n));
     if (!f) {
-        if (out) *out = Fail("read failed");
+        if (out) *out = Fail(OBFS("read failed"));
         return {};
     }
     if (out) *out = Ok();

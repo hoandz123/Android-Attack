@@ -3,7 +3,7 @@
 #include "Layout.hpp"
 #include "Icon.hpp"
 
-#define LOG_TAG "ModUi"
+#define LOG_TAG OBF("ModUi")
 #include <Includes/Logger.h>
 
 #include <GLES3/gl3.h>
@@ -27,8 +27,8 @@ bool SetSurface(ANativeWindow *window) {
     }
     if (!window) return true;
     if (!ImGui_ImplAndroid_Init(window)
-        || !ImGui_ImplOpenGL3_Init("#version 300 es")) {
-        LOGE("imgui backend init failed");
+        || !ImGui_ImplOpenGL3_Init(OBF("#version 300 es"))) {
+        LOGE(OBF("imgui backend init failed"));
         ImGui_ImplAndroid_Shutdown();
         return false;
     }

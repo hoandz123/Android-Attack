@@ -1,6 +1,6 @@
 #include "Internal.hpp"
 
-#define LOG_TAG "AttackSurface"
+#define LOG_TAG OBF("AttackSurface")
 #include <Includes/Logger.h>
 
 #include <JNIHelper/JNIHelper.hpp>
@@ -22,7 +22,7 @@ static void JNICALL OnSurfaceCreated(JNIEnv *env, jclass, jobject surface) {
     if (!surface) return;
     g_window = ANativeWindow_fromSurface(env, surface);
     if (!g_window || !modui::SetSurface(g_window)) {
-        LOGE("surface init failed");
+        LOGE(OBF("surface init failed"));
         if (g_window) ANativeWindow_release(g_window);
         g_window = nullptr;
     }
@@ -87,11 +87,11 @@ bool RegisterSurfaceNatives(JNIEnv *env) {
         {"nativeOnTextUtf8", "(Ljava/lang/String;)V", (void *)OnTextUtf8},
         {"nativeOnReplaceTail", "(ILjava/lang/String;)V", (void *)OnReplaceTail},
     };
-    jclass kb = jni::FindClass(env, "com/android/attack/nativedex/KeyboardInputBridge");
+    jclass kb = jni::FindClass(env, OBF("com/android/attack/nativedex/KeyboardInputBridge"));
     if (!kb) return false;
-    return jni::RegisterNatives(env, "com/android/attack/nativedex/EglOverlay", kOverlay, 3)
-        && jni::RegisterNatives(env, "com/android/attack/nativedex/TouchInputBridge", kTouch, 3)
-        && jni::RegisterNatives(env, "com/android/attack/nativedex/KeyboardInputBridge", kKeyboard, 3)
+    return jni::RegisterNatives(env, OBF("com/android/attack/nativedex/EglOverlay"), kOverlay, 3)
+        && jni::RegisterNatives(env, OBF("com/android/attack/nativedex/TouchInputBridge"), kTouch, 3)
+        && jni::RegisterNatives(env, OBF("com/android/attack/nativedex/KeyboardInputBridge"), kKeyboard, 3)
         && modui::InitKeyboardJni(env, kb);
 }
 
