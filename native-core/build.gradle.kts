@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "com.android.attack.loader"
+    namespace = "com.android.attack.nativecore"
     enableKotlin = false
     compileSdk {
         version = release(libs.versions.compileSdk.get().toInt()) {
@@ -36,6 +36,22 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    buildFeatures {
+        prefabPublishing = true
+    }
+
+    prefab {
+        create("dobby") {
+            headers = "src/main/cpp/dobby"
+        }
+        create("kitty") {
+            headers = "src/main/cpp/kittymemory"
+        }
+        create("imgui") {
+            headers = "src/main/cpp/imgui"
+        }
+    }
+
     externalNativeBuild {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
@@ -46,6 +62,10 @@ android {
     ndkVersion = libs.versions.ndk.get()
 }
 
+dependencies {
+    // Prebuilt libcurl + BoringSSL/nghttp2 via Prefab (not in LGL Mod Menu).
+    api(libs.ndk.curl)
+}
 
 tasks.named<Delete>("clean") {
     delete(

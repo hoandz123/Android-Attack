@@ -136,5 +136,10 @@ fastlane/test_output/
 *.patch.bak
 skills-lock.json
 
+# RE / dump scratch output
+native-core/build/
+native-core/.cxx/
+native-core/.externalNativeBuild/
+
 # --- Keep Gradle wrapper ---
 !gradle/wrapper/gradle-wrapper.jar

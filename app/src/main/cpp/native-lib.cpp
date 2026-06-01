@@ -1,8 +1,16 @@
+#include <android/log.h>
+#include <curl/curl.h>
+#include <dobby.h>
+#include <imgui.h>
 #include <jni.h>
 #include <link.h>
+#include <KittyMemory.h>
 #include <stdio.h>
 #include <string.h>
 #include <string>
+
+#define TAG "AttackPlugin"
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 
 static jstring stringFromNative(JNIEnv *env, jobject) { return env->NewStringUTF("Hello from C++ (NDK 28)"); }
 
@@ -43,6 +51,7 @@ static jstring listLoadedSo(JNIEnv *env, jobject) {
 extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
     JNIEnv *env = nullptr;
     if (vm->GetEnv((void **)&env, JNI_VERSION_1_6) != JNI_OK) return JNI_ERR;
+    LOGI("native-core: curl %s, imgui %s, page=%ld", curl_version(), IMGUI_VERSION, (long)_SYS_PAGE_SIZE_);
     JNINativeMethod m[] = {{"stringFromNative", "()Ljava/lang/String;", (void *)stringFromNative}, {"listLoadedSo", "()Ljava/lang/String;", (void *)listLoadedSo}};
     jclass c = env->FindClass("com/android/attack/MainActivity");
     if (!c || env->RegisterNatives(c, m, 2) != JNI_OK) return JNI_ERR;
