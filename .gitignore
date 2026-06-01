@@ -94,7 +94,6 @@ obj/
 *.so
 *.dylib
 *.dll
-*.a
 *.lib
 *.exp
 *.pdb

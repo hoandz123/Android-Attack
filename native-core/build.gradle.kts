@@ -41,7 +41,7 @@ android {
     }
 
     prefab {
-        create("includes") {
+        create("lgl") {
             // Export cpp root so consumers can #include <Includes/Logger.h> (LGL style).
             headers = "src/main/cpp"
         }
@@ -54,6 +54,9 @@ android {
         create("imgui") {
             headers = "src/main/cpp/imgui"
         }
+        create("curl") {
+            headers = "src/main/cpp/curl/include"
+        }
     }
 
     externalNativeBuild {
@@ -64,11 +67,6 @@ android {
     }
 
     ndkVersion = libs.versions.ndk.get()
-}
-
-dependencies {
-    // Prebuilt libcurl + BoringSSL/nghttp2 via Prefab (not in LGL Mod Menu).
-    api(libs.ndk.curl)
 }
 
 tasks.named<Delete>("clean") {

@@ -25,7 +25,8 @@ android {
                 arguments += listOf(
                     "-DANDROID_STL=c++_static",
                     "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON",
-                    "-DCMAKE_BUILD_TYPE=Release"
+                    "-DCMAKE_BUILD_TYPE=Release",
+                    "-DNATIVE_CORE_CPP=${rootProject.projectDir}/native-core/src/main/cpp"
                 )
             }
         }
@@ -67,6 +68,11 @@ android {
 dependencies {
     implementation(project(":loader"))
     implementation(project(":native-core"))
+}
+
+// Avoid CMake reconfigure during clean after :native-core:clean drops Prefab outputs.
+tasks.matching { it.name.startsWith("externalNativeBuildClean") }.configureEach {
+    enabled = false
 }
 
 tasks.named<Delete>("clean") {
