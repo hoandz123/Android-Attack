@@ -16,7 +16,7 @@ jboolean nativeLoadFromDir(JNIEnv *env, jclass /*clazz*/, jstring nativeLibraryD
 
     const char *dir = env->GetStringUTFChars(nativeLibraryDir, nullptr);
     const char *name = env->GetStringUTFChars(libName, nullptr);
-    const bool ok = attack::loader::loadFromDir(dir, name);
+    const bool ok = attack::loader::loadFromDir(env, dir, name);
 
     if (dir != nullptr) {
         env->ReleaseStringUTFChars(nativeLibraryDir, dir);
@@ -35,7 +35,7 @@ jboolean nativeLoadDownloaded(JNIEnv *env, jclass /*clazz*/, jstring absolutePat
     }
 
     const char *path = env->GetStringUTFChars(absolutePath, nullptr);
-    const bool ok = attack::loader::loadDownloaded(path);
+    const bool ok = attack::loader::loadDownloaded(env, path);
 
     if (path != nullptr) {
         env->ReleaseStringUTFChars(absolutePath, path);

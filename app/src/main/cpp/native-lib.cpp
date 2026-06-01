@@ -3,6 +3,7 @@
 
 #define LOG_TAG "AttackNative"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 namespace {
 
@@ -17,21 +18,22 @@ const JNINativeMethod kMainActivityMethods[] = {
 
 } // namespace
 
-extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void * /* reserved */) {
-    JNIEnv *env = nullptr;
-    if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
-        return JNI_ERR;
+extern "C" JNIEXPORT jboolean JNICALL attack_register_natives(JNIEnv *env) {
+    if (env == nullptr) {
+        return JNI_FALSE;
     }
 
     jclass clazz = env->FindClass("com/android/attack/MainActivity");
     if (clazz == nullptr) {
-        return JNI_ERR;
+        LOGE("FindClass MainActivity failed");
+        return JNI_FALSE;
     }
 
     if (env->RegisterNatives(clazz, kMainActivityMethods, sizeof(kMainActivityMethods) / sizeof(kMainActivityMethods[0])) != JNI_OK) {
-        return JNI_ERR;
+        LOGE("RegisterNatives failed");
+        return JNI_FALSE;
     }
 
     LOGI("RegisterNatives complete");
-    return JNI_VERSION_1_6;
+    return JNI_TRUE;
 }

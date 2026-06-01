@@ -5,7 +5,7 @@
 namespace attack::loader {
 
 bool bootstrap(JavaVM *vm, void *reserved);
-bool loadFromDir(const char *nativeLibraryDir, const char *libName);
-bool loadDownloaded(const char *absolutePath);
+bool loadFromDir(JNIEnv *env, const char *nativeLibraryDir, const char *libName);
+bool loadDownloaded(JNIEnv *env, const char *absolutePath);
 
 } // namespace attack::loader
