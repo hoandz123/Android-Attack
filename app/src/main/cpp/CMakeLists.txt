@@ -9,8 +9,7 @@ add_library(attack SHARED native-lib.cpp)
 find_library(log-lib log)
 find_library(z-lib z)
 
-# Vendored curl stack (Prefab only exports headers for native-core::curl)
-set(_curl ${NATIVE_CORE_CPP}/curl/${ANDROID_ABI})
+set(_curl_all ${NATIVE_CORE_CPP}/curl/${ANDROID_ABI}/libcurl_all.a)
 
 target_link_libraries(
     attack
@@ -19,13 +18,7 @@ target_link_libraries(
     native-core::dobby
     native-core::imgui
     native-core::curl
-    ${_curl}/libcurl.a
-    ${_curl}/libngtcp2_crypto.a
-    ${_curl}/libngtcp2.a
-    ${_curl}/libnghttp3.a
-    ${_curl}/libnghttp2.a
-    ${_curl}/libssl.a
-    ${_curl}/libcrypto.a
+    ${_curl_all}
     ${z-lib}
 )
 
