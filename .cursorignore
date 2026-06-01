@@ -76,7 +76,6 @@ obj/
 # --- Logs ---
 *.log
 *.log.*
-logcat.txt
 
 # --- ProGuard / R8 output ---
 proguard/
