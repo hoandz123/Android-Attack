@@ -4,10 +4,10 @@
 
 namespace modui {
 
-/** Upload file/URL → ImTextureID trên render thread (GL context active). `path == nullptr` xóa texture. */
+/** `stbi_load` file local → GL texture trên render thread. `path == nullptr` xóa texture. */
 ImTextureID LoadIcon(const char *path);
 
-/** Tải URL → `save_path` (thread-safe, không gọi GL). Trả true nếu file sẵn sàng. */
+/** Tải URL → `save_path` nếu file chưa có (không GL). Trả true khi file tồn tại. */
 bool DownloadIcon(const char *url, const char *save_path);
 
 } // namespace modui

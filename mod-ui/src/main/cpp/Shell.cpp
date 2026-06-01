@@ -235,6 +235,7 @@ void DrawMenuShell(const AppUi &ui) {
                 std::thread([] {
                     const bool ok = DownloadIcon(kFabIconUrl, kFabIconPath);
                     g_fab_file_ready.store(ok, std::memory_order_release);
+                    g_fab_downloading.store(false, std::memory_order_release);
                 }).detach();
             }
         } else {
