@@ -5,7 +5,6 @@
 
 #include <cstring>
 #include <string>
-#include <vector>
 
 #define LOG_TAG "AttackLoader"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -14,19 +13,6 @@
 namespace {
 
 JavaVM *g_vm = nullptr;
-
-struct LibSpec {
-    const char *fileName;
-    bool required;
-};
-
-// Built-in libs shipped inside APK lib/<abi>/.
-const std::vector<LibSpec> &builtinLibs() {
-    static const std::vector<LibSpec> libs = {
-        {"libattack.so", true},
-    };
-    return libs;
-}
 
 bool dlopenAbsolute(const char *path, bool required) {
     if (path == nullptr || path[0] == '\0') {
@@ -44,22 +30,6 @@ bool dlopenAbsolute(const char *path, bool required) {
     return true;
 }
 
-bool dlopenByName(const char *libFileName, bool required) {
-    if (libFileName == nullptr || libFileName[0] == '\0') {
-        LOGE("empty library name");
-        return !required;
-    }
-
-    void *handle = dlopen(libFileName, RTLD_NOW | RTLD_GLOBAL);
-    if (handle != nullptr) {
-        LOGI("loaded %s", libFileName);
-        return true;
-    }
-
-    LOGE("dlopen by name failed: %s (%s)", libFileName, dlerror());
-    return !required;
-}
-
 std::string joinPath(const char *dir, const char *fileName) {
     std::string path(dir);
     if (!path.empty() && path.back() != '/') {
@@ -69,16 +39,6 @@ std::string joinPath(const char *dir, const char *fileName) {
     return path;
 }
 
-bool loadBuiltinLibs() {
-    bool ok = true;
-    for (const LibSpec &spec : builtinLibs()) {
-        if (!dlopenByName(spec.fileName, spec.required)) {
-            ok = false;
-        }
-    }
-    return ok;
-}
-
 } // namespace
 
 namespace attack::loader {
@@ -86,19 +46,6 @@ namespace attack::loader {
 bool bootstrap(JavaVM *vm, void * /*reserved*/) {
     g_vm = vm;
     LOGI("JNI_OnLoad — client entry");
-
-    JNIEnv *env = nullptr;
-    if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
-        LOGE("GetEnv failed");
-        return false;
-    }
-
-    if (!loadBuiltinLibs()) {
-        LOGE("built-in native bootstrap failed");
-        return false;
-    }
-
-    LOGI("bootstrap complete");
     return true;
 }
 

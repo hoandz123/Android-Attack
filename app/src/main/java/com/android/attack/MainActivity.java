@@ -16,6 +16,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (!NativeLoader.loadFromDir(getApplicationInfo().nativeLibraryDir, "attack")) {
+            throw new UnsatisfiedLinkError("loader failed to load libattack.so");
+        }
         setContentView(R.layout.activity_main);
         ((TextView) findViewById(R.id.sample_text)).setText(stringFromNative());
     }
