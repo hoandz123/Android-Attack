@@ -26,8 +26,6 @@ android {
                     "-DANDROID_STL=c++_static",
                     "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON",
                     "-DNATIVE_CORE_CPP=${rootProject.projectDir}/native-core/src/main/cpp",
-                    "-DNATIVE_CORE_PREFAB=${rootProject.projectDir}/native-core/build/intermediates/prefab_package/release/prefab",
-                    "-DMOD_UI_PREFAB=${rootProject.projectDir}/mod-ui/build/intermediates/prefab_package/release/prefab",
                     "-DEMBEDDED_DEX_DIR=${rootProject.projectDir}/native-dex/build/generated/embed".replace('\\', '/'),
                 )
             }
@@ -42,7 +40,11 @@ android {
         debug {
             externalNativeBuild {
                 cmake {
-                    arguments += "-DCMAKE_BUILD_TYPE=Debug"
+                    arguments += listOf(
+                        "-DCMAKE_BUILD_TYPE=Debug",
+                        "-DNATIVE_CORE_PREFAB=${rootProject.projectDir}/native-core/build/intermediates/prefab_package/debug/prefab",
+                        "-DMOD_UI_PREFAB=${rootProject.projectDir}/mod-ui/build/intermediates/prefab_package/debug/prefab",
+                    )
                 }
             }
         }
@@ -54,7 +56,11 @@ android {
             )
             externalNativeBuild {
                 cmake {
-                    arguments += "-DCMAKE_BUILD_TYPE=Release"
+                    arguments += listOf(
+                        "-DCMAKE_BUILD_TYPE=Release",
+                        "-DNATIVE_CORE_PREFAB=${rootProject.projectDir}/native-core/build/intermediates/prefab_package/release/prefab",
+                        "-DMOD_UI_PREFAB=${rootProject.projectDir}/mod-ui/build/intermediates/prefab_package/release/prefab",
+                    )
                 }
             }
         }

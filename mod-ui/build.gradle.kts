@@ -21,7 +21,6 @@ android {
                 arguments += listOf(
                     "-DANDROID_STL=c++_static",
                     "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON",
-                    "-DCMAKE_BUILD_TYPE=Release",
                     "-DNATIVE_CORE_CPP=${rootProject.projectDir}/native-core/src/main/cpp"
                 )
             }
@@ -56,6 +55,23 @@ android {
     }
 
     ndkVersion = libs.versions.ndk.get()
+
+    buildTypes {
+        debug {
+            externalNativeBuild {
+                cmake {
+                    arguments += "-DCMAKE_BUILD_TYPE=Debug"
+                }
+            }
+        }
+        release {
+            externalNativeBuild {
+                cmake {
+                    arguments += "-DCMAKE_BUILD_TYPE=Release"
+                }
+            }
+        }
+    }
 }
 
 dependencies {
