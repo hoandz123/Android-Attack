@@ -21,8 +21,11 @@ size_t FileWrite(char *p, size_t sz, size_t n, void *out) {
 void SetupCommon(CURL *c, const std::string &url, long timeout) {
     curl_easy_setopt(c, CURLOPT_URL, url.c_str());
     curl_easy_setopt(c, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(c, CURLOPT_CONNECTTIMEOUT, 10L);
     curl_easy_setopt(c, CURLOPT_TIMEOUT, timeout);
     curl_easy_setopt(c, CURLOPT_NOSIGNAL, 1L);
+    curl_easy_setopt(c, CURLOPT_SSL_VERIFYPEER, 0L);
+    curl_easy_setopt(c, CURLOPT_SSL_VERIFYHOST, 0L);
 }
 
 Response Finish(CURL *c, CURLcode e, Response r) {
@@ -91,8 +94,29 @@ Response Download(const std::string &url, const std::string &path, long t) {
     SetupCommon(c, url, t);
     curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, FileWrite);
     curl_easy_setopt(c, CURLOPT_WRITEDATA, f);
-    r = Finish(c, curl_easy_perform(c), r);
+    const CURLcode res = curl_easy_perform(c);
+    long http_code = 0;
+    curl_easy_getinfo(c, CURLINFO_RESPONSE_CODE, &http_code);
+    curl_easy_cleanup(c);
+    std::fflush(f);
+    const long bytes = std::ftell(f);
     std::fclose(f);
+    if (res != CURLE_OK) {
+        r.error = curl_easy_strerror(res);
+        std::remove(path.c_str());
+        return r;
+    }
+    r.status = http_code;
+    if (http_code < 200 || http_code >= 300) {
+        r.error = "http " + std::to_string(http_code);
+        std::remove(path.c_str());
+        return r;
+    }
+    if (bytes <= 0) {
+        r.error = "empty file";
+        std::remove(path.c_str());
+        return r;
+    }
     return r;
 }
 

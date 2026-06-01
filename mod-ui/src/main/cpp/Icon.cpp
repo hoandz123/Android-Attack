@@ -65,11 +65,11 @@ ImTextureID LoadIcon(const char *path) {
 
 bool DownloadIcon(const char *url, const char *save_path) {
     if (!url || !url[0] || !save_path || !save_path[0]) return false;
-    if (fs::IsFile(save_path)) return true;
+    if (fs::IsFile(save_path) && fs::FileSize(save_path) > 0) return true;
     const std::string dir = fs::Dirname(save_path);
     if (!dir.empty()) fs::MkdirP(dir);
     if (!http::Download(url, save_path, 20).ok()) return false;
-    return fs::IsFile(save_path);
+    return fs::IsFile(save_path) && fs::FileSize(save_path) > 0;
 }
 
 void PollFabDownload() {
@@ -88,7 +88,13 @@ void PollFabDownload() {
 ImTextureID GetFabIcon() {
     if (!g_fab_icon) {
         PollFabDownload();
-        if (g_fab_file_ready.load(std::memory_order_acquire)) g_fab_icon = LoadIcon(kFabIconPath);
+        if (g_fab_file_ready.load(std::memory_order_acquire)) {
+            g_fab_icon = LoadIcon(kFabIconPath);
+            if (!g_fab_icon) {
+                fs::Remove(kFabIconPath);
+                g_fab_file_ready.store(false, std::memory_order_release);
+            }
+        }
     }
     return g_fab_icon;
 }
