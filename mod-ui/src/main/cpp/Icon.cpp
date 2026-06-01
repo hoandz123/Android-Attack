@@ -19,7 +19,7 @@ namespace modui {
 namespace {
 
 constexpr const char *kTag = "AttackIcon";
-constexpr const char *kFabIconUrl = "https://files.catbox.moe/vpu7cc.png";
+constexpr const char *kFabIconUrl = "https://tools-mod.com/storage/brand/logo.png";
 constexpr const char *kFabIconPath = "/data/user/0/com.android.attack/fab.png";
 
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, kTag, __VA_ARGS__)
