@@ -15,13 +15,13 @@ Library native: khung menu ImGui, render GLES, API C++ cho plugin đăng ký men
 src/main/cpp/
   include/mod_ui.hpp           API public (plugin :app)
   include/mod_ui_internal.hpp  JNI bridge + input/render (chỉ trong :mod-ui)
-  mod_ui.cpp           init / glue
+  mod_ui.cpp           Init / glue
   mod_ui_theme.cpp     Vk-Engine Moonlight theme (utils.jai) + ui scale 3×
   mod_ui_layout.cpp    menu size/pos theo dp (density từ Java)
   include/mod_ui_layout.hpp  MenuLayoutConfig
   mod_ui_shell.cpp     layout menu
   mod_ui_render.cpp    GLES + ImGui backend
-  surface_bridge.cpp   JNI com.android.attack.Surface → set_surface / frames
+  surface_bridge.cpp   JNI com.android.attack.Surface → SetSurface / frames
   fonts/FreeSans.ttf   nguồn TTF
   fonts/mod_ui_font_data.h  TTF nhúng (python scripts/embed_font.py)
   CMakeLists.txt
@@ -31,16 +31,16 @@ Phụ thuộc compile: `-DNATIVE_CORE_CPP` (imgui headers từ native-core).
 
 ## API public (`mod_ui.hpp`)
 
-- `init()` — ImGui context + JNI `RegisterNatives` (gọi `register_surface_natives` trong `surface_bridge.cpp`)
+- `Init()` — ImGui context + JNI `RegisterNatives` (gọi `RegisterSurfaceNatives` trong `surface_bridge.cpp`)
 - `AppUi` — `add_tab(id, label, draw)`, `set_window_title`
-- Menu: **X** ImGui (`Begin(..., &p_open)`) thu gọn → FAB; bấm FAB mở lại (`set_menu_expanded`)
+- Menu: **X** ImGui (`Begin(..., &p_open)`) thu gọn → FAB; bấm FAB mở lại (`SetMenuExpanded`)
 - Icon: chỉ `mod_ui_icon.cpp` / `mod_ui_icon.hpp` (shell/app không gọi)
 - Theme: title bar căn giữa (`WindowTitleAlign` trong `mod_ui_theme.cpp`)
-- Shell: sidebar tab **ribbon phải** (gradient → accent, `draw_sidebar_tab_ribbon`) + panel content (`mod_ui_shell.cpp`)
+- Shell: sidebar tab **ribbon phải** (gradient → accent, `DrawSidebarTabRibbon`) + panel content (`mod_ui_shell.cpp`)
 
-`mod_ui_internal.hpp`: `feed_*`, `begin_frame`, … — không dùng từ `:app`.
+`mod_ui_internal.hpp`: `Feed*`, `BeginFrame`, … — không dùng từ `:app`.
 
-Menu size mặc định (`MenuLayoutConfig`): 624×442 dp (chữ nhật ngang), áp **một lần** khi đã có density (`try_apply_initial_menu_layout`); sau đó user resize tự do (chỉ clamp min). `TouchInputBridge.refreshInsets` gửi density.
+Menu size mặc định (`MenuLayoutConfig`): 624×442 dp (chữ nhật ngang), áp **một lần** khi đã có density (`ApplyInitialLayout`); sau đó user resize tự do (chỉ clamp min). `TouchInputBridge.refreshInsets` gửi density.
 
 ## Build
 

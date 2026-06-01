@@ -17,15 +17,15 @@ Module **application** duy nhất. Build ra `libattack.so` (plugin thật) + APK
 
 | File | Việc |
 |------|------|
-| `native-lib.cpp` | `JNI_OnLoad`: dex → tracker → `modui::init()` → menu app |
+| `native-lib.cpp` | `JNI_OnLoad`: dex → tracker → `modui::Init()` → menu app |
 | `app_menu.cpp` | `set_window_title`, `add_tab` |
 | `CMakeLists.txt` | Link `attack` SHARED; include `EMBEDDED_DEX_DIR` |
 
 ### Thứ tự `JNI_OnLoad` (giữ nguyên thứ tự)
 
-1. `dex_loader::init(vm, embedded_dex::data, size)`
-2. `activity_tracker::init(vm)` → Java `ActivityTrackerBridge.install()` (+ `Surface` overlay)
-3. `modui::init()` → `appui::register_menu()`
+1. `dex_loader::Init(vm, embedded_dex::data, size)`
+2. `activity_tracker::Init(vm)` → Java `ActivityTrackerBridge.install()` (+ `Surface` overlay)
+3. `modui::Init()` → `appui::RegisterMenu()`
 
 ## CMake args (tự set trong `build.gradle.kts`)
 

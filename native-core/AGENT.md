@@ -13,8 +13,8 @@ Android library **chỉ C++**. Xuất static libs qua **Prefab** cho `:app` và 
 | `kitty` | Memory patch / backup |
 | `imgui` | ImGui + Android/GLES3 backend |
 | `curl` | libcurl static per ABI |
-| `httpclient` | `http::get` / `post` / `download(url, path)` (curl) |
-| `filemanager` | `fs::` đọc/ghi, mkdir, list, copy, rename, remove (`FileManager/`) |
+| `httpclient` | `http::Get` / `Post` / `Download(url, path)` (curl) |
+| `filemanager` | `fs::` đọc/ghi, Mkdir, ListDir, CopyFile, RenamePath, Remove (`FileManager/`) |
 | `jnihelper` | `JavaVM` + `JNIEnv` thống nhất (`JNIHelper/`) |
 | `dexloader` | In-memory DEX inject (`DexLoader/`) |
 | `activitytracker` | JVM activity refs + JNI bridge |
@@ -24,10 +24,10 @@ Headers: `src/main/cpp/` (dexloader/activitytracker export cả cpp root).
 ## Thư mục chính (`src/main/cpp/`)
 
 ```
-FileManager/        fs::exists, read_bytes, write_bytes, mkdir_p, list_dir, …
-JNIHelper/          jni::init, env(), ScopedEnv, find_class, register_natives
+FileManager/        fs::Exists, ReadBytes, WriteBytes, MkdirP, ListDir, …
+JNIHelper/          jni::Init, Env(), ScopedEnv, FindClass, RegisterNatives
 DexLoader/          DexLoader.cpp, JniReflect — makeInMemoryDexElements
-ActivityTracker/    init → Java install; nativeOn* giữ global ref Activity
+ActivityTracker/    Init → Java install; nativeOn* giữ global ref Activity
 imgui/              vendored
 kittymemory/        KittyMemory
 dobby/{abi}/        libdobby.a
@@ -38,11 +38,11 @@ cmake/PrefabStatic.cmake   link .a từ prefab (INTERFACE rỗng)
 ## JNIHelper — API
 
 ```cpp
-jni::init(vm);              // JNI_OnLoad, một lần
-JNIEnv *e = jni::env();     // thread đã attach — không Detach
+jni::Init(vm);              // JNI_OnLoad, một lần
+JNIEnv *e = jni::Env();     // thread đã attach — không Detach
 jni::ScopedEnv scoped;      // native thread chưa attach → Attach, destructor Detach
-jclass c = jni::find_class(e, "com/android/attack/nativedex/EglOverlay");
-jni::register_natives(e, slash_class, methods, count);
+jclass c = jni::FindClass(e, "com/android/attack/nativedex/EglOverlay");
+jni::RegisterNatives(e, slash_class, methods, count);
 ```
 
 **Không** gọi `DetachCurrentThread` trên thread đang chạy JNI callback (render thread, v.v.).
@@ -50,15 +50,15 @@ jni::register_natives(e, slash_class, methods, count);
 ## FileManager — API (`#include <FileManager.hpp>`, namespace `fs`)
 
 ```cpp
-bool exists(path);
-bool is_file(path); bool is_dir(path);
-int64_t file_size(path);
-Result remove(path); Result rename_path(from, to); Result copy_file(src, dst);
-Result mkdir(path); Result mkdir_p(path);
-std::vector<std::string> list_dir(dir);
-Result write_bytes(path, data, len); Result append_bytes(path, data, len);
-std::vector<uint8_t> read_bytes(path, Result *out = nullptr);
-std::string join(a, b); dirname(path); basename(path);
+bool Exists(path);
+bool IsFile(path); bool IsDir(path);
+int64_t FileSize(path);
+Result Remove(path); Result RenamePath(from, to); Result CopyFile(src, dst);
+Result Mkdir(path); Result MkdirP(path);
+std::vector<std::string> ListDir(dir);
+Result WriteBytes(path, data, len); Result AppendBytes(path, data, len);
+std::vector<uint8_t> ReadBytes(path, Result *out = nullptr);
+std::string Join(a, b); Dirname(path); Basename(path);
 ```
 
 Consumer CMake: `native-core::filemanager`
@@ -66,11 +66,11 @@ Consumer CMake: `native-core::filemanager`
 ## DexLoader — API
 
 ```cpp
-bool init(JavaVM *vm, const uint8_t *dex, size_t size);
-bool load_into_context(JNIEnv *env, jobject context, ...);
+bool Init(JavaVM *vm, const uint8_t *dex, size_t size);
+bool LoadIntoContext(JNIEnv *env, jobject context, ...);
 ```
 
-**Hành vi `init`:**
+**Hành vi `Init`:**
 
 - `SDK_INT < 26` → fail (cần `makeInMemoryDexElements`)
 - Retry `currentApplication` (30×20ms)
@@ -80,9 +80,9 @@ bool load_into_context(JNIEnv *env, jobject context, ...);
 ## ActivityTracker — API
 
 ```cpp
-bool init(JavaVM *vm);  // jni::init + RegisterNatives + Java install()
-jobject current_activity(JNIEnv *env);
-std::vector<jobject> activities(JNIEnv *env);
+bool Init(JavaVM *vm);  // jni::Init + RegisterNatives + Java install()
+jobject CurrentActivity(JNIEnv *env);
+std::vector<jobject> GetActivities(JNIEnv *env);
 ```
 
 Java lifecycle nằm `ActivityTrackerBridge` (`:native-dex`).

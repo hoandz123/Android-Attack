@@ -2,7 +2,7 @@
 
 ## Vai trò
 
-Android library **chỉ Java** (`src/main/java/`). Toàn bộ class biên dịch → **một** `classes.dex` → nhúng vào `libattack.so` qua `embedded_dex.hpp`. Runtime: `dex_loader::init` inject vào `Application` ClassLoader.
+Android library **chỉ Java** (`src/main/java/`). Toàn bộ class biên dịch → **một** `classes.dex` → nhúng vào `libattack.so` qua `embedded_dex.hpp`. Runtime: `dex_loader::Init` inject vào `Application` ClassLoader.
 
 **`:app` không `implementation(project(":native-dex"))`** — APK không chứa các class này trong dex merge chính.
 
@@ -61,7 +61,7 @@ Script: `gradle/embed-native-dex.gradle.kts` (apply trong `native-dex/build.grad
 - `syncExistingActivities()` — reflection `ActivityThread.mActivities` (try/catch, có thể 0 activity trên API cao)
 - Lifecycle → `nativeOnResumed/Paused/Destroyed` (C++ global ref)
 
-Gọi từ `activity_tracker::init` sau `RegisterNatives`.
+Gọi từ `activity_tracker::Init` sau `RegisterNatives`.
 
 ## Build
 
