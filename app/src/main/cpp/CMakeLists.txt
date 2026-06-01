@@ -50,3 +50,12 @@ link_native_core_prebuilts(attack ${NATIVE_CORE_CPP})
 
 target_compile_features(attack PRIVATE cxx_std_20)
 target_compile_definitions(attack PRIVATE CURL_STATICLIB)
+
+if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_options(attack PRIVATE -ffunction-sections -fdata-sections)
+    target_link_options(attack PRIVATE
+        "LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/exports.map"
+        "LINKER:--exclude-libs,ALL"
+        "LINKER:--strip-all"
+        "LINKER:--gc-sections")
+endif()

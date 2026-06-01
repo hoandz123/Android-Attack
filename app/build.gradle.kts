@@ -25,7 +25,6 @@ android {
                 arguments += listOf(
                     "-DANDROID_STL=c++_static",
                     "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON",
-                    "-DCMAKE_BUILD_TYPE=Release",
                     "-DNATIVE_CORE_CPP=${rootProject.projectDir}/native-core/src/main/cpp",
                     "-DNATIVE_CORE_PREFAB=${rootProject.projectDir}/native-core/build/intermediates/prefab_package/release/prefab",
                     "-DMOD_UI_PREFAB=${rootProject.projectDir}/mod-ui/build/intermediates/prefab_package/release/prefab",
@@ -40,12 +39,24 @@ android {
     }
 
     buildTypes {
+        debug {
+            externalNativeBuild {
+                cmake {
+                    arguments += "-DCMAKE_BUILD_TYPE=Debug"
+                }
+            }
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            externalNativeBuild {
+                cmake {
+                    arguments += "-DCMAKE_BUILD_TYPE=Release"
+                }
+            }
         }
     }
 
