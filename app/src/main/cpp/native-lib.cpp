@@ -37,7 +37,6 @@ static jstring listLoadedSo(JNIEnv *env, jobject) {
     dl_iterate_phdr(soPhdr, &r);
     r += "\n[/proc/self/maps r-xp]\n";
     appendMaps(&r);
-    r += "\nGhi chú: libattack qua memfd không nên hiện path .../libattack.so";
     return env->NewStringUTF(r.c_str());
 }
 
