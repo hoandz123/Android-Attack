@@ -7,7 +7,9 @@
 #include <imgui.h>
 #include <atomic>
 #include <cstring>
+#include <string>
 #include <thread>
+#include <vector>
 
 #define STBI_ONLY_PNG
 #define STBI_ONLY_JPEG
@@ -79,6 +81,32 @@ ImTextureID LoadIcon(const char *path) {
     return (ImTextureID) (intptr_t) g_load_icon_tex;
 }
 
+std::string MetaPath(const char *save_path) { return std::string(save_path) + ".etag"; }
+
+bool ReadMeta(const std::string &meta_path, http::CacheValidators *out) {
+    if (!out || !fs::IsFile(meta_path)) return false;
+    const std::vector<uint8_t> raw = fs::ReadBytes(meta_path);
+    if (raw.empty()) return false;
+    const char *data = reinterpret_cast<const char *>(raw.data());
+    const size_t len = raw.size();
+    size_t i = 0;
+    auto next_line = [&]() -> std::string {
+        std::string line;
+        while (i < len && data[i] != '\n' && data[i] != '\r') line += data[i++];
+        while (i < len && (data[i] == '\n' || data[i] == '\r')) ++i;
+        return line;
+    };
+    out->etag = next_line();
+    out->last_modified = next_line();
+    return !out->etag.empty() || !out->last_modified.empty();
+}
+
+void WriteMeta(const std::string &meta_path, const http::CacheValidators &v) {
+    const std::string content = v.etag + "\n" + v.last_modified + "\n";
+    const auto wr = fs::WriteBytes(meta_path, content.data(), content.size());
+    if (!wr.ok()) LOGW("WriteMeta failed path=%s: %s", meta_path.c_str(), wr.error.c_str());
+}
+
 bool DownloadIcon(const char *url, const char *save_path) {
     if (!url || !url[0] || !save_path || !save_path[0]) {
         LOGE("DownloadIcon invalid args url=%p path=%p", (void *) url, (void *) save_path);
@@ -87,29 +115,46 @@ bool DownloadIcon(const char *url, const char *save_path) {
     LOGI("DownloadIcon begin url=%s path=%s", url, save_path);
     const int64_t existing = fs::IsFile(save_path) ? fs::FileSize(save_path) : -1;
     LOGI("DownloadIcon existing size=%lld", (long long) existing);
-    if (existing > 0) {
-        LOGI("DownloadIcon skip download (valid file %lld bytes)", (long long) existing);
-        return true;
-    }
     if (existing == 0) {
         LOGW("DownloadIcon removing stale 0-byte file path=%s", save_path);
         fs::Remove(save_path);
+        fs::Remove(MetaPath(save_path));
     }
     const std::string dir = fs::Dirname(save_path);
     if (!dir.empty()) {
         const auto mk = fs::MkdirP(dir);
         if (!mk.error.empty()) LOGW("DownloadIcon MkdirP %s: %s", dir.c_str(), mk.error.c_str());
     }
-    const http::Response resp = http::Download(url, save_path, 20);
-    const int64_t after = fs::IsFile(save_path) ? fs::FileSize(save_path) : -1;
-    LOGI("DownloadIcon http ok=%d status=%ld error=%s size_after=%lld", resp.ok() ? 1 : 0, resp.status, resp.error.empty() ? "(none)" : resp.error.c_str(), (long long) after);
-    if (!resp.ok() || after <= 0) {
-        LOGW("DownloadIcon failed — removing path=%s", save_path);
-        fs::Remove(save_path);
-        return false;
+    const std::string meta_path = MetaPath(save_path);
+    http::CacheValidators in;
+    http::CacheValidators out;
+    const bool have_cache = fs::IsFile(save_path) && fs::FileSize(save_path) > 0;
+    const bool have_meta = ReadMeta(meta_path, &in);
+    const http::CacheValidators *in_ptr = nullptr;
+    if (have_cache && have_meta && (!in.etag.empty() || !in.last_modified.empty())) {
+        in_ptr = &in;
+        LOGI("DownloadIcon conditional GET if-none-match=%s if-modified-since=%s", in.etag.empty() ? "(none)" : in.etag.c_str(), in.last_modified.empty() ? "(none)" : in.last_modified.c_str());
+    } else {
+        LOGI("DownloadIcon plain GET (cache=%d meta=%d)", have_cache ? 1 : 0, have_meta ? 1 : 0);
     }
-    LOGI("DownloadIcon success path=%s bytes=%lld", save_path, (long long) after);
-    return true;
+    const http::Response resp = http::DownloadConditional(url, save_path, 20, in_ptr, &out);
+    const int64_t after = fs::IsFile(save_path) ? fs::FileSize(save_path) : -1;
+    if (resp.cache_hit()) {
+        LOGI("DownloadIcon conditional -> 304 keep cache size=%lld", (long long) after);
+        return after > 0;
+    }
+    if (resp.ok()) {
+        WriteMeta(meta_path, out);
+        DropLoadIconCache();
+        g_fab_icon = (ImTextureID) 0;
+        LOGI("DownloadIcon conditional -> 200 replaced (%lld bytes)", (long long) after);
+        return after > 0;
+    }
+    LOGI("DownloadIcon http ok=%d status=%ld error=%s size_after=%lld", resp.ok() ? 1 : 0, resp.status, resp.error.empty() ? "(none)" : resp.error.c_str(), (long long) after);
+    LOGW("DownloadIcon failed — removing path=%s", save_path);
+    fs::Remove(save_path);
+    fs::Remove(meta_path);
+    return false;
 }
 
 void PollFabDownload() {
