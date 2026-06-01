@@ -1,0 +1,26 @@
+---
+description: Checkpoint commit before/after work for rollback
+alwaysApply: true
+---
+
+# Checkpoint commit
+
+## Before editing
+1. `git status`
+2. Uncommitted changes → checkpoint commit first, then start new work.
+
+## After done
+1. `git status` + `git diff`
+2. Valid changes → commit (unless user says skip). No push unless asked.
+
+## Message (Vietnamese)
+- Describe **what actually changed**, not vague labels.
+- First line = short summary; body optional.
+
+| Bad | Good |
+|---|---|
+| `fix`, `update` | `Sửa crash load native trên arm64` |
+| `WIP` | `Thêm clean task xóa .cxx và externalNativeBuild` |
+
+## Never commit
+`local.properties`, `*.jks`, `*.keystore`, `.env`, secrets, build/cache dirs (see `.gitignore`).
