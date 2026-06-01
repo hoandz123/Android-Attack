@@ -17,7 +17,7 @@ APK load libloader.so
   → dlopen libattack.so
        → dex_loader::Init (embedded_dex.hpp từ :native-dex)
        → activity_tracker::Init
-       → modui + app_menu
+       → modui + Menu (app)
 ```
 
 ## Build nhanh

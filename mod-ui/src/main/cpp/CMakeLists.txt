@@ -12,17 +12,17 @@ find_library(EGL-lib EGL)
 find_library(GLESv3-lib GLESv3)
 
 add_library(modui STATIC
-    mod_ui.cpp
-    mod_ui_font.cpp
-    mod_ui_theme.cpp
-    mod_ui_layout.cpp
-    mod_ui_shell.cpp
-    mod_ui_icon.cpp
-    mod_ui_render.cpp
-    mod_ui_touch.cpp
-    mod_ui_keyboard.cpp
-    mod_ui_android_keys.cpp
-    surface_bridge.cpp)
+    ModUi.cpp
+    Font.cpp
+    Theme.cpp
+    Layout.cpp
+    Shell.cpp
+    Icon.cpp
+    Render.cpp
+    Touch.cpp
+    Keyboard.cpp
+    AndroidKeys.cpp
+    SurfaceBridge.cpp)
 
 target_include_directories(modui PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include

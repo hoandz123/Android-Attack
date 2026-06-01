@@ -1,4 +1,4 @@
-#include "mod_ui_icon.hpp"
+#include "Icon.hpp"
 
 #include <FileManager.hpp>
 #include <HttpClient.hpp>

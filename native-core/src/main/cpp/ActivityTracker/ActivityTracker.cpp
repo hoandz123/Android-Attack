@@ -76,26 +76,26 @@ void OnActivityDestroyed(JNIEnv *env, jobject activity) {
     }
 }
 
-static void JNICALL bridge_resumed(JNIEnv *env, jclass, jobject activity) {
+static void JNICALL BridgeResumed(JNIEnv *env, jclass, jobject activity) {
     if (env->ExceptionCheck()) env->ExceptionClear();
     OnActivityResumed(env, activity);
 }
 
-static void JNICALL bridge_paused(JNIEnv *env, jclass, jobject activity) {
+static void JNICALL BridgePaused(JNIEnv *env, jclass, jobject activity) {
     if (env->ExceptionCheck()) env->ExceptionClear();
     OnActivityPaused(env, activity);
 }
 
-static void JNICALL bridge_destroyed(JNIEnv *env, jclass, jobject activity) {
+static void JNICALL BridgeDestroyed(JNIEnv *env, jclass, jobject activity) {
     if (env->ExceptionCheck()) env->ExceptionClear();
     OnActivityDestroyed(env, activity);
 }
 
-static bool register_natives(JNIEnv *env) {
+static bool RegisterNatives(JNIEnv *env) {
     JNINativeMethod methods[] = {
-        {"nativeOnResumed", "(Landroid/app/Activity;)V", (void *)bridge_resumed},
-        {"nativeOnPaused", "(Landroid/app/Activity;)V", (void *)bridge_paused},
-        {"nativeOnDestroyed", "(Landroid/app/Activity;)V", (void *)bridge_destroyed},
+        {"nativeOnResumed", "(Landroid/app/Activity;)V", (void *)BridgeResumed},
+        {"nativeOnPaused", "(Landroid/app/Activity;)V", (void *)BridgePaused},
+        {"nativeOnDestroyed", "(Landroid/app/Activity;)V", (void *)BridgeDestroyed},
     };
     if (!jni::RegisterNatives(env, "com/android/attack/nativedex/ActivityTrackerBridge", methods, 3)) {
         LOGE("RegisterNatives ActivityTrackerBridge failed");
@@ -139,7 +139,7 @@ bool Init(JavaVM *vm) {
     JNIEnv *env = jni::Env();
     if (!env) return false;
 
-    if (!register_natives(env)) return false;
+    if (!RegisterNatives(env)) return false;
     if (!CallJavaInstall(env)) return false;
 
     LOGI("init ok");

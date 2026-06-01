@@ -2,7 +2,7 @@
 
 #include <jni.h>
 
-#include "mod_ui.hpp"
+#include "ModUi.hpp"
 
 struct ANativeWindow;
 

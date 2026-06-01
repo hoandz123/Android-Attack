@@ -1,5 +1,5 @@
 #include <imgui.h>
-#include <mod_ui.hpp>
+#include <ModUi.hpp>
 
 namespace appui {
 

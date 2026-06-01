@@ -10,7 +10,7 @@ find_library(log-lib log)
 # =============================================================================
 # LGL headers — Logger, obfuscate, Macros, Utils (#include <Includes/...>)
 # =============================================================================
-add_library(lgl STATIC includes_link.cpp)
+add_library(lgl STATIC IncludesLink.cpp)
 target_include_directories(lgl PUBLIC ${D})
 
 # =============================================================================
@@ -20,7 +20,7 @@ set(_dobby ${D}/dobby/${ANDROID_ABI}/libdobby.a)
 if(NOT EXISTS ${_dobby})
     message(FATAL_ERROR "Missing ${_dobby}")
 endif()
-add_library(dobby STATIC dobby/dobby_link.cpp)
+add_library(dobby STATIC dobby/DobbyLink.cpp)
 target_include_directories(dobby PUBLIC ${D}/dobby)
 target_link_libraries(dobby PUBLIC ${_dobby} lgl)
 
@@ -82,7 +82,7 @@ if(NOT EXISTS ${_curl_all})
     message(FATAL_ERROR "Missing ${_curl_all}")
 endif()
 find_library(z-lib z)
-add_library(curl STATIC curl/curl_link.cpp)
+add_library(curl STATIC curl/CurlLink.cpp)
 target_include_directories(curl PUBLIC ${D}/curl/include)
 target_compile_definitions(curl INTERFACE CURL_STATICLIB)
 target_link_libraries(curl PUBLIC ${_curl_all} ${z-lib})

@@ -6,39 +6,39 @@ Library native: khung menu ImGui, render GLES, API C++ cho plugin đăng ký men
 
 ## Prefab
 
-- Publish: `modui` (headers `src/main/cpp/include/mod_ui.hpp`)
+- Publish: `modui` (headers `src/main/cpp/include/ModUi.hpp`)
 - Consume: `:app` link `mod-ui::modui` + static lib từ prefab package
 
 ## Cấu trúc
 
 ```
 src/main/cpp/
-  include/mod_ui.hpp           API public (plugin :app)
-  include/mod_ui_internal.hpp  JNI bridge + input/render (chỉ trong :mod-ui)
-  mod_ui.cpp           Init / glue
-  mod_ui_theme.cpp     Vk-Engine Moonlight theme (utils.jai) + ui scale 3×
-  mod_ui_layout.cpp    menu size/pos theo dp (density từ Java)
-  include/mod_ui_layout.hpp  MenuLayoutConfig
-  mod_ui_shell.cpp     layout menu
-  mod_ui_render.cpp    GLES + ImGui backend
-  surface_bridge.cpp   JNI com.android.attack.Surface → SetSurface / frames
-  fonts/FreeSans.ttf   nguồn TTF
-  fonts/mod_ui_font_data.h  TTF nhúng (python scripts/embed_font.py)
+  include/ModUi.hpp           API public (plugin :app)
+  include/Internal.hpp        JNI bridge + input/render (chỉ trong :mod-ui)
+  ModUi.cpp                   Init / glue
+  Theme.cpp                   Vk-Engine Moonlight theme (utils.jai) + ui scale 3×
+  Layout.cpp                  menu size/pos theo dp (density từ Java)
+  include/Layout.hpp          MenuLayoutConfig
+  Shell.cpp                   layout menu
+  Render.cpp                  GLES + ImGui backend
+  SurfaceBridge.cpp           JNI com.android.attack.Surface → SetSurface / frames
+  fonts/FreeSans.ttf          nguồn TTF
+  fonts/FontData.h            TTF nhúng (python scripts/embed_font.py)
   CMakeLists.txt
 ```
 
 Phụ thuộc compile: `-DNATIVE_CORE_CPP` (imgui headers từ native-core).
 
-## API public (`mod_ui.hpp`)
+## API public (`ModUi.hpp`)
 
-- `Init()` — ImGui context + JNI `RegisterNatives` (gọi `RegisterSurfaceNatives` trong `surface_bridge.cpp`)
+- `Init()` — ImGui context + JNI `RegisterNatives` (gọi `RegisterSurfaceNatives` trong `SurfaceBridge.cpp`)
 - `AppUi` — `add_tab(id, label, draw)`, `set_window_title`
 - Menu: **X** ImGui (`Begin(..., &p_open)`) thu gọn → FAB; bấm FAB mở lại (`SetMenuExpanded`)
-- Icon: chỉ `mod_ui_icon.cpp` / `mod_ui_icon.hpp` (shell/app không gọi)
-- Theme: title bar căn giữa (`WindowTitleAlign` trong `mod_ui_theme.cpp`)
-- Shell: sidebar tab **ribbon phải** (gradient → accent, `DrawSidebarTabRibbon`) + panel content (`mod_ui_shell.cpp`)
+- Icon: chỉ `Icon.cpp` / `Icon.hpp` (shell/app không gọi)
+- Theme: title bar căn giữa (`WindowTitleAlign` trong `Theme.cpp`)
+- Shell: sidebar tab **ribbon phải** (gradient → accent, `DrawSidebarTabRibbon`) + panel content (`Shell.cpp`)
 
-`mod_ui_internal.hpp`: `Feed*`, `BeginFrame`, … — không dùng từ `:app`.
+`Internal.hpp`: `Feed*`, `BeginFrame`, … — không dùng từ `:app`.
 
 Menu size mặc định (`MenuLayoutConfig`): 624×442 dp (chữ nhật ngang), áp **một lần** khi đã có density (`ApplyInitialLayout`); sau đó user resize tự do (chỉ clamp min). `TouchInputBridge.refreshInsets` gửi density.
 
@@ -57,9 +57,9 @@ Cần `:native-core` (imgui) đã build cho Prefab imgui khi link app.
 
 ## Khi sửa
 
-- Giao diện menu chung → `mod_ui_shell.cpp` / `mod_ui_render.cpp`
-- API header → `include/mod_ui.hpp`
-- Widget riêng từng app → module `:app` (`app_menu.cpp`), không sửa mod-ui nếu không chia sẻ
+- Giao diện menu chung → `Shell.cpp` / `Render.cpp`
+- API header → `include/ModUi.hpp`
+- Widget riêng từng app → module `:app` (`Menu.cpp`), không sửa mod-ui nếu không chia sẻ
 
 ## Logcat
 

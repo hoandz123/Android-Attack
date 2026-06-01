@@ -1,4 +1,4 @@
-#include "mod_ui_internal.hpp"
+#include "Internal.hpp"
 
 #include <algorithm>
 #include <imgui.h>

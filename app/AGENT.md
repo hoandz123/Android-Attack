@@ -17,8 +17,8 @@ Module **application** duy nhất. Build ra `libattack.so` (plugin thật) + APK
 
 | File | Việc |
 |------|------|
-| `native-lib.cpp` | `JNI_OnLoad`: dex → tracker → `modui::Init()` → menu app |
-| `app_menu.cpp` | `set_window_title`, `add_tab` |
+| `NativeLib.cpp` | `JNI_OnLoad`: dex → tracker → `modui::Init()` → menu app |
+| `Menu.cpp` | `set_window_title`, `add_tab` |
 | `CMakeLists.txt` | Link `attack` SHARED; include `EMBEDDED_DEX_DIR` |
 
 ### Thứ tự `JNI_OnLoad` (giữ nguyên thứ tự)
@@ -62,6 +62,6 @@ Module **application** duy nhất. Build ra `libattack.so` (plugin thật) + APK
 
 ## Khi sửa
 
-- Menu UI app → `app_menu.cpp`
-- Thứ tự khởi tạo / thêm init → `native-lib.cpp`
+- Menu UI app → `Menu.cpp`
+- Thứ tự khởi tạo / thêm init → `NativeLib.cpp`
 - Không nhét Java bridge vào app; dex Java thuộc `:native-dex`

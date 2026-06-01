@@ -1,12 +1,12 @@
 #include <android/log.h>
 #include <curl/curl.h>
 #include <jni.h>
-#include "app_menu.hpp"
+#include "Menu.hpp"
 #include <ActivityTracker/ActivityTracker.hpp>
 #include <DexLoader/DexLoader.hpp>
 #include <JNIHelper/JNIHelper.hpp>
 #include <embedded_dex.hpp>
-#include <mod_ui.hpp>
+#include <ModUi.hpp>
 #include <KittyMemory.h>
 
 #define TAG "AttackPlugin"

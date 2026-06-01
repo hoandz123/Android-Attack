@@ -1,4 +1,4 @@
-#include "mod_ui_internal.hpp"
+#include "Internal.hpp"
 
 #include <JNIHelper/JNIHelper.hpp>
 #include <android/input.h>

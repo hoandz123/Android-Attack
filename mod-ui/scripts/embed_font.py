@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Regenerate mod_ui_font_data.h from fonts/FreeSans.ttf."""
+"""Regenerate FontData.h from fonts/FreeSans.ttf."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src/main/cpp/fonts/FreeSans.ttf"
-DST = ROOT / "src/main/cpp/fonts/mod_ui_font_data.h"
+DST = ROOT / "src/main/cpp/fonts/FontData.h"
 
 def main() -> None:
     data = SRC.read_bytes()

@@ -1,10 +1,10 @@
-#include "mod_ui_internal.hpp"
-#include "mod_ui_theme.hpp"
+#include "Internal.hpp"
+#include "Theme.hpp"
 
 #include <android/log.h>
 #include <imgui.h>
 
-#include "mod_ui_font_data.h"
+#include "FontData.h"
 
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "ModUi", __VA_ARGS__)
 

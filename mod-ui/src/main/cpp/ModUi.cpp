@@ -1,6 +1,6 @@
-#include "mod_ui.hpp"
-#include "mod_ui_internal.hpp"
-#include "mod_ui_theme.hpp"
+#include "ModUi.hpp"
+#include "Internal.hpp"
+#include "Theme.hpp"
 #include <JNIHelper/JNIHelper.hpp>
 #include <android/log.h>
 #include <imgui.h>

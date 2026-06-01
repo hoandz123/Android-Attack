@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.22.1)
 
 project("loader")
 
-add_library(loader SHARED loader.cpp)
+add_library(loader SHARED Loader.cpp)
 
 find_library(log-lib log)
 

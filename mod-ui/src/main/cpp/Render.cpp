@@ -1,6 +1,6 @@
-#include "mod_ui.hpp"
-#include "mod_ui_internal.hpp"
-#include "mod_ui_layout.hpp"
+#include "ModUi.hpp"
+#include "Internal.hpp"
+#include "Layout.hpp"
 #include <GLES3/gl3.h>
 #include <android/log.h>
 #include <imgui.h>

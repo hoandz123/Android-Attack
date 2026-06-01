@@ -1,7 +1,7 @@
-#include "mod_ui.hpp"
-#include "mod_ui_internal.hpp"
-#include "mod_ui_layout.hpp"
-#include "mod_ui_icon.hpp"
+#include "ModUi.hpp"
+#include "Internal.hpp"
+#include "Layout.hpp"
+#include "Icon.hpp"
 #include <imgui.h>
 #include <algorithm>
 #include <atomic>
