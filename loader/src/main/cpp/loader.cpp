@@ -7,14 +7,9 @@
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
 
-using RegisterFn = jboolean (*)(JNIEnv *);
-
-static bool loadPlugin(JNIEnv *env, const char *path) {
-    if (!env || !path || !*path) return false;
-    void *handle = dlopen(path, RTLD_NOW | RTLD_GLOBAL);
-    if (!handle) { LOGE("dlopen %s: %s", path, dlerror()); return false; }
-    auto reg = (RegisterFn)dlsym(handle, "attack_register_natives");
-    if (!reg || reg(env) != JNI_TRUE) { LOGE("register failed: %s", path); return false; }
+static bool loadPlugin(const char *path) {
+    if (!path || !*path) return false;
+    if (!dlopen(path, RTLD_NOW | RTLD_GLOBAL)) { LOGE("dlopen %s: %s", path, dlerror()); return false; }
     LOGI("loaded %s", path);
     return true;
 }
@@ -41,6 +36,6 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
     if (vm->GetEnv((void **)&env, JNI_VERSION_1_6) != JNI_OK) return JNI_ERR;
     LOGI("JNI_OnLoad");
     std::string dir;
-    if (nativeLibDir(env, dir)) return loadPlugin(env, (dir + "/libattack.so").c_str()) ? JNI_VERSION_1_6 : JNI_ERR;
-    return loadPlugin(env, "libattack.so") ? JNI_VERSION_1_6 : JNI_ERR;
+    if (nativeLibDir(env, dir)) return loadPlugin((dir + "/libattack.so").c_str()) ? JNI_VERSION_1_6 : JNI_ERR;
+    return loadPlugin("libattack.so") ? JNI_VERSION_1_6 : JNI_ERR;
 }
