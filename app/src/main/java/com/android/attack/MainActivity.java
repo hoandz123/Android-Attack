@@ -10,11 +10,13 @@ public class MainActivity extends Activity {
     }
 
     private static native String stringFromNative();
+    private static native String listLoadedSo();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        ((TextView) findViewById(R.id.sample_text)).setText(stringFromNative());
+        TextView tv = findViewById(R.id.sample_text);
+        tv.setText(stringFromNative() + "\n\n" + listLoadedSo());
     }
 }
