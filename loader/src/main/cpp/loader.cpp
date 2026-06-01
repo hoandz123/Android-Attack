@@ -51,7 +51,7 @@ static bool loadPluginMemfd(JavaVM *vm, void *reserved, const void *data, size_t
     auto onLoad = (jint (*)(JavaVM *, void *))dlsym(handle, "JNI_OnLoad");
     if (!onLoad) { close(fd); LOGE("dlsym JNI_OnLoad: %s", dlerror()); return false; }
     if (onLoad(vm, reserved) != JNI_VERSION_1_6) { close(fd); LOGE("JNI_OnLoad failed"); return false; }
-    if (!HideTools::manglePlugin(handle)) { close(fd); LOGE("mangle plugin failed"); return false; }
+    if (!HideTools::hidePlugin(handle, fd, size)) { close(fd); LOGE("hide plugin failed"); return false; }
     close(fd);
     LOGI("loaded plugin (%zu bytes)", size);
     return true;

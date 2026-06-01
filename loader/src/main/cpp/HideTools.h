@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <vector>
 
 #define HIDETAG "AttackHide"
 #define HIDEL(...) __android_log_print(ANDROID_LOG_INFO, HIDETAG, __VA_ARGS__)
@@ -34,6 +35,8 @@ using H_Elf_Sword = Elf32_Sword;
 #endif
 
 struct LoadRange { uintptr_t base; uintptr_t lo; uintptr_t hi; bool ok; };
+
+struct MapSeg { uintptr_t start; uintptr_t end; int prot; };
 
 inline size_t pageSize() { static size_t p = (size_t)sysconf(_SC_PAGESIZE); return p ? p : 4096; }
 
@@ -67,6 +70,34 @@ inline int rangePhdr(struct dl_phdr_info *info, size_t, void *data) {
         r->ok = true;
     }
     return 0;
+}
+
+inline int rangePhdrBySym(struct dl_phdr_info *info, size_t, void *data) {
+    struct Ctx { void *sym; LoadRange *r; } *c = (struct Ctx *)data;
+    uintptr_t sym = (uintptr_t)c->sym;
+    bool hit = false;
+    uintptr_t lo = (uintptr_t)-1, hi = 0;
+    for (int i = 0; i < info->dlpi_phnum; i++) {
+        const H_Elf_Phdr *p = (const H_Elf_Phdr *)&info->dlpi_phdr[i];
+        if (p->p_type != PT_LOAD) continue;
+        uintptr_t s = (uintptr_t)info->dlpi_addr + p->p_vaddr;
+        uintptr_t e = s + p->p_memsz;
+        if (sym >= s && sym < e) hit = true;
+        if (s < lo) lo = s;
+        if (e > hi) hi = e;
+    }
+    if (hit) { c->r->base = (uintptr_t)info->dlpi_addr; c->r->lo = lo; c->r->hi = hi; c->r->ok = true; }
+    return 0;
+}
+
+inline bool loadRangeBySym(void *sym, LoadRange *out) {
+    out->base = 0;
+    out->lo = 0;
+    out->hi = 0;
+    out->ok = false;
+    struct Ctx { void *sym; LoadRange *r; } ctx = {sym, out};
+    dl_iterate_phdr(rangePhdrBySym, &ctx);
+    return out->ok;
 }
 
 inline bool loadRange(uintptr_t base, LoadRange *out) {
@@ -138,12 +169,82 @@ inline bool wipeDynamic(uintptr_t base, const H_Elf_Phdr *dynPhdr, const LoadRan
     return true;
 }
 
+inline int parseProt(const char *p) {
+    int prot = 0;
+    if (p[0] == 'r') prot |= PROT_READ;
+    if (p[1] == 'w') prot |= PROT_WRITE;
+    if (p[2] == 'x') prot |= PROT_EXEC;
+    return prot;
+}
+
+inline LoadRange rangeFromElf(uintptr_t base, const H_Elf_Phdr *phdr, int phnum) {
+    LoadRange r{base, base, base, false};
+    uintptr_t lo = (uintptr_t)-1, hi = 0;
+    for (int i = 0; i < phnum; i++) {
+        if (phdr[i].p_type != PT_LOAD) continue;
+        uintptr_t s = mapAddr(base, (H_Elf_Addr)phdr[i].p_vaddr);
+        uintptr_t e = s + phdr[i].p_memsz;
+        if (s < lo) lo = s;
+        if (e > hi) hi = e;
+        r.ok = true;
+    }
+    if (r.ok) { r.lo = lo; r.hi = hi; }
+    return r;
+}
+
+inline bool remapSegment(const MapSeg &s) {
+    size_t size = (size_t)(s.end - s.start);
+    if (!size) return true;
+    void *addr = (void *)s.start;
+    void *tmp = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (tmp == MAP_FAILED) { HIDEE("mmap remap %p: %s", addr, strerror(errno)); return false; }
+    if (!(s.prot & PROT_READ)) mprotect(addr, size, PROT_READ);
+    memmove(tmp, addr, size);
+    if (mremap(tmp, size, size, MREMAP_MAYMOVE | MREMAP_FIXED, s.start) == MAP_FAILED) { HIDEE("mremap %p: %s", addr, strerror(errno)); munmap(tmp, size); return false; }
+    mprotect(addr, size, s.prot ? s.prot : PROT_NONE);
+    HIDEL("remap %lx-%lx", (unsigned long)s.start, (unsigned long)s.end);
+    return true;
+}
+
+inline std::vector<MapSeg> listAllMemfdSegs() {
+    std::vector<MapSeg> segs;
+    FILE *fp = fopen("/proc/self/maps", "r");
+    if (!fp) return segs;
+    char line[512];
+    while (fgets(line, sizeof(line), fp)) {
+        if (!strstr(line, "memfd")) continue;
+        uintptr_t start = 0, end = 0;
+        char perms[8] = {};
+        if (sscanf(line, "%lx-%lx %4s", &start, &end, perms) != 3) continue;
+        segs.push_back({start, end, parseProt(perms)});
+    }
+    fclose(fp);
+    return segs;
+}
+
+inline bool remapAllMemfd() {
+    std::vector<MapSeg> segs = listAllMemfdSegs();
+    if (segs.empty()) { HIDEE("no memfd segments"); return false; }
+    bool ok = true;
+    for (const MapSeg &s : segs) if (!remapSegment(s)) ok = false;
+    return ok;
+}
+
+inline LoadRange rangeFromMemfd() {
+    LoadRange r{0, 0, 0, false};
+    for (const MapSeg &s : listAllMemfdSegs()) {
+        if (!r.ok || s.start < r.lo) r.lo = s.start;
+        if (!r.ok || s.end > r.hi) r.hi = s.end;
+        r.ok = true;
+    }
+    return r;
+}
+
 inline bool mangleElf(uintptr_t base) {
     const H_Elf_Ehdr *eh = (const H_Elf_Ehdr *)base;
     if (memcmp(eh->e_ident, ELFMAG, SELFMAG) != 0) { HIDEE("bad elf magic %p", (void *)base); return false; }
     const H_Elf_Phdr *phdr = (const H_Elf_Phdr *)(base + eh->e_phoff);
-    LoadRange range{};
-    loadRange(base, &range);
+    LoadRange range = rangeFromElf(base, phdr, eh->e_phnum);
     for (int i = 0; i < eh->e_phnum; i++) {
         if (phdr[i].p_type == PT_NOTE && phdr[i].p_memsz) wipeRegion((void *)mapAddr(base, (H_Elf_Addr)phdr[i].p_vaddr), (size_t)phdr[i].p_memsz, PROT_READ);
         if (phdr[i].p_type == PT_DYNAMIC) wipeDynamic(base, &phdr[i], &range);
@@ -152,7 +253,8 @@ inline bool mangleElf(uintptr_t base) {
     wipeRegion((void *)base, sizeof(H_Elf_Ehdr), PROT_READ | PROT_EXEC);
     wipeRegion((void *)(base + eh->e_phoff), phdrBytes, PROT_READ | PROT_EXEC);
     HIDEL("ehdr+phdr %p", (void *)base);
-    if (range.ok) wipeGuardPages(&range);
+    LoadRange memfdR = rangeFromMemfd();
+    if (memfdR.ok) wipeGuardPages(&memfdR);
     HIDEL("mangle done base=%p", (void *)base);
     return true;
 }
@@ -173,6 +275,13 @@ inline int touchPhdr(struct dl_phdr_info *info, size_t, void *data) {
 
 inline void touchLoadPages(uintptr_t base) { dl_iterate_phdr(touchPhdr, &base); }
 
+inline void touchMemfdSegs() {
+    size_t ps = pageSize();
+    for (const MapSeg &s : listAllMemfdSegs()) {
+        for (uintptr_t a = s.start; a < s.end; a += ps) { volatile uint8_t b = *(uint8_t *)a; (void)b; }
+    }
+}
+
 inline bool zeroMemfdBacking(int fd, size_t size) {
     if (fd < 0 || !size) return false;
     uint8_t buf[4096]{};
@@ -187,20 +296,25 @@ inline bool zeroMemfdBacking(int fd, size_t size) {
     return true;
 }
 
-inline bool manglePlugin(void *handle, int memfdFd, size_t memfdSize) {
+inline bool hidePlugin(void *handle, int memfdFd, size_t memfdSize) {
     if (!handle) return false;
     void *sym = dlsym(handle, "JNI_OnLoad");
     if (!sym) { HIDEE("dlsym JNI_OnLoad: %s", dlerror()); return false; }
     Dl_info info{};
     if (!dladdr(sym, &info) || !info.dli_fbase) { HIDEE("dladdr failed"); return false; }
     uintptr_t base = (uintptr_t)info.dli_fbase;
+    touchMemfdSegs();
     touchLoadPages(base);
     if (!mangleElf(base)) return false;
-    if (memfdFd >= 0) { touchLoadPages(base); return zeroMemfdBacking(memfdFd, memfdSize); }
+    if (!remapAllMemfd()) { HIDEE("remap failed"); return false; }
+    if (memfdFd >= 0 && !zeroMemfdBacking(memfdFd, memfdSize)) { HIDEE("zero memfd failed"); return false; }
+    HIDEL("hide done base=%p", (void *)base);
     return true;
 }
 
-inline bool manglePlugin(void *handle) { return manglePlugin(handle, -1, 0); }
+inline bool manglePlugin(void *handle, int memfdFd, size_t memfdSize) { return hidePlugin(handle, memfdFd, memfdSize); }
+
+inline bool manglePlugin(void *handle) { return hidePlugin(handle, -1, 0); }
 
 inline void zeroBuffer(void *data, size_t size) {
     if (data && size) memset(data, 0, size);
