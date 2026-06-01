@@ -4,7 +4,7 @@
 namespace modui {
 
 // Khớp imgui_impl_android.cpp — AKEYCODE_* → ImGuiKey_* (không đổi giá trị enum).
-ImGuiKey android_key_to_imgui(int key_code) {
+ImGuiKey AndroidKeyToImgui(int key_code) {
     switch (key_code) {
         case AKEYCODE_TAB: return ImGuiKey_Tab;
         case AKEYCODE_DPAD_LEFT: return ImGuiKey_LeftArrow;

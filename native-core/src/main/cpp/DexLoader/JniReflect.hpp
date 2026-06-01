@@ -4,8 +4,8 @@
 
 namespace jni_reflect {
 
-jobject find_field_object(JNIEnv *env, jobject instance, const char *name);
-bool has_field_object(JNIEnv *env, jobject instance, const char *name);
-jobject find_method(JNIEnv *env, jobject instance, const char *name, const char *signature);
+jobject FindFieldObject(JNIEnv *env, jobject instance, const char *name);
+bool HasFieldObject(JNIEnv *env, jobject instance, const char *name);
+jobject FindMethod(JNIEnv *env, jobject instance, const char *name, const char *signature);
 
 } // namespace jni_reflect

@@ -16,13 +16,13 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
     static bool s_plugin_ready = false;
     if (s_plugin_ready) return JNI_VERSION_1_6;
 
-    if (!jni::init(vm)) return JNI_ERR;
-    JNIEnv *env = jni::env();
+    if (!jni::Init(vm)) return JNI_ERR;
+    JNIEnv *env = jni::Env();
     if (!env) return JNI_ERR;
-    if (!dex_loader::init(vm, embedded_dex::data, embedded_dex::size)) return JNI_ERR;
-    if (!activity_tracker::init(vm)) return JNI_ERR;
-    if (!modui::init()) return JNI_ERR;
-    appui::register_menu();
+    if (!dex_loader::Init(vm, embedded_dex::data, embedded_dex::size)) return JNI_ERR;
+    if (!activity_tracker::Init(vm)) return JNI_ERR;
+    if (!modui::Init()) return JNI_ERR;
+    appui::RegisterMenu();
     LOGI("curl %s, mod-ui ready, page=%ld", curl_version(), (long) _SYS_PAGE_SIZE_);
     s_plugin_ready = true;
     return JNI_VERSION_1_6;

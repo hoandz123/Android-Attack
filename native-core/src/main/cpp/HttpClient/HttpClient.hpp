@@ -14,10 +14,10 @@ struct Response {
     bool ok() const { return error.empty() && status >= 200 && status < 300; }
 };
 
-Response get(const std::string &url, long timeout_sec = 30);
-Response post(const std::string &url, const void *body = nullptr, size_t body_len = 0,
+Response Get(const std::string &url, long timeout_sec = 30);
+Response Post(const std::string &url, const void *body = nullptr, size_t body_len = 0,
               const char *content_type = "application/octet-stream", long timeout_sec = 30);
 /** GET → ghi file `path` (không giữ body trong Response). */
-Response download(const std::string &url, const std::string &path, long timeout_sec = 30);
+Response Download(const std::string &url, const std::string &path, long timeout_sec = 30);
 
 } // namespace http

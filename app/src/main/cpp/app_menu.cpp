@@ -3,7 +3,7 @@
 
 namespace appui {
 
-static void draw_attack_tab() {
+static void DrawAttackTab() {
     if (ImGui::CollapsingHeader("Attack", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::TextUnformatted("Nội dung plugin — thay toàn bộ vùng bên phải.");
         static bool demo = true;
@@ -13,7 +13,7 @@ static void draw_attack_tab() {
     }
 }
 
-static void draw_about_tab() {
+static void DrawAboutTab() {
     ImGui::Text("mod-ui + :app");
     ImGui::Separator();
     ImGui::Text("ImGui %s", IMGUI_VERSION);
@@ -22,12 +22,12 @@ static void draw_about_tab() {
         "Shell giữ khung trái/phải; plugin chỉ vẽ panel content.");
 }
 
-void register_menu() {
+void RegisterMenu() {
     modui::AppUi ui{};
     ui.set_window_title("Android Attack##modui_shell");
-    ui.add_tab("attack", "Attack", draw_attack_tab);
-    ui.add_tab("about", "About", draw_about_tab);
-    modui::set_app_ui(ui);
+    ui.add_tab("attack", "Attack", DrawAttackTab);
+    ui.add_tab("about", "About", DrawAboutTab);
+    modui::SetAppUi(ui);
 }
 
 } // namespace appui

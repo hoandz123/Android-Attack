@@ -7,16 +7,16 @@ namespace jni {
 constexpr jint kVersion = JNI_VERSION_1_6;
 
 /** Gọi một lần từ JNI_OnLoad (trước dex/tracker/mod-ui). */
-bool init(JavaVM *vm);
+bool Init(JavaVM *vm);
 
-bool inited();
+bool Inited();
 JavaVM *vm();
 
 /** JNIEnv của thread hiện tại nếu đã attach (JNI_OK). Không Attach/Detach. */
-JNIEnv *env();
+JNIEnv *Env();
 
 /**
- * RAII: dùng env sẵn có; chỉ Attach khi thread native chưa gắn JVM.
+ * RAII: dùng env sẵn có; chỉ Attach khi thread native chưa attach JVM.
  * Destructor Detach chỉ khi lần này đã Attach — an toàn với JNI callback / render thread.
  */
 class ScopedEnv {
@@ -36,12 +36,12 @@ private:
     bool attached_ = false;
 };
 
-void clear_exception(JNIEnv *env);
+void ClearException(JNIEnv *env);
 
 /** FindClass hoặc load qua Application ClassLoader (embedded dex). */
-jclass find_class(JNIEnv *env, const char *slash_name);
+jclass FindClass(JNIEnv *env, const char *slash_name);
 
-bool register_natives(JNIEnv *env, const char *slash_class, const JNINativeMethod *methods,
+bool RegisterNatives(JNIEnv *env, const char *slash_class, const JNINativeMethod *methods,
                       jint count);
 
 } // namespace jni

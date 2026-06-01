@@ -13,7 +13,7 @@ float g_inset_l, g_inset_t, g_inset_r, g_inset_b;
 
 } // namespace
 
-void feed_touch(int action, float x, float y) {
+void FeedTouch(int action, float x, float y) {
     g_x = x;
     g_y = y;
     g_dirty = true;
@@ -21,14 +21,14 @@ void feed_touch(int action, float x, float y) {
     else if (action == 1 || action == 3) g_down = false;
 }
 
-void set_safe_insets(float left, float top, float right, float bottom) {
+void SetSafeInsets(float left, float top, float right, float bottom) {
     g_inset_l = left;
     g_inset_t = top;
     g_inset_r = right;
     g_inset_b = bottom;
 }
 
-void apply_pending_touch() {
+void ApplyPendingTouch() {
     if (!g_dirty && !g_down) return;
     ImGuiIO &io = ImGui::GetIO();
     io.AddMouseSourceEvent(ImGuiMouseSource_TouchScreen);
@@ -37,7 +37,7 @@ void apply_pending_touch() {
     g_dirty = false;
 }
 
-void apply_safe_area_style() {
+void ApplySafeAreaStyle() {
     ImGui::GetStyle().DisplaySafeAreaPadding =
         ImVec2(std::max(g_inset_l, g_inset_r), std::max(g_inset_t, g_inset_b));
 }

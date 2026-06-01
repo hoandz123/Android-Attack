@@ -15,47 +15,47 @@ bool g_initial_layout_done = false;
 
 } // namespace
 
-const MenuLayoutConfig &menu_layout_config() { return g_menu_layout; }
+const MenuLayoutConfig &GetMenuLayout() { return g_menu_layout; }
 
-void set_display_density(float density) {
+void SetDisplayDensity(float density) {
     if (density > 0.1f && density < 10.f) {
         g_density = density;
         g_metrics_ready = true;
     }
 }
 
-float display_density() { return g_density; }
+float GetDisplayDensity() { return g_density; }
 
-bool display_metrics_ready() { return g_metrics_ready; }
+bool DisplayMetricsReady() { return g_metrics_ready; }
 
-void reset_menu_initial_layout() { g_initial_layout_done = false; }
+void ResetInitialLayout() { g_initial_layout_done = false; }
 
-bool try_apply_initial_menu_layout() {
+bool ApplyInitialLayout() {
     if (!g_metrics_ready || g_initial_layout_done) return false;
-    const ImVec2 size = menu_window_size();
-    ImGui::SetNextWindowPos(menu_window_pos(size), ImGuiCond_Always);
+    const ImVec2 size = MenuWindowSize();
+    ImGui::SetNextWindowPos(MenuWindowPos(size), ImGuiCond_Always);
     ImGui::SetNextWindowSize(size, ImGuiCond_Always);
     g_initial_layout_done = true;
     return true;
 }
 
-void menu_apply_resize_constraints() {
+void ApplyResizeConstraints() {
     const MenuLayoutConfig &cfg = g_menu_layout;
-    const ImVec2 min_sz(dp_to_px(cfg.min_width_dp), dp_to_px(cfg.min_height_dp));
+    const ImVec2 min_sz(DpToPx(cfg.min_width_dp), DpToPx(cfg.min_height_dp));
     ImGui::SetNextWindowSizeConstraints(min_sz, ImVec2(FLT_MAX, FLT_MAX));
 }
 
-float dp_to_px(float dp) { return dp * g_density; }
+float DpToPx(float dp) { return dp * g_density; }
 
-ImVec2 menu_window_size() {
+ImVec2 MenuWindowSize() {
     const MenuLayoutConfig &cfg = g_menu_layout;
     const ImGuiViewport *vp = ImGui::GetMainViewport();
     const ImVec2 work = vp->WorkSize;
 
-    float w = dp_to_px(cfg.width_dp);
-    float h = dp_to_px(cfg.height_dp);
-    const float min_w = dp_to_px(cfg.min_width_dp);
-    const float min_h = dp_to_px(cfg.min_height_dp);
+    float w = DpToPx(cfg.width_dp);
+    float h = DpToPx(cfg.height_dp);
+    const float min_w = DpToPx(cfg.min_width_dp);
+    const float min_h = DpToPx(cfg.min_height_dp);
     const float max_w = work.x * cfg.max_width_screen;
     const float max_h = work.y * cfg.max_height_screen;
 
@@ -64,10 +64,10 @@ ImVec2 menu_window_size() {
     return ImVec2(w, h);
 }
 
-ImVec2 menu_window_pos(const ImVec2 &window_size) {
+ImVec2 MenuWindowPos(const ImVec2 &window_size) {
     const MenuLayoutConfig &cfg = g_menu_layout;
     const ImGuiViewport *vp = ImGui::GetMainViewport();
-    const float margin = dp_to_px(cfg.margin_dp);
+    const float margin = DpToPx(cfg.margin_dp);
     const ImVec2 work_pos = vp->WorkPos;
     const ImVec2 work = vp->WorkSize;
 

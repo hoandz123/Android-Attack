@@ -16,7 +16,7 @@ constexpr float kBaseFontPx = 13.0f;
 
 } // namespace
 
-void setup_ui_fonts() {
+void SetupUiFonts() {
     ImGuiIO &io = ImGui::GetIO();
     io.Fonts->Clear();
 
@@ -28,7 +28,7 @@ void setup_ui_fonts() {
     cfg.PixelSnapH = true;
     cfg.FontDataOwnedByAtlas = true;
 
-    const float font_px = kBaseFontPx * ui_scale();
+    const float font_px = kBaseFontPx * UiScale();
     ImFont *font = io.Fonts->AddFontFromMemoryTTF(
         const_cast<unsigned char *>(kModUiFontData),
         static_cast<int>(kModUiFontSize),

@@ -103,9 +103,9 @@ void apply_vk_engine_moonlight_palette(ImGuiStyle &s) {
 
 } // namespace
 
-float ui_scale() { return kUiScale; }
+float UiScale() { return kUiScale; }
 
-void setup_ui_theme() {
+void SetupTheme() {
     ImGuiStyle &s = ImGui::GetStyle();
     s = ImGuiStyle();
     apply_vk_engine_moonlight_metrics(s);

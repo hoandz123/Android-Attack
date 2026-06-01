@@ -14,13 +14,13 @@ namespace activity_tracker {
 static std::vector<jobject> g_activities;
 static jobject g_current = nullptr;
 
-static void clear_ref(JNIEnv *env, jobject &ref) {
+static void ClearRef(JNIEnv *env, jobject &ref) {
     if (!ref) return;
     env->DeleteGlobalRef(ref);
     ref = nullptr;
 }
 
-static void log_activity(JNIEnv *env, jobject activity, const char *event) {
+static void LogActivity(JNIEnv *env, jobject activity, const char *event) {
     if (!activity) return;
     jclass cls = env->GetObjectClass(activity);
     if (!cls || env->ExceptionCheck()) {
@@ -34,7 +34,7 @@ static void log_activity(JNIEnv *env, jobject activity, const char *event) {
     }
     jmethodID get_name = env->GetMethodID(class_cls, "getName", "()Ljava/lang/String;");
     if (!get_name) return;
-    jstring jname = reinterpret_cast<jstring>(env->CallObjectMethod(cls, get_name));
+    jstring jname = (jstring)env->CallObjectMethod(cls, get_name);
     if (!jname || env->ExceptionCheck()) {
         env->ExceptionClear();
         return;
@@ -44,10 +44,10 @@ static void log_activity(JNIEnv *env, jobject activity, const char *event) {
     if (name) env->ReleaseStringUTFChars(jname, name);
 }
 
-void on_activity_resumed(JNIEnv *env, jobject activity) {
+void OnActivityResumed(JNIEnv *env, jobject activity) {
     if (!activity) return;
-    log_activity(env, activity, "resumed");
-    clear_ref(env, g_current);
+    LogActivity(env, activity, "resumed");
+    ClearRef(env, g_current);
     g_current = env->NewGlobalRef(activity);
 
     for (jobject a : g_activities) {
@@ -56,16 +56,16 @@ void on_activity_resumed(JNIEnv *env, jobject activity) {
     g_activities.push_back(env->NewGlobalRef(activity));
 }
 
-void on_activity_paused(JNIEnv *env, jobject activity) {
+void OnActivityPaused(JNIEnv *env, jobject activity) {
     if (!activity) return;
-    log_activity(env, activity, "paused");
-    if (g_current && env->IsSameObject(g_current, activity)) clear_ref(env, g_current);
+    LogActivity(env, activity, "paused");
+    if (g_current && env->IsSameObject(g_current, activity)) ClearRef(env, g_current);
 }
 
-void on_activity_destroyed(JNIEnv *env, jobject activity) {
+void OnActivityDestroyed(JNIEnv *env, jobject activity) {
     if (!activity) return;
-    log_activity(env, activity, "destroyed");
-    if (g_current && env->IsSameObject(g_current, activity)) clear_ref(env, g_current);
+    LogActivity(env, activity, "destroyed");
+    if (g_current && env->IsSameObject(g_current, activity)) ClearRef(env, g_current);
 
     for (auto it = g_activities.begin(); it != g_activities.end(); ++it) {
         if (env->IsSameObject(*it, activity)) {
@@ -78,34 +78,34 @@ void on_activity_destroyed(JNIEnv *env, jobject activity) {
 
 static void JNICALL bridge_resumed(JNIEnv *env, jclass, jobject activity) {
     if (env->ExceptionCheck()) env->ExceptionClear();
-    on_activity_resumed(env, activity);
+    OnActivityResumed(env, activity);
 }
 
 static void JNICALL bridge_paused(JNIEnv *env, jclass, jobject activity) {
     if (env->ExceptionCheck()) env->ExceptionClear();
-    on_activity_paused(env, activity);
+    OnActivityPaused(env, activity);
 }
 
 static void JNICALL bridge_destroyed(JNIEnv *env, jclass, jobject activity) {
     if (env->ExceptionCheck()) env->ExceptionClear();
-    on_activity_destroyed(env, activity);
+    OnActivityDestroyed(env, activity);
 }
 
 static bool register_natives(JNIEnv *env) {
     JNINativeMethod methods[] = {
-        {"nativeOnResumed", "(Landroid/app/Activity;)V", reinterpret_cast<void *>(bridge_resumed)},
-        {"nativeOnPaused", "(Landroid/app/Activity;)V", reinterpret_cast<void *>(bridge_paused)},
-        {"nativeOnDestroyed", "(Landroid/app/Activity;)V", reinterpret_cast<void *>(bridge_destroyed)},
+        {"nativeOnResumed", "(Landroid/app/Activity;)V", (void *)bridge_resumed},
+        {"nativeOnPaused", "(Landroid/app/Activity;)V", (void *)bridge_paused},
+        {"nativeOnDestroyed", "(Landroid/app/Activity;)V", (void *)bridge_destroyed},
     };
-    if (!jni::register_natives(env, "com/android/attack/nativedex/ActivityTrackerBridge", methods, 3)) {
+    if (!jni::RegisterNatives(env, "com/android/attack/nativedex/ActivityTrackerBridge", methods, 3)) {
         LOGE("RegisterNatives ActivityTrackerBridge failed");
         return false;
     }
     return true;
 }
 
-static bool call_java_install_once(JNIEnv *env) {
-    jclass bridge = jni::find_class(env, "com/android/attack/nativedex/ActivityTrackerBridge");
+static bool CallJavaInstallOnce(JNIEnv *env) {
+    jclass bridge = jni::FindClass(env, "com/android/attack/nativedex/ActivityTrackerBridge");
     if (!bridge) return false;
     jmethodID install = env->GetStaticMethodID(bridge, "install", "()Z");
     if (!install || env->ExceptionCheck()) {
@@ -121,9 +121,9 @@ static bool call_java_install_once(JNIEnv *env) {
     return ok == JNI_TRUE;
 }
 
-static bool call_java_install(JNIEnv *env) {
+static bool CallJavaInstall(JNIEnv *env) {
     for (int i = 0; i < 10; ++i) {
-        if (call_java_install_once(env)) {
+        if (CallJavaInstallOnce(env)) {
             if (i > 0) LOGI("ActivityTrackerBridge.install ok after retry %d", i);
             return true;
         }
@@ -133,27 +133,27 @@ static bool call_java_install(JNIEnv *env) {
     return false;
 }
 
-bool init(JavaVM *vm) {
+bool Init(JavaVM *vm) {
     if (!vm) return false;
-    if (!jni::inited() && !jni::init(vm)) return false;
-    JNIEnv *env = jni::env();
+    if (!jni::Inited() && !jni::Init(vm)) return false;
+    JNIEnv *env = jni::Env();
     if (!env) return false;
 
     if (!register_natives(env)) return false;
-    if (!call_java_install(env)) return false;
+    if (!CallJavaInstall(env)) return false;
 
     LOGI("init ok");
     return true;
 }
 
-std::vector<jobject> activities(JNIEnv *env) {
+std::vector<jobject> GetActivities(JNIEnv *env) {
     std::vector<jobject> out;
     out.reserve(g_activities.size());
     for (jobject a : g_activities) out.push_back(env->NewLocalRef(a));
     return out;
 }
 
-jobject current_activity(JNIEnv *env) {
+jobject CurrentActivity(JNIEnv *env) {
     return g_current ? env->NewLocalRef(g_current) : nullptr;
 }
 

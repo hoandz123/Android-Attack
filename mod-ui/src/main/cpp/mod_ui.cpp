@@ -17,44 +17,44 @@ static bool g_natives = false;
 static bool g_visible = true;
 static bool g_expanded = true;
 
-bool init() {
+bool Init() {
     if (!g_ctx) {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGuiIO &io = ImGui::GetIO();
         io.IniFilename = nullptr;
         io.ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
-        setup_ui_theme();
-        setup_ui_fonts();
+        SetupTheme();
+        SetupUiFonts();
         g_ctx = true;
         LOGI("context ready (%s)", IMGUI_VERSION);
     }
     if (g_natives) return true;
-    JNIEnv *env = jni::env();
-    if (!env || !register_surface_natives(env)) {
-        LOGE("register_surface_natives failed");
+    JNIEnv *env = jni::Env();
+    if (!env || !RegisterSurfaceNatives(env)) {
+        LOGE("RegisterSurfaceNatives failed");
         return false;
     }
     g_natives = true;
     return true;
 }
 
-void shutdown() {
+void Shutdown() {
     if (!g_ctx) return;
     ImGui::DestroyContext();
     g_ctx = false;
 }
 
-void set_app_ui(const AppUi &ui) { g_app_ui = ui; }
+void SetAppUi(const AppUi &ui) { g_app_ui = ui; }
 
-const AppUi &app_ui() { return g_app_ui; }
+const AppUi &GetAppUi() { return g_app_ui; }
 
-void set_menu_visible(bool visible) { g_visible = visible; }
+void SetMenuVisible(bool visible) { g_visible = visible; }
 
-bool menu_visible() { return g_visible; }
+bool MenuVisible() { return g_visible; }
 
-void set_menu_expanded(bool expanded) { g_expanded = expanded; }
+void SetMenuExpanded(bool expanded) { g_expanded = expanded; }
 
-bool menu_expanded() { return g_expanded; }
+bool MenuExpanded() { return g_expanded; }
 
 } // namespace modui

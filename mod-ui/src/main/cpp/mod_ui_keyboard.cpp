@@ -12,7 +12,7 @@
 
 namespace modui {
 
-ImGuiKey android_key_to_imgui(int key_code);
+ImGuiKey AndroidKeyToImgui(int key_code);
 
 namespace {
 
@@ -32,25 +32,18 @@ std::vector<KeyEvt> g_keys;
 std::vector<std::string> g_text;
 std::vector<ReplaceEvt> g_replace;
 
-void backspaces(ImGuiIO &io, int n) {
-    for (int i = 0; i < n; ++i) {
-        io.AddKeyEvent(ImGuiKey_Backspace, true);
-        io.AddKeyEvent(ImGuiKey_Backspace, false);
-    }
-}
-
 } // namespace
 
-void feed_key(int key_code, int action, int meta, int unicode) {
+void FeedKey(int key_code, int action, int meta, int unicode) {
     g_keys.push_back({key_code, action, meta, unicode});
 }
 
-void feed_text_utf8(const char *utf8) {
+void FeedTextUtf8(const char *utf8) {
     if (!utf8 || !*utf8) return;
     g_text.emplace_back(utf8);
 }
 
-void feed_replace_tail(int delete_chars, const char *utf8) {
+void FeedReplaceTail(int delete_chars, const char *utf8) {
     if (delete_chars < 0) delete_chars = 0;
     ReplaceEvt e;
     e.delete_chars = delete_chars;
@@ -58,7 +51,7 @@ void feed_replace_tail(int delete_chars, const char *utf8) {
     g_replace.push_back(std::move(e));
 }
 
-void apply_pending_keyboard() {
+void ApplyPendingKeyboard() {
     std::vector<KeyEvt> keys;
     std::vector<std::string> texts;
     std::vector<ReplaceEvt> reps;
@@ -68,7 +61,10 @@ void apply_pending_keyboard() {
 
     ImGuiIO &io = ImGui::GetIO();
     for (const auto &r : reps) {
-        backspaces(io, r.delete_chars);
+        for (int i = 0; i < r.delete_chars; ++i) {
+            io.AddKeyEvent(ImGuiKey_Backspace, true);
+            io.AddKeyEvent(ImGuiKey_Backspace, false);
+        }
         if (!r.insert.empty()) io.AddInputCharactersUTF8(r.insert.c_str());
     }
     for (const auto &k : keys) {
@@ -77,7 +73,7 @@ void apply_pending_keyboard() {
         io.AddKeyEvent(ImGuiMod_Shift, (k.meta & AMETA_SHIFT_ON) != 0);
         io.AddKeyEvent(ImGuiMod_Alt, (k.meta & AMETA_ALT_ON) != 0);
         io.AddKeyEvent(ImGuiMod_Super, (k.meta & AMETA_META_ON) != 0);
-        const ImGuiKey key = android_key_to_imgui(k.key_code);
+        const ImGuiKey key = AndroidKeyToImgui(k.key_code);
         if (key != ImGuiKey_None) {
             io.AddKeyEvent(key, down);
         } else if (down && k.unicode > 0 && (k.meta & AMETA_CTRL_ON) == 0) {
@@ -87,23 +83,23 @@ void apply_pending_keyboard() {
     for (const auto &t : texts) io.AddInputCharactersUTF8(t.c_str());
 }
 
-void sync_soft_keyboard(bool want) {
-    JNIEnv *env = jni::env();
+void SyncSoftKeyboard(bool want) {
+    JNIEnv *env = jni::Env();
     if (!env || !g_kb_cls || !g_sync_ime) return;
     env->CallStaticVoidMethod(g_kb_cls, g_sync_ime, want ? JNI_TRUE : JNI_FALSE);
     if (env->ExceptionCheck()) {
-        jni::clear_exception(env);
+        jni::ClearException(env);
         LOGE("syncIme failed");
     }
 }
 
-bool init_keyboard_jni(JNIEnv *env, jclass kb_class) {
+bool InitKeyboardJni(JNIEnv *env, jclass kb_class) {
     if (g_kb_cls) return true;
     if (!env || !kb_class) return false;
-    g_kb_cls = reinterpret_cast<jclass>(env->NewGlobalRef(kb_class));
+    g_kb_cls = (jclass)env->NewGlobalRef(kb_class);
     g_sync_ime = env->GetStaticMethodID(g_kb_cls, "syncIme", "(Z)V");
     if (!g_sync_ime || env->ExceptionCheck()) {
-        jni::clear_exception(env);
+        jni::ClearException(env);
         return false;
     }
     return true;

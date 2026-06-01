@@ -15,15 +15,15 @@ struct MenuLayoutConfig {
     float max_height_screen = 0.88f;
 };
 
-const MenuLayoutConfig &menu_layout_config();
-void set_display_density(float density);
-float display_density();
-float dp_to_px(float dp);
-bool display_metrics_ready();
-void reset_menu_initial_layout();
-bool try_apply_initial_menu_layout();
-void menu_apply_resize_constraints();
-ImVec2 menu_window_size();
-ImVec2 menu_window_pos(const ImVec2 &window_size);
+const MenuLayoutConfig &GetMenuLayout();
+void SetDisplayDensity(float density);
+float GetDisplayDensity();
+float DpToPx(float dp);
+bool DisplayMetricsReady();
+void ResetInitialLayout();
+bool ApplyInitialLayout();
+void ApplyResizeConstraints();
+ImVec2 MenuWindowSize();
+ImVec2 MenuWindowPos(const ImVec2 &window_size);
 
 } // namespace modui

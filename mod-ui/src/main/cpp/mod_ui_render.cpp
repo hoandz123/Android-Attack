@@ -11,17 +11,17 @@
 
 namespace modui {
 
-void draw_menu_shell(const AppUi &ui);
+void DrawMenuShell(const AppUi &ui);
 
 static bool g_backend;
 
-bool set_surface(ANativeWindow *window) {
-    if (!init()) return false;
+bool SetSurface(ANativeWindow *window) {
+    if (!Init()) return false;
     if (g_backend) {
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplAndroid_Shutdown();
         g_backend = false;
-        reset_menu_initial_layout();
+        ResetInitialLayout();
     }
     if (!window) return true;
     if (!ImGui_ImplAndroid_Init(window)
@@ -34,20 +34,20 @@ bool set_surface(ANativeWindow *window) {
     return true;
 }
 
-bool has_surface() { return g_backend; }
+bool HasSurface() { return g_backend; }
 
-void begin_frame() {
+void BeginFrame() {
     if (!g_backend) return;
-    apply_safe_area_style();
+    ApplySafeAreaStyle();
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplAndroid_NewFrame();
-    apply_pending_touch();
+    ApplyPendingTouch();
     ImGui::NewFrame();
-    draw_menu_shell(app_ui());
-    apply_pending_keyboard();
+    DrawMenuShell(GetAppUi());
+    ApplyPendingKeyboard();
 }
 
-void end_frame() {
+void EndFrame() {
     if (!g_backend) return;
     ImGui::Render();
     ImDrawData *draw = ImGui::GetDrawData();
@@ -62,7 +62,7 @@ void end_frame() {
         glClear(GL_COLOR_BUFFER_BIT);
     }
     ImGui_ImplOpenGL3_RenderDrawData(draw);
-    sync_soft_keyboard(ImGui::GetIO().WantTextInput);
+    SyncSoftKeyboard(ImGui::GetIO().WantTextInput);
 }
 
 } // namespace modui

@@ -19,25 +19,25 @@ static constexpr int kMinSdkForInMemoryDex = 26;
 static constexpr int kInitRetryCount = 30;
 static constexpr useconds_t kInitRetryDelayUs = 20000; // 20ms
 
-static jobject field_get(JNIEnv *env, jobject field, jobject instance) {
+static jobject FieldGet(JNIEnv *env, jobject field, jobject instance) {
     jclass field_cls = env->FindClass("java/lang/reflect/Field");
     jmethodID get = env->GetMethodID(field_cls, "get", "(Ljava/lang/Object;)Ljava/lang/Object;");
     return env->CallObjectMethod(field, get, instance);
 }
 
-static void field_set(JNIEnv *env, jobject field, jobject instance, jobject value) {
+static void FieldSet(JNIEnv *env, jobject field, jobject instance, jobject value) {
     jclass field_cls = env->FindClass("java/lang/reflect/Field");
     jmethodID set = env->GetMethodID(field_cls, "set", "(Ljava/lang/Object;Ljava/lang/Object;)V");
     env->CallVoidMethod(field, set, instance, value);
 }
 
-static jobject method_invoke(JNIEnv *env, jobject method, jobject instance, jobjectArray args) {
+static jobject MethodInvoke(JNIEnv *env, jobject method, jobject instance, jobjectArray args) {
     jclass method_cls = env->FindClass("java/lang/reflect/Method");
     jmethodID invoke = env->GetMethodID(method_cls, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
     return env->CallObjectMethod(method, invoke, instance, args);
 }
 
-static jobjectArray make_buffer_array(JNIEnv *env, const std::vector<std::vector<uint8_t>> &dex_files) {
+static jobjectArray MakeBufferArray(JNIEnv *env, const std::vector<std::vector<uint8_t>> &dex_files) {
     jclass buffer_cls = env->FindClass("java/nio/ByteBuffer");
     const jsize n = static_cast<jsize>(dex_files.size());
     jobjectArray arr = env->NewObjectArray(n, buffer_cls, nullptr);
@@ -52,13 +52,13 @@ static jobjectArray make_buffer_array(JNIEnv *env, const std::vector<std::vector
     return arr;
 }
 
-static jobject new_suppressed_list(JNIEnv *env) {
+static jobject NewSuppressedList(JNIEnv *env) {
     jclass array_list = env->FindClass("java/util/ArrayList");
     jmethodID ctor = env->GetMethodID(array_list, "<init>", "()V");
     return env->NewObject(array_list, ctor);
 }
 
-static int sdk_int(JNIEnv *env) {
+static int SdkInt(JNIEnv *env) {
     jclass build = env->FindClass("android/os/Build$VERSION");
     if (!build || env->ExceptionCheck()) {
         env->ExceptionClear();
@@ -72,12 +72,12 @@ static int sdk_int(JNIEnv *env) {
     return env->GetStaticIntField(build, fid);
 }
 
-static void log_class_name(JNIEnv *env, jobject obj, const char *prefix) {
+static void LogClassName(JNIEnv *env, jobject obj, const char *prefix) {
     if (!obj) return;
     jclass cls = env->GetObjectClass(obj);
     jclass class_cls = env->FindClass("java/lang/Class");
     jmethodID get_name = env->GetMethodID(class_cls, "getName", "()Ljava/lang/String;");
-    jstring jname = reinterpret_cast<jstring>(env->CallObjectMethod(cls, get_name));
+    jstring jname = (jstring)env->CallObjectMethod(cls, get_name);
     if (!jname || env->ExceptionCheck()) {
         env->ExceptionClear();
         return;
@@ -87,7 +87,7 @@ static void log_class_name(JNIEnv *env, jobject obj, const char *prefix) {
     if (name) env->ReleaseStringUTFChars(jname, name);
 }
 
-static void log_class_loader_chain(JNIEnv *env, jobject context) {
+static void LogClassLoaderChain(JNIEnv *env, jobject context) {
     if (!context) return;
     jclass context_cls = env->FindClass("android/content/Context");
     jmethodID get_cl = env->GetMethodID(context_cls, "getClassLoader", "()Ljava/lang/ClassLoader;");
@@ -104,8 +104,8 @@ static void log_class_loader_chain(JNIEnv *env, jobject context) {
     while (loader && depth < 12) {
         char label[48];
         snprintf(label, sizeof(label), "ClassLoader[%d]", depth);
-        log_class_name(env, loader, label);
-        const bool has_path = jni_reflect::has_field_object(env, loader, "pathList");
+        LogClassName(env, loader, label);
+        const bool has_path = jni_reflect::HasFieldObject(env, loader, "pathList");
         LOGI("  pathList=%s", has_path ? "yes" : "no");
 
         jobject parent = env->CallObjectMethod(loader, get_parent);
@@ -121,7 +121,7 @@ static void log_class_loader_chain(JNIEnv *env, jobject context) {
 }
 
 /** Android 10+ thường bọc PathClassLoader (DelegateLastClassLoader…) — đi parent đến loader có pathList. */
-static jobject resolve_loader_with_path_list(JNIEnv *env, jobject context) {
+static jobject ResolveLoaderWithPathList(JNIEnv *env, jobject context) {
     jclass context_cls = env->FindClass("android/content/Context");
     jmethodID get_cl = env->GetMethodID(context_cls, "getClassLoader", "()Ljava/lang/ClassLoader;");
     jobject loader = env->CallObjectMethod(context, get_cl);
@@ -136,7 +136,7 @@ static jobject resolve_loader_with_path_list(JNIEnv *env, jobject context) {
     jobject candidate = env->NewLocalRef(loader);
 
     for (int depth = 0; depth < 12 && candidate; ++depth) {
-        if (jni_reflect::has_field_object(env, candidate, "pathList")) {
+        if (jni_reflect::HasFieldObject(env, candidate, "pathList")) {
             if (depth > 0) {
                 LOGI("using parent ClassLoader at depth %d for pathList", depth);
             }
@@ -160,7 +160,7 @@ static jobject resolve_loader_with_path_list(JNIEnv *env, jobject context) {
     return nullptr;
 }
 
-static jobject wait_for_application(JNIEnv *env) {
+static jobject WaitForApplication(JNIEnv *env) {
     jclass at = env->FindClass("android/app/ActivityThread");
     jmethodID current_app = env->GetStaticMethodID(at, "currentApplication", "()Landroid/app/Application;");
     if (!current_app) return nullptr;
@@ -180,8 +180,8 @@ static jobject wait_for_application(JNIEnv *env) {
     return nullptr;
 }
 
-static bool verify_embedded_class(JNIEnv *env) {
-    jclass bridge = jni::find_class(env, "com/android/attack/nativedex/ActivityTrackerBridge");
+static bool VerifyEmbeddedClass(JNIEnv *env) {
+    jclass bridge = jni::FindClass(env, "com/android/attack/nativedex/ActivityTrackerBridge");
     if (!bridge) {
         LOGE("verify: ActivityTrackerBridge not visible");
         return false;
@@ -194,21 +194,21 @@ static bool verify_embedded_class(JNIEnv *env) {
     }
     LOGI("verify: ActivityTrackerBridge OK");
 
-    jclass overlay = jni::find_class(env, "com/android/attack/nativedex/EglOverlay");
+    jclass overlay = jni::FindClass(env, "com/android/attack/nativedex/EglOverlay");
     if (!overlay) {
         LOGE("verify: EglOverlay not visible — :native-dex:generateEmbeddedDex && rebuild :app");
         return false;
     }
     LOGI("verify: EglOverlay OK");
 
-    jclass touch = jni::find_class(env, "com/android/attack/nativedex/TouchInputBridge");
+    jclass touch = jni::FindClass(env, "com/android/attack/nativedex/TouchInputBridge");
     if (!touch) {
         LOGE("verify: TouchInputBridge not visible");
         return false;
     }
     LOGI("verify: TouchInputBridge OK");
 
-    jclass keyboard = jni::find_class(env, "com/android/attack/nativedex/KeyboardInputBridge");
+    jclass keyboard = jni::FindClass(env, "com/android/attack/nativedex/KeyboardInputBridge");
     if (!keyboard) {
         LOGE("verify: KeyboardInputBridge not visible");
         return false;
@@ -217,46 +217,46 @@ static bool verify_embedded_class(JNIEnv *env) {
     return true;
 }
 
-bool load_into_context(JNIEnv *env, jobject context, const std::vector<std::vector<uint8_t>> &dex_files) {
+bool LoadIntoContext(JNIEnv *env, jobject context, const std::vector<std::vector<uint8_t>> &dex_files) {
     if (!env || !context || dex_files.empty()) return false;
 
-    const int sdk = sdk_int(env);
+    const int sdk = SdkInt(env);
     if (sdk > 0 && sdk < kMinSdkForInMemoryDex) {
         LOGE("API %d < %d: makeInMemoryDexElements unavailable", sdk, kMinSdkForInMemoryDex);
         return false;
     }
 
     if (sdk >= 29) {
-        log_class_loader_chain(env, context);
+        LogClassLoaderChain(env, context);
     }
 
-    jobject class_loader = resolve_loader_with_path_list(env, context);
+    jobject class_loader = ResolveLoaderWithPathList(env, context);
     if (!class_loader) return false;
-    log_class_name(env, class_loader, "dex inject target");
+    LogClassName(env, class_loader, "dex inject target");
 
-    jobject path_list_field = jni_reflect::find_field_object(env, class_loader, "pathList");
+    jobject path_list_field = jni_reflect::FindFieldObject(env, class_loader, "pathList");
     if (!path_list_field) {
         env->DeleteLocalRef(class_loader);
         return false;
     }
-    jobject path_list = field_get(env, path_list_field, class_loader);
+    jobject path_list = FieldGet(env, path_list_field, class_loader);
     if (!path_list) {
         env->DeleteLocalRef(class_loader);
         return false;
     }
 
-    jobject dex_elements_field = jni_reflect::find_field_object(env, path_list, "dexElements");
+    jobject dex_elements_field = jni_reflect::FindFieldObject(env, path_list, "dexElements");
     if (!dex_elements_field) {
         env->DeleteLocalRef(class_loader);
         return false;
     }
-    jobject dex_elements = field_get(env, dex_elements_field, path_list);
+    jobject dex_elements = FieldGet(env, dex_elements_field, path_list);
     if (!dex_elements) {
         env->DeleteLocalRef(class_loader);
         return false;
     }
 
-    jobject make_dex_elements = jni_reflect::find_method(env, path_list, "makeInMemoryDexElements",
+    jobject make_dex_elements = jni_reflect::FindMethod(env, path_list, "makeInMemoryDexElements",
                                                          "([Ljava/nio/ByteBuffer;Ljava/util/List;)");
     if (!make_dex_elements) {
         LOGE("makeInMemoryDexElements missing on this device (API %d)", sdk);
@@ -264,13 +264,13 @@ bool load_into_context(JNIEnv *env, jobject context, const std::vector<std::vect
         return false;
     }
 
-    jobjectArray buffers = make_buffer_array(env, dex_files);
-    jobject suppressed = new_suppressed_list(env);
+    jobjectArray buffers = MakeBufferArray(env, dex_files);
+    jobject suppressed = NewSuppressedList(env);
     jobjectArray invoke_args = env->NewObjectArray(2, env->FindClass("java/lang/Object"), nullptr);
     env->SetObjectArrayElement(invoke_args, 0, buffers);
     env->SetObjectArrayElement(invoke_args, 1, suppressed);
 
-    jobject add_elements = method_invoke(env, make_dex_elements, path_list, invoke_args);
+    jobject add_elements = MethodInvoke(env, make_dex_elements, path_list, invoke_args);
     if (!add_elements || env->ExceptionCheck()) {
         if (env->ExceptionCheck()) {
             env->ExceptionDescribe();
@@ -281,8 +281,8 @@ bool load_into_context(JNIEnv *env, jobject context, const std::vector<std::vect
         return false;
     }
 
-    auto *old_arr = reinterpret_cast<jobjectArray>(dex_elements);
-    auto *add_arr = reinterpret_cast<jobjectArray>(add_elements);
+    auto *old_arr = (jobjectArray)dex_elements;
+    auto *add_arr = (jobjectArray)add_elements;
     const jsize old_len = env->GetArrayLength(old_arr);
     const jsize add_len = env->GetArrayLength(add_arr);
 
@@ -303,7 +303,7 @@ bool load_into_context(JNIEnv *env, jobject context, const std::vector<std::vect
         env->DeleteLocalRef(class_loader);
         return false;
     }
-    auto *new_elements = reinterpret_cast<jobjectArray>(new_elements_obj);
+    auto *new_elements = (jobjectArray)new_elements_obj;
 
     for (jsize i = 0; i < old_len; ++i) {
         jobject item = env->GetObjectArrayElement(old_arr, i);
@@ -314,41 +314,41 @@ bool load_into_context(JNIEnv *env, jobject context, const std::vector<std::vect
         env->SetObjectArrayElement(new_elements, old_len + i, item);
     }
 
-    field_set(env, dex_elements_field, path_list, new_elements);
+    FieldSet(env, dex_elements_field, path_list, new_elements);
     env->DeleteLocalRef(class_loader);
     LOGI("injected %d dex (%d + %d elements) API %d", static_cast<int>(dex_files.size()), old_len, add_len, sdk);
     return true;
 }
 
-bool load_into_context(JNIEnv *env, jobject context, const uint8_t *dex, size_t size) {
+bool LoadIntoContext(JNIEnv *env, jobject context, const uint8_t *dex, size_t size) {
     std::vector<std::vector<uint8_t>> one;
     one.emplace_back(dex, dex + size);
-    return load_into_context(env, context, one);
+    return LoadIntoContext(env, context, one);
 }
 
-bool init(JavaVM *vm, const uint8_t *dex, size_t size) {
+bool Init(JavaVM *vm, const uint8_t *dex, size_t size) {
     if (!vm || !dex || size == 0) return false;
     static bool s_inited = false;
     if (s_inited) return true;
 
-    if (!jni::inited() && !jni::init(vm)) return false;
-    JNIEnv *env = jni::env();
+    if (!jni::Inited() && !jni::Init(vm)) return false;
+    JNIEnv *env = jni::Env();
     if (!env) return false;
 
-    const int sdk = sdk_int(env);
+    const int sdk = SdkInt(env);
     if (sdk > 0) {
         LOGI("init SDK %d (min in-memory dex API %d)", sdk, kMinSdkForInMemoryDex);
         if (sdk < kMinSdkForInMemoryDex) return false;
     }
 
-    jobject app = wait_for_application(env);
+    jobject app = WaitForApplication(env);
     if (!app) {
         LOGE("currentApplication unavailable after %d retries", kInitRetryCount);
         return false;
     }
 
-    if (!load_into_context(env, app, dex, size)) return false;
-    if (!verify_embedded_class(env)) return false;
+    if (!LoadIntoContext(env, app, dex, size)) return false;
+    if (!VerifyEmbeddedClass(env)) return false;
 
     s_inited = true;
     LOGI("init ok (%zu bytes)", size);

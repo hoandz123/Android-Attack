@@ -8,24 +8,24 @@ namespace {
 
 std::once_flag g_once;
 
-size_t vec_write(char *p, size_t sz, size_t n, void *out) {
+size_t VecWrite(char *p, size_t sz, size_t n, void *out) {
     auto *v = static_cast<std::vector<uint8_t> *>(out);
     v->insert(v->end(), reinterpret_cast<uint8_t *>(p), reinterpret_cast<uint8_t *>(p) + sz * n);
     return sz * n;
 }
 
-size_t file_write(char *p, size_t sz, size_t n, void *out) {
+size_t FileWrite(char *p, size_t sz, size_t n, void *out) {
     return fwrite(p, 1, sz * n, static_cast<FILE *>(out));
 }
 
-void setup_common(CURL *c, const std::string &url, long timeout) {
+void SetupCommon(CURL *c, const std::string &url, long timeout) {
     curl_easy_setopt(c, CURLOPT_URL, url.c_str());
     curl_easy_setopt(c, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(c, CURLOPT_TIMEOUT, timeout);
     curl_easy_setopt(c, CURLOPT_NOSIGNAL, 1L);
 }
 
-Response finish(CURL *c, CURLcode e, Response r) {
+Response Finish(CURL *c, CURLcode e, Response r) {
     if (e != CURLE_OK)
         r.error = curl_easy_strerror(e);
     else
@@ -34,7 +34,7 @@ Response finish(CURL *c, CURLcode e, Response r) {
     return r;
 }
 
-Response request(bool post, const std::string &url, const void *body, size_t body_len,
+Response Request(bool post, const std::string &url, const void *body, size_t body_len,
                  const char *ctype, long timeout) {
     std::call_once(g_once, [] { curl_global_init(CURL_GLOBAL_DEFAULT); });
     Response r;
@@ -45,8 +45,8 @@ Response request(bool post, const std::string &url, const void *body, size_t bod
     }
 
     std::vector<uint8_t> buf;
-    setup_common(c, url, timeout);
-    curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, vec_write);
+    SetupCommon(c, url, timeout);
+    curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, VecWrite);
     curl_easy_setopt(c, CURLOPT_WRITEDATA, &buf);
 
     curl_slist *hdrs = nullptr;
@@ -60,7 +60,7 @@ Response request(bool post, const std::string &url, const void *body, size_t bod
             curl_easy_setopt(c, CURLOPT_HTTPHEADER, hdrs);
         }
     }
-    r = finish(c, curl_easy_perform(c), r);
+    r = Finish(c, curl_easy_perform(c), r);
     curl_slist_free_all(hdrs);
     if (r.ok()) r.body = std::move(buf);
     return r;
@@ -68,13 +68,13 @@ Response request(bool post, const std::string &url, const void *body, size_t bod
 
 } // namespace
 
-Response get(const std::string &url, long t) { return request(false, url, nullptr, 0, nullptr, t); }
+Response Get(const std::string &url, long t) { return Request(false, url, nullptr, 0, nullptr, t); }
 
-Response post(const std::string &url, const void *body, size_t n, const char *ctype, long t) {
-    return request(true, url, body, n, ctype, t);
+Response Post(const std::string &url, const void *body, size_t n, const char *ctype, long t) {
+    return Request(true, url, body, n, ctype, t);
 }
 
-Response download(const std::string &url, const std::string &path, long t) {
+Response Download(const std::string &url, const std::string &path, long t) {
     std::call_once(g_once, [] { curl_global_init(CURL_GLOBAL_DEFAULT); });
     Response r;
     FILE *f = std::fopen(path.c_str(), "wb");
@@ -88,10 +88,10 @@ Response download(const std::string &url, const std::string &path, long t) {
         r.error = "curl init";
         return r;
     }
-    setup_common(c, url, t);
-    curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, file_write);
+    SetupCommon(c, url, t);
+    curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, FileWrite);
     curl_easy_setopt(c, CURLOPT_WRITEDATA, f);
-    r = finish(c, curl_easy_perform(c), r);
+    r = Finish(c, curl_easy_perform(c), r);
     std::fclose(f);
     return r;
 }

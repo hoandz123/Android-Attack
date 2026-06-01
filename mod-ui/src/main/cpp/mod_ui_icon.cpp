@@ -14,7 +14,7 @@
 
 namespace modui {
 
-ImTextureID menu_icon_texture(const char *path) {
+ImTextureID LoadIcon(const char *path) {
     static char cached[8192]{};
     static GLuint tex = 0;
 
@@ -33,7 +33,7 @@ ImTextureID menu_icon_texture(const char *path) {
     int w = 0, h = 0;
     unsigned char *px = nullptr;
     if (strncmp(path, "http", 4) == 0) {
-        const http::Response r = http::get(path, 20);
+        const http::Response r = http::Get(path, 20);
         px = stbi_load_from_memory(r.body.data(), (int) r.body.size(), &w, &h, nullptr, 4);
     } else {
         px = stbi_load(path, &w, &h, nullptr, 4);
@@ -52,31 +52,25 @@ ImTextureID menu_icon_texture(const char *path) {
     return (ImTextureID) (intptr_t) tex;
 }
 
-namespace {
-
-bool disk_cache_ok(const char *url, const char *save_path) {
-    const std::string meta = std::string(save_path) + ".url";
-    if (!fs::is_file(save_path) || !fs::is_file(meta)) return false;
-    fs::Result r;
-    const std::vector<uint8_t> b = fs::read_bytes(meta, &r);
-    if (!r.ok()) return false;
-    const size_t n = std::strlen(url);
-    return b.size() == n && std::memcmp(b.data(), url, n) == 0;
-}
-
-} // namespace
-
-bool menu_icon_download(const char *url, const char *save_path) {
+bool DownloadIcon(const char *url, const char *save_path) {
     if (!url || !save_path) return false;
 
-    if (!disk_cache_ok(url, save_path)) {
-        fs::mkdir_p(fs::dirname(save_path));
-        if (!http::download(url, save_path, 20).ok()) return false;
-        const std::string meta = std::string(save_path) + ".url";
-        fs::write_bytes(meta, url, std::strlen(url));
+    const std::string meta = std::string(save_path) + ".url";
+    bool cache_ok = fs::IsFile(save_path) && fs::IsFile(meta);
+    if (cache_ok) {
+        fs::Result r;
+        const std::vector<uint8_t> b = fs::ReadBytes(meta, &r);
+        const size_t n = std::strlen(url);
+        cache_ok = r.ok() && b.size() == n && std::memcmp(b.data(), url, n) == 0;
     }
 
-    return fs::is_file(save_path);
+    if (!cache_ok) {
+        fs::MkdirP(fs::Dirname(save_path));
+        if (!http::Download(url, save_path, 20).ok()) return false;
+        fs::WriteBytes(meta, url, std::strlen(url));
+    }
+
+    return fs::IsFile(save_path);
 }
 
 } // namespace modui

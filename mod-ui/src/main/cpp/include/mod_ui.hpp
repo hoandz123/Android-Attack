@@ -31,12 +31,12 @@ struct AppUi {
     }
 };
 
-bool init();
-void set_app_ui(const AppUi &ui);
-const AppUi &app_ui();
-void set_menu_visible(bool visible);
-bool menu_visible();
-void set_menu_expanded(bool expanded);
-bool menu_expanded();
+bool Init();
+void SetAppUi(const AppUi &ui);
+const AppUi &GetAppUi();
+void SetMenuVisible(bool visible);
+bool MenuVisible();
+void SetMenuExpanded(bool expanded);
+bool MenuExpanded();
 
 } // namespace modui
