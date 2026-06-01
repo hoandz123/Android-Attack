@@ -79,6 +79,57 @@ std::string normalizeLibFileName(const char *libName) {
     return fileName;
 }
 
+bool resolveNativeLibraryDir(JNIEnv *env, std::string &outDir) {
+    if (env == nullptr) {
+        return false;
+    }
+
+    jclass activityThreadClass = env->FindClass("android/app/ActivityThread");
+    if (activityThreadClass == nullptr) {
+        return false;
+    }
+
+    jmethodID currentApplication = env->GetStaticMethodID(activityThreadClass, "currentApplication", "()Landroid/app/Application;");
+    if (currentApplication == nullptr) {
+        return false;
+    }
+
+    jobject application = env->CallStaticObjectMethod(activityThreadClass, currentApplication);
+    if (application == nullptr) {
+        return false;
+    }
+
+    jclass applicationClass = env->GetObjectClass(application);
+    jmethodID getApplicationInfo = env->GetMethodID(applicationClass, "getApplicationInfo", "()Landroid/content/pm/ApplicationInfo;");
+    if (getApplicationInfo == nullptr) {
+        return false;
+    }
+
+    jobject applicationInfo = env->CallObjectMethod(application, getApplicationInfo);
+    if (applicationInfo == nullptr) {
+        return false;
+    }
+
+    jfieldID nativeLibraryDirField = env->GetFieldID(env->GetObjectClass(applicationInfo), "nativeLibraryDir", "Ljava/lang/String;");
+    if (nativeLibraryDirField == nullptr) {
+        return false;
+    }
+
+    auto nativeLibraryDir = reinterpret_cast<jstring>(env->GetObjectField(applicationInfo, nativeLibraryDirField));
+    if (nativeLibraryDir == nullptr) {
+        return false;
+    }
+
+    const char *dir = env->GetStringUTFChars(nativeLibraryDir, nullptr);
+    if (dir == nullptr) {
+        return false;
+    }
+
+    outDir = dir;
+    env->ReleaseStringUTFChars(nativeLibraryDir, dir);
+    return true;
+}
+
 } // namespace
 
 namespace attack::loader {
@@ -86,7 +137,25 @@ namespace attack::loader {
 bool bootstrap(JavaVM *vm, void * /*reserved*/) {
     g_vm = vm;
     LOGI("JNI_OnLoad — client entry");
-    return true;
+
+    JNIEnv *env = nullptr;
+    if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
+        LOGE("GetEnv failed");
+        return false;
+    }
+
+    return loadBuiltinPlugins(env);
+}
+
+bool loadBuiltinPlugins(JNIEnv *env) {
+    std::string nativeLibraryDir;
+    if (resolveNativeLibraryDir(env, nativeLibraryDir)) {
+        LOGI("nativeLibraryDir=%s", nativeLibraryDir.c_str());
+        return loadFromDir(env, nativeLibraryDir.c_str(), "attack");
+    }
+
+    LOGI("Application not ready, fallback dlopen by name");
+    return dlopenAbsolute(env, normalizeLibFileName("attack").c_str(), true);
 }
 
 bool loadFromDir(JNIEnv *env, const char *nativeLibraryDir, const char *libName) {

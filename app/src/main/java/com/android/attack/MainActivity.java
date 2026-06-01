@@ -9,14 +9,11 @@ public class MainActivity extends Activity {
         System.loadLibrary("loader");
     }
 
-    private static native void bootstrap(String nativeLibraryDir);
-
     private static native String stringFromNative();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        bootstrap(getApplicationInfo().nativeLibraryDir);
         setContentView(R.layout.activity_main);
         ((TextView) findViewById(R.id.sample_text)).setText(stringFromNative());
     }
