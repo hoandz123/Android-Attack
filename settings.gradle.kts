@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "AndroidAttack"
 include(":app")
+include(":loader")

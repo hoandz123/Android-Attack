@@ -4,9 +4,11 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.widget.TextView;
 
+import com.android.attack.loader.NativeLoader;
+
 public class MainActivity extends Activity {
     static {
-        System.loadLibrary("attack");
+        NativeLoader.class.getName();
     }
 
     private static native String stringFromNative();

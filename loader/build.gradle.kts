@@ -1,9 +1,9 @@
 plugins {
-    alias(libs.plugins.android.application)
+    alias(libs.plugins.android.library)
 }
 
 android {
-    namespace = "com.android.attack"
+    namespace = "com.android.attack.loader"
     enableKotlin = false
     compileSdk {
         version = release(libs.versions.compileSdk.get().toInt()) {
@@ -12,12 +12,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.android.attack"
         minSdk = libs.versions.minSdk.get().toInt()
-        targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
-        multiDexEnabled = false
+        consumerProguardFiles("consumer-rules.pro")
 
         externalNativeBuild {
             cmake {
@@ -34,16 +30,6 @@ android {
         }
     }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -57,10 +43,6 @@ android {
     }
 
     ndkVersion = libs.versions.ndk.get()
-}
-
-dependencies {
-    implementation(project(":loader"))
 }
 
 tasks.named<Delete>("clean") {
