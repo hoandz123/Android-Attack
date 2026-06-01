@@ -24,3 +24,4 @@ rootProject.name = "AndroidAttack"
 include(":app")
 include(":loader")
 include(":native-core")
+include(":mod-ui")

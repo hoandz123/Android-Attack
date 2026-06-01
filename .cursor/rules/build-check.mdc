@@ -7,4 +7,4 @@ After modifying source under `app/`:
 
 1. Build with Android Studio (Build > Make Project) or `./gradlew :app:assembleDebug`.
 2. Fix compile errors until build passes.
-3. Output is copied automatically to `out/dex` and `out/lib` after assemble.
+3. `assembleDebug` / `assembleRelease` auto-copy to `out/`. `./gradlew clean` deletes `out/`.
