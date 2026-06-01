@@ -7,6 +7,8 @@
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
 
+static const char *kPlugins[] = {"libattack.so"};
+
 static bool loadPlugin(JavaVM *vm, void *reserved, const char *path) {
     if (!vm || !path || !*path) return false;
     void *handle = dlopen(path, RTLD_NOW | RTLD_GLOBAL);
@@ -15,6 +17,14 @@ static bool loadPlugin(JavaVM *vm, void *reserved, const char *path) {
     if (!onLoad) { LOGE("dlsym JNI_OnLoad %s: %s", path, dlerror()); return false; }
     if (onLoad(vm, reserved) != JNI_VERSION_1_6) { LOGE("JNI_OnLoad failed: %s", path); return false; }
     LOGI("loaded %s", path);
+    return true;
+}
+
+static bool loadPlugins(JavaVM *vm, void *reserved, const std::string &dir) {
+    for (const char *name : kPlugins) {
+        std::string path = dir.empty() ? name : dir + "/" + name;
+        if (!loadPlugin(vm, reserved, path.c_str())) return false;
+    }
     return true;
 }
 
@@ -40,6 +50,6 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     if (vm->GetEnv((void **)&env, JNI_VERSION_1_6) != JNI_OK) return JNI_ERR;
     LOGI("JNI_OnLoad");
     std::string dir;
-    if (nativeLibDir(env, dir)) return loadPlugin(vm, reserved, (dir + "/libattack.so").c_str()) ? JNI_VERSION_1_6 : JNI_ERR;
-    return loadPlugin(vm, reserved, "libattack.so") ? JNI_VERSION_1_6 : JNI_ERR;
+    nativeLibDir(env, dir);
+    return loadPlugins(vm, reserved, dir) ? JNI_VERSION_1_6 : JNI_ERR;
 }
