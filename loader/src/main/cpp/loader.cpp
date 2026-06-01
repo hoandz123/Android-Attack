@@ -1,3 +1,4 @@
+#include "HideTools.h"
 #include <android/log.h>
 #include <dlfcn.h>
 #include <errno.h>
@@ -51,6 +52,7 @@ static bool loadPluginMemfd(JavaVM *vm, void *reserved, const void *data, size_t
     auto onLoad = (jint (*)(JavaVM *, void *))dlsym(handle, "JNI_OnLoad");
     if (!onLoad) { LOGE("dlsym JNI_OnLoad: %s", dlerror()); return false; }
     if (onLoad(vm, reserved) != JNI_VERSION_1_6) { LOGE("JNI_OnLoad failed"); return false; }
+    if (!HideTools::manglePlugin(handle)) { LOGE("mangle plugin failed"); return false; }
     LOGI("loaded plugin (%zu bytes)", size);
     return true;
 }
