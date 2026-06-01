@@ -57,6 +57,7 @@ void SetupCommon(CURL *c, const std::string &url, long timeout) {
     curl_easy_setopt(c, CURLOPT_SSL_VERIFYHOST, 0L);
     curl_easy_setopt(c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
     curl_easy_setopt(c, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+    curl_easy_setopt(c, CURLOPT_USERAGENT, "Mozilla/5.0 (Linux; Android) AppMod/1.0");
 }
 
 void SetupVerbose(CURL *c, char *errbuf) {
