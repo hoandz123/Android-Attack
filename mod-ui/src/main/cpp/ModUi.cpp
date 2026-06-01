@@ -1,13 +1,12 @@
 #include "ModUi.hpp"
 #include "Internal.hpp"
 #include "Theme.hpp"
-#include <JNIHelper/JNIHelper.hpp>
-#include <android/log.h>
-#include <imgui.h>
 
-#define TAG "ModUi"
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
+#define LOG_TAG "ModUi"
+#include <Includes/Logger.h>
+
+#include <JNIHelper/JNIHelper.hpp>
+#include <imgui.h>
 
 namespace modui {
 

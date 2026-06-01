@@ -21,6 +21,9 @@ Example:
 const char* obfuscated_string = AY_OBFUSCATE("Hello World");
 std::cout << obfuscated_string << std::endl;
 ----------------------------------------------------------------------------- */
+#ifndef AY_OBFUSCATE_H
+#define AY_OBFUSCATE_H
+
 #include <cstddef>
 #include <string>
 
@@ -222,3 +225,5 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
 CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ----------------------------------------------------------------------------- */
+
+#endif /* AY_OBFUSCATE_H */

@@ -1,6 +1,9 @@
 #include "HttpClient.hpp"
+
+#define LOG_TAG "AttackHttp"
+#include <Includes/Logger.h>
+
 #include <FileManager.hpp>
-#include <android/log.h>
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
@@ -9,12 +12,6 @@
 
 namespace http {
 namespace {
-
-constexpr const char *kTag = "AttackHttp";
-
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, kTag, __VA_ARGS__)
-#define LOGW(...) __android_log_print(ANDROID_LOG_WARN, kTag, __VA_ARGS__)
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, kTag, __VA_ARGS__)
 
 std::once_flag g_once;
 

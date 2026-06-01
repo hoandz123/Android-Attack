@@ -21,7 +21,8 @@ android {
                 arguments += listOf(
                     "-DANDROID_STL=c++_static",
                     "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON",
-                    "-DCMAKE_BUILD_TYPE=Release"
+                    "-DCMAKE_BUILD_TYPE=Release",
+                    "-DNATIVE_CORE_CPP=${rootProject.projectDir}/native-core/src/main/cpp"
                 )
             }
         }

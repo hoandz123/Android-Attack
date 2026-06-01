@@ -2,13 +2,14 @@
 #include "Internal.hpp"
 #include "Layout.hpp"
 #include "Icon.hpp"
+
+#define LOG_TAG "ModUi"
+#include <Includes/Logger.h>
+
 #include <GLES3/gl3.h>
-#include <android/log.h>
 #include <imgui.h>
 #include <imgui_impl_android.h>
 #include <imgui_impl_opengl3.h>
-
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "ModUi", __VA_ARGS__)
 
 namespace modui {
 

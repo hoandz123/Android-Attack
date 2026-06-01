@@ -1,17 +1,15 @@
 #include "DexLoader.hpp"
 
+#define LOG_TAG "DexLoader"
+#include <Includes/Logger.h>
+
 #include "JniReflect.hpp"
 #include <JNIHelper/JNIHelper.hpp>
 
-#include <android/log.h>
 #include <cstdio>
 #include <string>
 #include <string.h>
 #include <unistd.h>
-
-#define TAG "DexLoader"
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
 
 namespace dex_loader {
 

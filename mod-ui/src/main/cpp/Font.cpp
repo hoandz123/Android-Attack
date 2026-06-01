@@ -1,12 +1,11 @@
 #include "Internal.hpp"
 #include "Theme.hpp"
 
-#include <android/log.h>
+#define LOG_TAG "ModUi"
+#include <Includes/Logger.h>
+
 #include <imgui.h>
-
 #include "FontData.h"
-
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "ModUi", __VA_ARGS__)
 
 namespace modui {
 

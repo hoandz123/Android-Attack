@@ -1,10 +1,9 @@
 #include "JniReflect.hpp"
 
-#include <android/log.h>
-#include <cstring>
+#define LOG_TAG "JniReflect"
+#include <Includes/Logger.h>
 
-#define TAG "JniReflect"
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
+#include <cstring>
 
 namespace jni_reflect {
 

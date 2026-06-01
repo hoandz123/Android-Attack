@@ -1,9 +1,11 @@
 #include "Icon.hpp"
 
+#define LOG_TAG "AttackIcon"
+#include <Includes/Logger.h>
+
 #include <FileManager.hpp>
 #include <HttpClient.hpp>
 #include <GLES3/gl3.h>
-#include <android/log.h>
 #include <imgui.h>
 #include <atomic>
 #include <cstring>
@@ -20,13 +22,8 @@ namespace modui {
 
 namespace {
 
-constexpr const char *kTag = "AttackIcon";
 constexpr const char *kFabIconUrl = "https://tools-mod.com/storage/brand/logo.png";
 constexpr const char *kFabIconPath = "/data/user/0/com.android.attack/fab.png";
-
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, kTag, __VA_ARGS__)
-#define LOGW(...) __android_log_print(ANDROID_LOG_WARN, kTag, __VA_ARGS__)
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, kTag, __VA_ARGS__)
 
 std::atomic<bool> g_fab_downloading{false};
 std::atomic<bool> g_fab_file_ready{false};

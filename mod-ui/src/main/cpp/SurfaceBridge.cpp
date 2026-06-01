@@ -1,12 +1,11 @@
 #include "Internal.hpp"
 
+#define LOG_TAG "AttackSurface"
+#include <Includes/Logger.h>
+
 #include <JNIHelper/JNIHelper.hpp>
-#include <android/log.h>
 #include <android/native_window_jni.h>
 #include <jni.h>
-
-#define TAG "AttackSurface"
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
 
 static ANativeWindow *g_window = nullptr;
 

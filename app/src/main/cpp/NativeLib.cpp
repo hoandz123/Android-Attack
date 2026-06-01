@@ -1,16 +1,16 @@
-#include <android/log.h>
 #include <curl/curl.h>
 #include <jni.h>
 #include "Menu.hpp"
+
+#define LOG_TAG "AttackPlugin"
+#include <Includes/Logger.h>
+
 #include <ActivityTracker/ActivityTracker.hpp>
 #include <DexLoader/DexLoader.hpp>
 #include <JNIHelper/JNIHelper.hpp>
 #include <embedded_dex.hpp>
 #include <ModUi.hpp>
 #include <KittyMemory.h>
-
-#define TAG "AttackPlugin"
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 
 extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
     static bool s_plugin_ready = false;

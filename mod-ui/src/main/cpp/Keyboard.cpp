@@ -1,14 +1,14 @@
 #include "Internal.hpp"
 
+#define LOG_TAG "ModUiKey"
+#include <Includes/Logger.h>
+
 #include <JNIHelper/JNIHelper.hpp>
 #include <android/input.h>
-#include <android/log.h>
 #include <imgui.h>
 #include <jni.h>
 #include <string>
 #include <vector>
-
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "ModUiKey", __VA_ARGS__)
 
 namespace modui {
 
