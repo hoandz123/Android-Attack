@@ -29,7 +29,7 @@ constexpr int kActionIntervalMs = 500;
 constexpr int kRestartDelayMs = 1500;
 constexpr int kStartFishingFailDelayMs = 5000;
 
-// g_time: cooldown | g_sm: FSM | g_cast: cast/telemetry | g_fish: cá đang cắn | g_filter: skip cycle | g_early: bán sớm
+// g_time: cooldown | g_sm: FSM | g_cast: cast/telemetry | g_fish: cá đang cắn + catch item | g_filter: skip cycle
 struct Timing {
     long long lastActionMs = 0;
     long long lastCastAttemptMs = 0;
@@ -54,6 +54,7 @@ struct CastContext {
 struct ActiveFish {
     unsigned int level = 0;
     int shadowIndex = 0;
+    unsigned int catchItemId = 0;
 };
 
 struct FilterCycle {
@@ -62,17 +63,11 @@ struct FilterCycle {
     bool tableWarned = false;
 };
 
-struct EarlyCatch {
-    bool ready = false;
-    bool sell = false;
-};
-
 Timing g_time;
 StateMachine g_sm;
 CastContext g_cast;
 ActiveFish g_fish;
 FilterCycle g_filter;
-EarlyCatch g_early;
 
 // Chống spam action — cập nhật lastActionMs khi cho phép
 bool canActNow() {
@@ -91,20 +86,11 @@ void onPID_FISHING_CASTING(Object *self, Object *protocol) {
     g_cast.difficultyId = protocol->invoke_method<unsigned int>(OBF("get_FishingDifficultyID"));
 }
 
-// Hook câu trúng: tính sẵn quyết định bán rác trước khi dialog mở
+// Hook câu trúng: lưu CatchItemID cho kiểm tra bán ở dialog
 void onReceiveFishingCatch(Object *self, Object *rewardInfo) {
     old_ReceiveFishingCatch(self, rewardInfo);
     if (isGameLoading || !rewardInfo) return;
-    unsigned int itemId = rewardInfo->invoke_method<unsigned int>(OBF("get_CatchItemID"));
-    g_early.ready = false;
-    g_early.sell = false;
-    if (itemId == 0) return;
-    int grade = self ? FishingSystem::get_CatchItemGrade(self) : TableItemImpl::GetGrade(itemId);
-    if (grade <= 0) grade = TableItemImpl::GetGrade(itemId);
-    bool sellTrash = gPLConfig.fishing.autoSellTrash && grade > 0 && grade <= gPLConfig.fishing.maxSellGrade;
-    if (sellTrash && !TableItemImpl::GetIsSell(itemId)) sellTrash = false;
-    g_early.ready = true;
-    g_early.sell = sellTrash;
+    g_fish.catchItemId = rewardInfo->invoke_method<unsigned int>(OBF("get_CatchItemID"));
 }
 
 // Tick chính — gọi từ ActorControl::get_Kunit mỗi ~400ms
@@ -128,6 +114,7 @@ void Update() {
             if (state == eFishingState::None || state == eFishingState::Casting) {
                 g_fish.level = 0;
                 g_fish.shadowIndex = 0;
+                g_fish.catchItemId = 0;
             }
         }
         g_sm.last = state;
@@ -157,30 +144,39 @@ void Update() {
         }
     }
 
-    // Dialog thưởng: bán rác (ưu tiên g_early) hoặc đóng tự động
+    // Dialog thưởng: bán theo bóng/grade hoặc đóng tự động
     auto handleRewardDialog = [&]() {
         long long now = Tools::getSystemMilliseconds();
         if (g_time.lastRewardMs > 0 && now - g_time.lastRewardMs < 600) return;
         Object *dlg = nullptr;
         IL2Cpp::Il2CppGetStaticFieldValue(OBF("DialogFishingGetItem"), OBF("Self"), &dlg);
         if (!dlg) return;
+
+        bool shouldSell = false;
+        if (gPLConfig.fishing.sellByShadow && g_fish.shadowIndex >= 1 && g_fish.shadowIndex <= 7 &&
+            gPLConfig.fishing.sellShadow[g_fish.shadowIndex - 1]) {
+            shouldSell = true;
+        }
         int grade = (int) fishingSys->invoke_method<int>(OBF("get_CatchItemGrade"));
-        bool sellTrash = gPLConfig.fishing.autoSellTrash && grade > 0 && grade <= gPLConfig.fishing.maxSellGrade;
-        if (g_early.ready) sellTrash = g_early.sell;
-        if (sellTrash) {
+        if (grade <= 0 && g_fish.catchItemId > 0) grade = TableItemImpl::GetGrade(g_fish.catchItemId);
+        if (gPLConfig.fishing.sellByGrade && grade >= 1 && grade <= 5 && gPLConfig.fishing.sellGrade[grade - 1]) {
+            shouldSell = true;
+        }
+        unsigned int itemId = g_fish.catchItemId;
+        if (shouldSell && itemId > 0 && !TableItemImpl::GetIsSell(itemId)) shouldSell = false;
+
+        if (shouldSell) {
             if (!canActNow()) return;
             g_time.lastRewardMs = now;
             dlg->invoke_method<void>(OBF("OnClick_Selling"));
-            g_early.ready = false;
-            g_early.sell = false;
+            g_fish.catchItemId = 0;
             return;
         }
         if (!gPLConfig.fishing.autoCloseReward) return;
         if (!canActNow()) return;
         g_time.lastRewardMs = now;
         dlg->invoke_method<void>(OBF("OnClick_ButtonClose"));
-        g_early.ready = false;
-        g_early.sell = false;
+        g_fish.catchItemId = 0;
     };
 
     // Dialog đang mở → xử lý ngay (không chờ state Boast/Finish)
