@@ -210,7 +210,14 @@ struct PLConfig {
         } Party;
     } miniGame;
 
+    struct MapInfo {
+        std::string name;
+        int id = 0;
+    };
+
     static int GetPlayerMapID();
+    static Vector3 GetPlayerPosition();
+    static std::vector<MapInfo> GetMapInfoList();
     static void NextMapPos(int mapID, Vector3 pos);
     void Load(const std::string &content);
     std::string GetConfigContent();

@@ -14,6 +14,14 @@
 
 #include "../UI/GameViewport.h"
 
+#include "../RollCongCu.h"
+
+#include "../UI/InfoWindow.h"
+
+#include "../SDK/ActorDefaultControlPlayer.h"
+
+#include "../SDK/NetNativeProtocol.h"
+
 #include "../SDK/FrameWork.h"
 
 #include "../SDK/ActorControl.h"
@@ -138,6 +146,8 @@ void DRAW_RENDER() {
 
     AutoTreasure::DrawESP();
 
+    ShowInfoWindow();
+
 }
 
 
@@ -190,6 +200,13 @@ void init() {
 
     Tools::Hook(ActorControl::get_class()->find_method(OBF("get_Kunit"), 0)->methodPointer, (void *) ActorControl::get_Kunit, (void **) &ActorControl::old_get_Kunit);
 
+    if (NetNativeProtocol::get_class()) {
+        Tools::Hook(NetNativeProtocol::get_class()->find_method(OBF("SendToFishingCasting"), 1)->methodPointer, (void *) ActorDefaultControlPlayer::Hook_SendToFishingCasting, (void **) &ActorDefaultControlPlayer::old_SendToFishingCasting);
+    }
+    if (Class *zoneTitle = FindClass(OBF("DialogZoneTitle"))) {
+        Tools::Hook(zoneTitle->find_method(OBF("SetTitle"), 1)->methodPointer, (void *) ActorDefaultControlPlayer::Hook_DialogZoneTitle_SetTitle, (void **) &ActorDefaultControlPlayer::old_DialogZoneTitle_SetTitle);
+    }
+
     Tools::Hook(KinematicCharacterMotor::get_class()->find_method(OBF("UpdatePhase1"), 1)->methodPointer, (void *) KinematicCharacterMotor::UpdatePhase1, (void **) &KinematicCharacterMotor::old_UpdatePhase1);
 
     Tools::Hook(MapGuideArrow::get_class()->find_method(OBF("Update"), 0)->methodPointer, (void *) MapGuideArrow::Update, (void **) &MapGuideArrow::old_Update);
@@ -219,6 +236,8 @@ void init() {
     MiniGameKMGUnit::init();
 
     TableFishingDifficultyImpl::init();
+
+    ItemAffixOptionView_NS::init();
 
     DrawRender::registerTask(DRAW_RENDER);
 

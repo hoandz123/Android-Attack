@@ -10,8 +10,11 @@ set(PLAY_TOGETHER_SOURCES
     PlayTogether/PlayTogether.cpp
     PlayTogether/HOOK_PLAY/HOOK_PLAY.cpp
     PlayTogether/HOOK_PLAY/AntiCheat.cpp
+    PlayTogether/RollCongCu.cpp
     PlayTogether/Config/Config.cpp
     PlayTogether/Config/PLConfigJson.cpp
+    PlayTogether/UI/MenuUi.cpp
+    PlayTogether/UI/InfoWindow.cpp
     PlayTogether/UI/EspGUI.cpp
     PlayTogether/UI/DrawRender.cpp
     PlayTogether/UI/GameViewport.cpp
