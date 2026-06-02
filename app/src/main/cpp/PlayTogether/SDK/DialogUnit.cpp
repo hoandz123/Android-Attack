@@ -74,11 +74,11 @@ namespace DialogUnit {
 
                 LOGI("FishingGetItem: name=%s, grade=%d, ItemType=%d, ItemId=%d, NameId=%d", name.c_str(), grade, ItemType, ItemId, NameId);
 
-                if (gPLConfig.general.isBaoQuan) {
+                if (gPLConfig.fishing.isBaoQuan) {
                     thiz->invoke_method<void>("OnClick_ButtonClose");
-                } else if (gPLConfig.general.isBanGoi) {
-                    if (gPLConfig.general.isDuB67 && PLConfig::FishingConfig::curFishShadowLevel > 5) {
-                    } else if (gPLConfig.general.isDuNenVip && grade > 3) {
+                } else if (gPLConfig.fishing.isBanGoi) {
+                    if (gPLConfig.fishing.isDuB67 && PLConfig::FishingConfig::curFishShadowLevel > 5) {
+                    } else if (gPLConfig.fishing.isDuNenVip && grade > 3) {
                     } else if (thiz->invoke_method<bool>("CheckItemTypeForMembershipPopup", ItemType)) {
                         static bool isModified = false;
                         if (!isModified) {
@@ -93,6 +93,7 @@ namespace DialogUnit {
                 }
 
                 if (ItemType == Item_Type::Fish) {
+                    PLConfig::FishingConfig::totalCaught++;
                     PLConfig::FishingConfig::gFishLogger.markSuccess((int) ItemType, ItemId, NameId, name);
                 }
 
@@ -110,13 +111,6 @@ namespace DialogUnit {
 //                thiz->invoke_method<void>("OnClick_ButtonRevealItem");
 //                break;
 //            }
-            case eDialogType::ResultGetItemList: {
-                if (gPLConfig.general.isMoHopQua) {
-                    thiz->invoke_method<void>("OnClick_ButtonOk");
-                }
-                break;
-            }
-
             case eDialogType::WebView: {
                 thiz->invoke_method<void>("CloseHelpWindow");
                 break;

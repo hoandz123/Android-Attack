@@ -17,24 +17,13 @@ set(PLAY_TOGETHER_SOURCES
     PlayTogether/UI/InfoWindow.cpp
     PlayTogether/KhoiPhucTrangThai.cpp
     PlayTogether/FishLogger.cpp
-    PlayTogether/Stubs/AutoCollect.cpp
-    PlayTogether/Stubs/AutoInsect.cpp
-    PlayTogether/Stubs/AutoMonster.cpp
-    PlayTogether/Stubs/AutoFarm.cpp
-    PlayTogether/Stubs/AutoTreasure.cpp
     PlayTogether/SDK/FrameWork.cpp
     PlayTogether/SDK/SystemHelper.cpp
     PlayTogether/SDK/CacheSystem.cpp
     PlayTogether/SDK/CacheUser.cpp
     PlayTogether/SDK/ActorControl.cpp
     PlayTogether/SDK/KinematicCharacterMotor.cpp
-    PlayTogether/SDK/MissionSystem.cpp
-    PlayTogether/SDK/MailSystem.cpp
-    PlayTogether/SDK/AutoCatchSystem.cpp
     PlayTogether/SDK/LayerSystem.cpp
-    PlayTogether/SDK/DialogResultGetItemView.cpp
-    PlayTogether/SDK/InsectSystem.cpp
-    PlayTogether/SDK/CollectSystem.cpp
     PlayTogether/SDK/FishingSystem.cpp
     PlayTogether/SDK/ActorDefaultControlPlayer.cpp
     PlayTogether/SDK/TableSystem.cpp
@@ -42,13 +31,6 @@ set(PLAY_TOGETHER_SOURCES
     PlayTogether/SDK/NetWebProtocol.cpp
     PlayTogether/SDK/TableItemImpl.cpp
     PlayTogether/SDK/TableFishingDifficultyImpl.cpp
-    PlayTogether/SDK/FarmSystem.cpp
-    PlayTogether/SDK/FarmLandProbe.cpp
-    PlayTogether/SDK/FarmLandHooks.cpp
-    PlayTogether/SDK/MiniGameTowerOfHell.cpp
-    PlayTogether/SDK/MiniGameObby.cpp
-    PlayTogether/SDK/EventPickUpItemManager.cpp
-    PlayTogether/SDK/MiniGameKMGUnit.cpp
     PlayTogether/SDK/JsonConvert.cpp
     PlayTogether/SDK/NguiExtensions.cpp
     PlayTogether/SDK/UILabel.cpp
@@ -59,11 +41,7 @@ set(PLAY_TOGETHER_SOURCES
     PlayTogether/SDK/EquipmentSystem.cpp
     PlayTogether/SDK/MapGuideArrow.cpp
     PlayTogether/SDK/HeadUpSelectButton.cpp
-    PlayTogether/SDK/ActorCatchUpPlayer.cpp
-    PlayTogether/SDK/ActorCatchUpOther.cpp
-    PlayTogether/SDK/DialogShopInGame.cpp
-    PlayTogether/SDK/Treasure.cpp
-    PlayTogether/SDK/ActorTreasureHuntPlayer.cpp)
+    PlayTogether/SDK/DialogShopInGame.cpp)
 
 add_library(attack SHARED
     NativeLib.cpp Menu.cpp Games.cpp

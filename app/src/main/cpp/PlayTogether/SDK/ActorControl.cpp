@@ -7,17 +7,10 @@
 #include "Config/Config.h"
 #include "SystemHelper.h"
 #include "enum/eNickNameHeadUpTag.h"
-#include "MissionSystem.h"
 #include "KhoiPhucTrangThai.h"
 #include "LayerSystem.h"
-#include "DialogResultGetItemView.h"
-#include "InsectSystem.h"
-#include "CollectSystem.h"
 #include "FishingSystem.h"
 #include "ActorDefaultControlPlayer.h"
-#include "FarmSystem.h"
-#include "MailSystem.h"
-#include "AutoCatchSystem.h"
 #include <Tools/Tools.h>
 #include <Includes/obfuscate.h>
 #define LOG_TAG OBF("ATTACK_PlayTogether")
@@ -33,7 +26,6 @@ namespace ActorControl {
         if (cacheMapId != CacheUser::myCurrentMapID()) {
             cacheMapId = CacheUser::myCurrentMapID();
             PLConfig::npcMap.clear();
-            LOGI(OBF("GetListNPC - Map changed, clear npcMap and reset timer"));
             return;
         }
         if (!PLConfig::npcMap.empty()) return;
@@ -112,17 +104,11 @@ namespace ActorControl {
                     }
                     isFistLoading = false;
                     isGameLoading = false;
-                    MissionSystem::Update();
-                    MailSystem::Update();
                     KhoiPhucTrangThai::Update();
                     LayerSystem::Update();
-                    DialogResultGetItemView::Update();
-                    InsectSystem::Update();
-                    CollectSystem::Update();
                     FishingSystem::Update();
                     ActorDefaultControlPlayer::Update();
-                    FarmSystem::Update();
-                    AutoCatchSystem::Update();
+                    FishingSystem::UpdateEsp();
                     GetListNPC();
                 }
             }

@@ -1,7 +1,6 @@
 #include "HOOK_PLAY.h"
 #include "AntiCheat.h"
 #include "../Config/Config.h"
-#include "../Stubs/AutoTreasure.h"
 #include "../Stubs/ESPManager.h"
 #include <DrawRender.hpp>
 #include <GameUI/EspGUI.h>
@@ -18,17 +17,9 @@
 #include "../SDK/EquipmentSystem.h"
 #include "../SDK/MapGuideArrow.h"
 #include "../SDK/HeadUpSelectButton.h"
-#include "../SDK/ActorCatchUpPlayer.h"
-#include "../SDK/ActorCatchUpOther.h"
 #include "../SDK/DialogShopInGame.h"
-#include "../SDK/Treasure.h"
-#include "../SDK/ActorTreasureHuntPlayer.h"
-#include "../SDK/FarmLandHooks.h"
-#include "../SDK/MiniGameTowerOfHell.h"
-#include "../SDK/MiniGameObby.h"
-#include "../SDK/EventPickUpItemManager.h"
-#include "../SDK/MiniGameKMGUnit.h"
 #include "../SDK/TableFishingDifficultyImpl.h"
+#include "../SDK/FishingSystem.h"
 #include <API/Il2CppApi.h>
 #include <API/Vector2.h>
 #include <Includes/obfuscate.h>
@@ -68,21 +59,7 @@ void DRAW_RENDER() {
             }
         }
     }
-    int currentCount = (int) espEntries.size();
-    if (currentCount > 0) {
-        ImDrawList *draw = ImGui::GetBackgroundDrawList();
-        ImVec2 center(ImGui::GetIO().DisplaySize.x / 2.f, 15.f);
-        char buf[16];
-        snprintf(buf, sizeof(buf), "%d", currentCount);
-        const float font_size = ImGui::GetFontSize();
-        ImVec2 text_size = ImGui::CalcTextSize(buf);
-        float baseline_offset = (font_size - text_size.y) * 0.5f;
-        float radius = (text_size.x > text_size.y ? text_size.x : text_size.y) * 0.5f + 2.f;
-        draw->AddCircleFilled(center, radius, IM_COL32(25, 25, 25, 180));
-        ImVec2 text_pos(center.x - text_size.x * 0.5f, center.y - text_size.y * 0.5f + baseline_offset);
-        draw->AddText(text_pos, IM_COL32(255, 255, 255, 255), buf);
-    }
-    AutoTreasure::DrawESP();
+    FishingSystem::DrawOverlay();
     ShowInfoWindow();
 }
 
@@ -106,8 +83,6 @@ void init() {
                     LOGI(OBF("AntiCheatListener disabled"));
                     break;
                 }
-            } else {
-                LOGE(OBF("FrameWork::get_Instance() not found"));
             }
         }
     }).detach();
@@ -125,16 +100,7 @@ void init() {
     Tools::Hook(MapGuideArrow::get_class()->find_method(OBF("Update"), 0)->methodPointer, (void *) MapGuideArrow::Update, (void **) &MapGuideArrow::old_Update);
     Tools::Hook(HeadUpSelectButton::get_class()->find_method(OBF("SetSprite"), 1)->methodPointer, (void *) HeadUpSelectButton::SetSprite, (void **) &HeadUpSelectButton::old_SetSprite);
     Tools::Hook(HeadUpSelectButton::get_class()->find_method(OBF("UpdatePosition"), 0)->methodPointer, (void *) HeadUpSelectButton::UpdatePosition, (void **) &HeadUpSelectButton::old_UpdatePosition);
-    Tools::Hook(ActorCatchUpPlayer::get_class()->find_method(OBF("OnUpdate"), 0)->methodPointer, (void *) ActorCatchUpPlayer::OnUpdate, (void **) &ActorCatchUpPlayer::old_OnUpdate);
-    Tools::Hook(ActorCatchUpOther::get_class()->find_method(OBF("OnUpdate"), 0)->methodPointer, (void *) ActorCatchUpOther::OnUpdate, (void **) &ActorCatchUpOther::old_OnUpdate);
     Tools::Hook(DialogShopInGame::get_class()->find_method(OBF("Update"), 0)->methodPointer, (void *) DialogShopInGame::Update, (void **) &DialogShopInGame::old_Update);
-    Tools::Hook(Treasure::get_class()->find_method(OBF("Update"), 0)->methodPointer, (void *) Treasure::Update, (void **) &Treasure::old_Update);
-    Tools::Hook(ActorTreasureHuntPlayer::get_class()->find_method(OBF("OnUpdate"), 0)->methodPointer, (void *) ActorTreasureHuntPlayer::OnUpdate, (void **) &ActorTreasureHuntPlayer::old_OnUpdate);
-    FarmLandHooks::Init();
-    MiniGameTowerOfHell::init();
-    MiniGameObby::init();
-    EventPickUpItemManager::init();
-    MiniGameKMGUnit::init();
     TableFishingDifficultyImpl::init();
     ItemAffixOptionView_NS::init();
     DrawRender::registerTask(DRAW_RENDER);

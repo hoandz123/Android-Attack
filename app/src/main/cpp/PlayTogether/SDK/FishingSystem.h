@@ -7,11 +7,10 @@
 namespace FishingSystem {
     extern int MagicWaterLeft;
     Class *get_class();
-
     Object *get_Instance();
-
     void Update();
-
+    void UpdateEsp();
+    void DrawOverlay();
     int GetActiveBuffCount(int itemID);
 }
 

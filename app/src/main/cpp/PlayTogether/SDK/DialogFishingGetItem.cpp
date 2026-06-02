@@ -8,7 +8,7 @@ namespace DialogFishingGetItem {
     }
     void (*old_OnItemSell)(Object *thiz, bool success);
     void OnItemSell(Object *thiz, bool success) {
-        if (gPLConfig.general.isBanGoi) {
+        if (gPLConfig.fishing.isBanGoi) {
             return;
         }
         old_OnItemSell(thiz, success);

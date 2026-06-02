@@ -20,9 +20,14 @@ void ShowInfoWindow() {
         snprintf(uptime, sizeof(uptime), OBF("%02lld:%02lld:%02lld"), hours, minutes, seconds);
         ImGui::Text("%s %s", OBF("Uptime:"), uptime);
         ImGui::Separator();
+        ImGui::Text("%s %s", OBF("TT:"), PLConfig::FishingConfig::curStateName.c_str());
         ImGui::Text("%s %d", OBF("Cấp cá:"), PLConfig::FishingConfig::curFishLevel);
         ImGui::Text("%s %d", OBF("Bóng:"), PLConfig::FishingConfig::curFishShadowLevel);
         ImGui::Text("%s %d", OBF("Vùng:"), PLConfig::FishingConfig::curFishZone);
+        ImGui::Text("%s %d / %d / %d", OBF("Câu/Bỏ/Hụt:"),
+            PLConfig::FishingConfig::totalCaught,
+            PLConfig::FishingConfig::totalSkipped,
+            PLConfig::FishingConfig::totalFailed);
         if (gPLConfig.fishing.magicWater.isEnable && FishingSystem::MagicWaterLeft >= 0) {
             ImGui::Text("%s %d", OBF("Buff:"), FishingSystem::MagicWaterLeft);
         }
