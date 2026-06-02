@@ -5,4 +5,5 @@
 namespace FrameWork {
     Class *get_class();
     Object *get_Instance();
+    void SystemRestart();
 }

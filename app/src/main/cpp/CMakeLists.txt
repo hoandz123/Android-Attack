@@ -6,18 +6,58 @@ find_package(mod-ui REQUIRED CONFIG)
 
 include(${NATIVE_CORE_CPP}/cmake/PrefabStatic.cmake)
 
-add_library(attack SHARED
-    NativeLib.cpp Menu.cpp Games.cpp
-    LienQuan/LienQuan.cpp
+set(PLAY_TOGETHER_SOURCES
     PlayTogether/PlayTogether.cpp
     PlayTogether/HOOK_PLAY/HOOK_PLAY.cpp
     PlayTogether/HOOK_PLAY/AntiCheat.cpp
+    PlayTogether/Config/Config.cpp
+    PlayTogether/SharedPrefs/SharedPrefs.cpp
+    PlayTogether/base64/base64.cpp
+    PlayTogether/KhoiPhucTrangThai.cpp
+    PlayTogether/FishLogger.cpp
+    PlayTogether/Stubs/AutoCollect.cpp
+    PlayTogether/Stubs/AutoInsect.cpp
+    PlayTogether/Stubs/AutoMonster.cpp
+    PlayTogether/Stubs/AutoFarm.cpp
+    PlayTogether/Stubs/AutoTreasure.cpp
     PlayTogether/SDK/FrameWork.cpp
     PlayTogether/SDK/SystemHelper.cpp
     PlayTogether/SDK/CacheSystem.cpp
     PlayTogether/SDK/CacheUser.cpp
     PlayTogether/SDK/ActorControl.cpp
-    PlayTogether/SDK/KinematicCharacterMotor.cpp)
+    PlayTogether/SDK/KinematicCharacterMotor.cpp
+    PlayTogether/SDK/MissionSystem.cpp
+    PlayTogether/SDK/LayerSystem.cpp
+    PlayTogether/SDK/DialogResultGetItemView.cpp
+    PlayTogether/SDK/InsectSystem.cpp
+    PlayTogether/SDK/CollectSystem.cpp
+    PlayTogether/SDK/FishingSystem.cpp
+    PlayTogether/SDK/ActorDefaultControlPlayer.cpp
+    PlayTogether/SDK/TableSystem.cpp
+    PlayTogether/SDK/NetNativeProtocol.cpp
+    PlayTogether/SDK/NetWebProtocol.cpp
+    PlayTogether/SDK/TableItemImpl.cpp
+    PlayTogether/SDK/TableFishingDifficultyImpl.cpp
+    PlayTogether/SDK/JsonConvert.cpp
+    PlayTogether/SDK/NguiExtensions.cpp
+    PlayTogether/SDK/UILabel.cpp
+    PlayTogether/SDK/DialogJoyStick.cpp
+    PlayTogether/SDK/DialogActionButtons.cpp
+    PlayTogether/SDK/DialogUnit.cpp
+    PlayTogether/SDK/DialogFishingGetItem.cpp
+    PlayTogether/SDK/EquipmentSystem.cpp
+    PlayTogether/SDK/MapGuideArrow.cpp
+    PlayTogether/SDK/HeadUpSelectButton.cpp
+    PlayTogether/SDK/ActorCatchUpPlayer.cpp
+    PlayTogether/SDK/ActorCatchUpOther.cpp
+    PlayTogether/SDK/DialogShopInGame.cpp
+    PlayTogether/SDK/Treasure.cpp
+    PlayTogether/SDK/ActorTreasureHuntPlayer.cpp)
+
+add_library(attack SHARED
+    NativeLib.cpp Menu.cpp Games.cpp
+    LienQuan/LienQuan.cpp
+    ${PLAY_TOGETHER_SOURCES})
 if(EMBEDDED_DEX_DIR)
     target_include_directories(attack PRIVATE "${EMBEDDED_DEX_DIR}")
     set(_embed_hpp "${EMBEDDED_DEX_DIR}/embedded_dex.hpp")
@@ -38,11 +78,14 @@ find_library(GLESv3-lib GLESv3)
 target_include_directories(attack PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether
+    ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether/Config
+    ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether/Stubs
     ${NATIVE_CORE_CPP}
     ${NATIVE_CORE_CPP}/Includes
     ${NATIVE_CORE_CPP}/Tools
     ${NATIVE_CORE_CPP}/API
     ${NATIVE_CORE_CPP}/API/game
+    ${NATIVE_CORE_CPP}/FileManager
     ${NATIVE_CORE_CPP}/json
     ${NATIVE_CORE_CPP}/imgui
     ${NATIVE_CORE_CPP}/imgui/backends)

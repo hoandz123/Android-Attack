@@ -3,26 +3,73 @@
 //
 
 #include "ActorControl.h"
+#include "CacheUser.h"
+#include "Config/Config.h"
 #include "SystemHelper.h"
+#include "enum/eNickNameHeadUpTag.h"
+#include "MissionSystem.h"
+#include "KhoiPhucTrangThai.h"
+#include "LayerSystem.h"
+#include "DialogResultGetItemView.h"
+#include "InsectSystem.h"
+#include "CollectSystem.h"
+#include "FishingSystem.h"
+#include "ActorDefaultControlPlayer.h"
 #include <Tools/Tools.h>
+#include <Includes/obfuscate.h>
+#define LOG_TAG OBF("AttackPlugin")
+#include <Includes/Logger.h>
 
-bool isGameLoading = false;
-
-namespace ActorControl { //Nhân vật
+namespace ActorControl {
     Class *get_class() {
         return FindClass("ActorControl");
+    }
+
+    void GetListNPC() {
+        volatile static int cacheMapId = 0;
+        if (cacheMapId != CacheUser::myCurrentMapID()) {
+            cacheMapId = CacheUser::myCurrentMapID();
+            PLConfig::npcMap.clear();
+            LOGI(OBF("GetListNPC - Map changed, clear npcMap and reset timer"));
+            return;
+        }
+        if (!PLConfig::npcMap.empty()) return;
+        Object *hubSystem = SystemHelper::get_Hud();
+        if (!hubSystem) {
+            PLConfig::npcMap.clear();
+            return;
+        }
+        List<Object *> *_npcHeadUp3DNicknames = hubSystem->get_field_object<List<Object *> *>("_npcHeadUp3DNicknames");
+        if (!_npcHeadUp3DNicknames || _npcHeadUp3DNicknames->get_Count() < 1) {
+            PLConfig::npcMap.clear();
+            return;
+        }
+        for (int i = 0; i < _npcHeadUp3DNicknames->get_Count(); i++) {
+            Object *headUp = _npcHeadUp3DNicknames->get_item(i);
+            if (headUp->get_field_value<eNickNameHeadUpTag>("_nickNameTag") != eNickNameHeadUpTag::NPC) continue;
+            Object *nickName = headUp->get_field_object<Object *>("nickName");
+            Object *cacheTransform = headUp->get_field_object<Object *>("cacheTransform");
+            if (!nickName || !cacheTransform) continue;
+            String *name = nickName->get_field_object<String *>("m_Text");
+            if (!name) continue;
+            long uid = headUp->get_field_value<long>("_uid");
+            PLConfig::NPCData npcData;
+            npcData.instance = headUp;
+            npcData.pos = cacheTransform->invoke_method<Vector3>("get_position");
+            npcData.name = name->to_string();
+            npcData.uid = uid;
+            PLConfig::npcMap[headUp] = npcData;
+        }
     }
 
     Object *my_Unit = nullptr;
     Object *my_Motor = nullptr;
     Object *my_Player = nullptr;
-
     Object *(*old_get_Kunit)(Object *instance);
 
     Object *get_Kunit(Object *instance) {
         static bool inProgress = false;
         if (inProgress) {
-            // Ngăn recursion
             inProgress = false;
             return old_get_Kunit(instance);
         }
@@ -33,14 +80,12 @@ namespace ActorControl { //Nhân vật
                 my_Motor = kunit->get_field_object<Object *>("Motor");
                 if (my_Motor) {
                     my_Unit = kunit;
-                    my_Player = kunit->get_field_object<Object*>("actorDefaultControlPlayer");
-
+                    my_Player = kunit->get_field_object<Object *>("actorDefaultControlPlayer");
                     static long long timeLimit = 0;
                     if (timeLimit > 0 && Tools::getSystemMilliseconds() - timeLimit < 30) {
                         return kunit;
                     }
                     timeLimit = Tools::getSystemMilliseconds();
-
                     Object *dialog = SystemHelper::get_Dialog();
                     if (!dialog) {
                         isGameLoading = true;
@@ -51,7 +96,6 @@ namespace ActorControl { //Nhân vật
                         isGameLoading = true;
                         return kunit;
                     }
-
                     static long long choQuaMap = 0;
                     if (loading->invoke_method<bool>("GetIsLoading")) {
                         choQuaMap = Tools::getSystemMilliseconds();
@@ -65,11 +109,16 @@ namespace ActorControl { //Nhân vật
                     }
                     isFistLoading = false;
                     isGameLoading = false;
-                    // TODO G3: MissionSystem::Update / KhoiPhucTrangThai::Update / LayerSystem::Update
-                    // TODO G3: DialogResultGetItemView::Update / InsectSystem::Update / CollectSystem::Update / FishingSystem::Update
-                    // TODO G3: ActorDefaultControlPlayer::Update
-                    // TODO G4: FarmSystem::Update
-                    // TODO G3: GetListNPC() — cần PLConfig::npcMap + eNickNameHeadUpTag (Config)
+                    MissionSystem::Update();
+                    KhoiPhucTrangThai::Update();
+                    LayerSystem::Update();
+                    DialogResultGetItemView::Update();
+                    InsectSystem::Update();
+                    CollectSystem::Update();
+                    FishingSystem::Update();
+                    ActorDefaultControlPlayer::Update();
+                    // TODO G4: FarmSystem::Update()
+                    GetListNPC();
                 }
             }
         }
