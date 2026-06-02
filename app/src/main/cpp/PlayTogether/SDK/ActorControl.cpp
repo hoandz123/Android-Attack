@@ -16,6 +16,8 @@
 #include "FishingSystem.h"
 #include "ActorDefaultControlPlayer.h"
 #include "FarmSystem.h"
+#include "MailSystem.h"
+#include "AutoCatchSystem.h"
 #include <Tools/Tools.h>
 #include <Includes/obfuscate.h>
 #define LOG_TAG OBF("ATTACK_PlayTogether")
@@ -111,6 +113,7 @@ namespace ActorControl {
                     isFistLoading = false;
                     isGameLoading = false;
                     MissionSystem::Update();
+                    MailSystem::Update();
                     KhoiPhucTrangThai::Update();
                     LayerSystem::Update();
                     DialogResultGetItemView::Update();
@@ -119,6 +122,7 @@ namespace ActorControl {
                     FishingSystem::Update();
                     ActorDefaultControlPlayer::Update();
                     FarmSystem::Update();
+                    AutoCatchSystem::Update();
                     GetListNPC();
                 }
             }

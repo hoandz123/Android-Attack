@@ -13,4 +13,9 @@ namespace CacheSystem {
         if (!instance) return nullptr;
         return instance->invoke_method<Object *>("get_CacheUser");
     }
+    Object *get_CachePost() {
+        Object *instance = get_Instance();
+        if (!instance) return nullptr;
+        return instance->invoke_method<Object *>("get_CachePost");
+    }
 }

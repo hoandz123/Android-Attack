@@ -42,9 +42,25 @@ struct PLConfig {
         bool isTangTocGame = false;
         bool isResetTrangThai = false;
         bool isNhanThanhTich = false;
+        bool isNhanNhiemVuNgay = false;
+        bool isNhanTemNgay = false;
+        bool isNhanThu = false;
         int chaynhanh = 0;
         int nhaycao = 0;
     } general;
+
+    struct AutoCatchConfig {
+        bool isAuto = false;
+        bool isRetrieve = true;
+        bool isCheck = true;
+        bool isInstall = false;
+        uint32_t mainItemId = 0;
+        uint32_t subItemId = 0;
+        int catchType = 1;
+        struct ESP {
+            bool isEnable = false;
+        } esp;
+    } autoCatch;
 
     struct FishingConfig {
         inline static int curFishLevel = 0;

@@ -52,6 +52,9 @@ void to_json(nlohmann::json& j, const PLConfig::GeneralConfig& cfg) {
         {"isTangTocGame", cfg.isTangTocGame},
         {"isResetTrangThai", cfg.isResetTrangThai},
         {"isNhanThanhTich", cfg.isNhanThanhTich},
+        {"isNhanNhiemVuNgay", cfg.isNhanNhiemVuNgay},
+        {"isNhanTemNgay", cfg.isNhanTemNgay},
+        {"isNhanThu", cfg.isNhanThu},
         {"chaynhanh", cfg.chaynhanh},
         {"nhaycao", cfg.nhaycao}
     };
@@ -73,8 +76,43 @@ void from_json(const nlohmann::json& j, PLConfig::GeneralConfig& cfg) {
     if (j.contains("isTangTocGame")) j["isTangTocGame"].get_to(cfg.isTangTocGame);
     if (j.contains("isResetTrangThai")) j["isResetTrangThai"].get_to(cfg.isResetTrangThai);
     if (j.contains("isNhanThanhTich")) j["isNhanThanhTich"].get_to(cfg.isNhanThanhTich);
+    if (j.contains("isNhanNhiemVuNgay")) j["isNhanNhiemVuNgay"].get_to(cfg.isNhanNhiemVuNgay);
+    if (j.contains("isNhanTemNgay")) j["isNhanTemNgay"].get_to(cfg.isNhanTemNgay);
+    if (j.contains("isNhanThu")) j["isNhanThu"].get_to(cfg.isNhanThu);
     if (j.contains("chaynhanh")) j["chaynhanh"].get_to(cfg.chaynhanh);
     if (j.contains("nhaycao")) j["nhaycao"].get_to(cfg.nhaycao);
+}
+
+void to_json(nlohmann::json& j, const PLConfig::AutoCatchConfig::ESP& esp) {
+    j = nlohmann::json{{"isEnable", esp.isEnable}};
+}
+
+void from_json(const nlohmann::json& j, PLConfig::AutoCatchConfig::ESP& esp) {
+    if (j.contains("isEnable")) j["isEnable"].get_to(esp.isEnable);
+}
+
+void to_json(nlohmann::json& j, const PLConfig::AutoCatchConfig& cfg) {
+    j = nlohmann::json{
+        {"isAuto", cfg.isAuto},
+        {"isRetrieve", cfg.isRetrieve},
+        {"isCheck", cfg.isCheck},
+        {"isInstall", cfg.isInstall},
+        {"mainItemId", cfg.mainItemId},
+        {"subItemId", cfg.subItemId},
+        {"catchType", cfg.catchType},
+        {"esp", cfg.esp}
+    };
+}
+
+void from_json(const nlohmann::json& j, PLConfig::AutoCatchConfig& cfg) {
+    if (j.contains("isAuto")) j["isAuto"].get_to(cfg.isAuto);
+    if (j.contains("isRetrieve")) j["isRetrieve"].get_to(cfg.isRetrieve);
+    if (j.contains("isCheck")) j["isCheck"].get_to(cfg.isCheck);
+    if (j.contains("isInstall")) j["isInstall"].get_to(cfg.isInstall);
+    if (j.contains("mainItemId")) j["mainItemId"].get_to(cfg.mainItemId);
+    if (j.contains("subItemId")) j["subItemId"].get_to(cfg.subItemId);
+    if (j.contains("catchType")) j["catchType"].get_to(cfg.catchType);
+    if (j.contains("esp")) j["esp"].get_to(cfg.esp);
 }
 
 void to_json(nlohmann::json& j, const PLConfig::FishingConfig::MagicWater& mw) {
@@ -487,6 +525,7 @@ void to_json(nlohmann::json& j, const PLConfig& cfg) {
         {"monster", cfg.monster},
         {"farm", cfg.farm},
         {"insect", cfg.insect},
+        {"autoCatch", cfg.autoCatch},
         {"miniGame", cfg.miniGame}
     };
 }
@@ -499,6 +538,7 @@ void from_json(const nlohmann::json& j, PLConfig& cfg) {
     if (j.contains("monster")) j["monster"].get_to(cfg.monster);
     if (j.contains("farm")) j["farm"].get_to(cfg.farm);
     if (j.contains("insect")) j["insect"].get_to(cfg.insect);
+    if (j.contains("autoCatch")) j["autoCatch"].get_to(cfg.autoCatch);
     if (j.contains("miniGame")) j["miniGame"].get_to(cfg.miniGame);
 }
 

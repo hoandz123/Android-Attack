@@ -7,6 +7,7 @@ namespace CacheSystem {
     Class *get_class();
     Object *get_Instance();
     Object *get_CacheUser();
+    Object *get_CachePost();
 }
 
 #endif // SDK_CACHESYSTEM_H

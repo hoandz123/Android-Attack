@@ -50,6 +50,21 @@ namespace MissionSystem {
             LOGI("AchievementId: %d, Step: %d", AchievementId, Step);
             NetNativeProtocol::SendToAchievementReward(AchievementId, Step);
         }
+
+        if (gPLConfig.general.isNhanNhiemVuNgay && instance->invoke_method<bool>("get_HasDailyMissionReward")) {
+            Object *dailyMission = instance->invoke_method<Object *>("get_FirstCompleteDailyMission");
+            if (dailyMission) {
+                uint32_t missionId = dailyMission->invoke_method<uint32_t>("get_DailyMissionId");
+                LOGI("DailyMission reward missionId=%u", missionId);
+                NetNativeProtocol::SendToMissionReward(missionId);
+            }
+        }
+
+        if (gPLConfig.general.isNhanTemNgay && instance->invoke_method<bool>("get_HasDailyStampReward")) {
+            LOGI("RequestDailyStamp");
+            bool ad = false;
+            instance->invoke_method<void>("RequestDailyStamp", ad);
+        }
     }
 
 }

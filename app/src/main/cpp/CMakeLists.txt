@@ -29,6 +29,8 @@ set(PLAY_TOGETHER_SOURCES
     PlayTogether/SDK/ActorControl.cpp
     PlayTogether/SDK/KinematicCharacterMotor.cpp
     PlayTogether/SDK/MissionSystem.cpp
+    PlayTogether/SDK/MailSystem.cpp
+    PlayTogether/SDK/AutoCatchSystem.cpp
     PlayTogether/SDK/LayerSystem.cpp
     PlayTogether/SDK/DialogResultGetItemView.cpp
     PlayTogether/SDK/InsectSystem.cpp

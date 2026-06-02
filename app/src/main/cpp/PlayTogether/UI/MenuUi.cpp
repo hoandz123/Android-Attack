@@ -145,6 +145,12 @@ static void DrawTabChung() {
     UiCheckbox(OBF("Khôi phục TT"), &gPLConfig.general.isResetTrangThai);
     ImGui::Separator();
     UiCheckbox(OBF("Nhận thành tích"), &gPLConfig.general.isNhanThanhTich);
+    ImGui::Separator();
+    UiCheckbox(OBF("Nhiệm vụ ngày"), &gPLConfig.general.isNhanNhiemVuNgay);
+    ImGui::Separator();
+    UiCheckbox(OBF("Tem ngày"), &gPLConfig.general.isNhanTemNgay);
+    ImGui::Separator();
+    UiCheckbox(OBF("Nhận thư"), &gPLConfig.general.isNhanThu);
     ImGui::EndChild();
 }
 
@@ -525,6 +531,29 @@ static void DrawTabEvent() {
                 UiCheckbox(OBF("Loại##esp_farm"), &esp.isShowType);
                 UiCheckbox(OBF("Nút tele##esp_farm"), &esp.isTeleportButton);
             }
+            ImGui::EndChild();
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem(OBF("Lưới AFK"))) {
+            auto &ac = gPLConfig.autoCatch;
+            ImVec2 avail = ImGui::GetContentRegionAvail();
+            ImGui::BeginChild(OBF("AutoCatchL"), ImVec2(avail.x * 0.5f, avail.y), true);
+            UiCheckbox(OBF("Tự lưới/cần"), &ac.isAuto);
+            if (ac.isAuto) {
+                UiCheckbox(OBF("Thu hoạch"), &ac.isRetrieve);
+                UiCheckbox(OBF("Kiểm tra"), &ac.isCheck);
+                UiCheckbox(OBF("Lắp đặt"), &ac.isInstall);
+                if (ac.isInstall) {
+                    int mainId = (int) ac.mainItemId;
+                    int subId = (int) ac.subItemId;
+                    if (UiSliderInt(OBF("ID lưới/cần"), &mainId, 0, 999999)) ac.mainItemId = (uint32_t) mainId;
+                    if (UiSliderInt(OBF("ID mồi"), &subId, 0, 999999)) ac.subItemId = (uint32_t) subId;
+                }
+            }
+            ImGui::EndChild();
+            ImGui::SameLine();
+            ImGui::BeginChild(OBF("AutoCatchR"), ImVec2(0, avail.y), true);
+            ImGui::TextUnformatted(OBF("ESP vùng: chưa hỗ trợ"));
             ImGui::EndChild();
             ImGui::EndTabItem();
         }

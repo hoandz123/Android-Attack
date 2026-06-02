@@ -11,6 +11,9 @@ namespace NetNativeProtocol {
     void SendToItemUse(long uid);
     void SendToItemRepair(long uid, Object *cb);
     void SendToAchievementReward(int achievementID, int step);
+    void SendToMissionReward(uint32_t missionID);
+    void SendToStampReward();
+    void SendToMailReceive(List<Object *> *mailChoiceList);
     void SendToItemSell(void *sellItemList, Item_Type type, int targetNPC);
     void SendToTreasureDigging(int boxUid, int diggingCount);
 }

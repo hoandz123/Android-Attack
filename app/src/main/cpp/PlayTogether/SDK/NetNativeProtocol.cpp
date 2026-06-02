@@ -33,6 +33,42 @@ namespace NetNativeProtocol {
         }
         instance->invoke_method<void>("SendToAchievementReward", achievementID, step);
     }
+    void SendToMissionReward(uint32_t missionID) {
+        Object *instance = GetNetNativeProtocol();
+        if (!instance) {
+            LOGE("SendToMissionReward: NetNativeProtocol is null");
+            return;
+        }
+        void *nullCb = nullptr;
+        instance->invoke_method<void>("SendToMissionReward", missionID, nullCb);
+    }
+    void SendToStampReward() {
+        Object *instance = GetNetNativeProtocol();
+        if (!instance) {
+            LOGE("SendToStampReward: NetNativeProtocol is null");
+            return;
+        }
+        void *nullCb = nullptr;
+        int stampTypeDaily = 1;
+        bool isADReward = false;
+        uint32_t eventID = 0;
+        uint32_t stepRewardIndex = 0;
+        uint32_t paidStampItemId = 0;
+        instance->invoke_method<void>("SendToStampReward", nullCb, stampTypeDaily, isADReward, eventID, stepRewardIndex, paidStampItemId);
+    }
+    void SendToMailReceive(List<Object *> *mailChoiceList) {
+        Object *instance = GetNetNativeProtocol();
+        if (!instance) {
+            LOGE("SendToMailReceive: NetNativeProtocol is null");
+            return;
+        }
+        if (!mailChoiceList) {
+            LOGE("SendToMailReceive: mailChoiceList is null");
+            return;
+        }
+        void *nullCb = nullptr;
+        instance->invoke_method<void>("SendToMailReceive", mailChoiceList, nullCb);
+    }
     void SendToItemSell(void *sellItemList, Item_Type type, int targetNPC) {
         Object *instance = GetNetNativeProtocol();
         if (!instance) {
