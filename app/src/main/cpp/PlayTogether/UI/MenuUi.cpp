@@ -171,8 +171,8 @@ static void DrawFishingPage() {
                     keepLevelsBuf[sizeof(keepLevelsBuf) - 1] = '\0';
                     keepLevelsSynced = gPLConfig.fishing.keepLevels;
                 }
-                ImGui::TextUnformatted(OBF("Mỗi dòng hoặc dấu phẩy: 1,2,3…"));
-                ImGui::InputTextMultiline(OBF("##keep_levels"), keepLevelsBuf, sizeof(keepLevelsBuf), ImVec2(-1, 72));
+                ImGui::TextUnformatted(OBF("Enter = xuống dòng; hoặc dấu phẩy"));
+                ImGui::InputTextMultiline(OBF("##keep_levels"), keepLevelsBuf, sizeof(keepLevelsBuf), ImVec2(-1, 96));
                 if (ImGui::IsItemDeactivatedAfterEdit()) {
                     gPLConfig.fishing.keepLevels = keepLevelsBuf;
                     keepLevelsSynced = gPLConfig.fishing.keepLevels;
