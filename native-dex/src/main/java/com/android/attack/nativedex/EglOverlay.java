@@ -35,7 +35,9 @@ public final class EglOverlay {
     }
 
     public static void onActivityResumed(Activity activity) {
-        if (activity != null) MAIN.post(() -> attach(activity));
+        if (activity == null) return;
+        if (Looper.myLooper() == Looper.getMainLooper()) attach(activity);
+        else MAIN.post(() -> attach(activity));
     }
 
     public static void onActivityPaused(Activity activity) {
@@ -51,12 +53,25 @@ public final class EglOverlay {
             attachedActivity = activity;
             overlay = new SurfaceView(activity);
             overlay.setZOrderOnTop(true);
+            overlay.setClickable(false);
+            overlay.setFocusable(false);
+            overlay.setFocusableInTouchMode(false);
             overlay.getHolder().setFormat(PixelFormat.TRANSLUCENT);
             renderThread = new RenderThread();
             overlay.getHolder().addCallback(renderThread);
             ViewGroup root = (ViewGroup) activity.getWindow().getDecorView();
             root.addView(overlay, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.TOP));
+            overlay.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+                @Override
+                public void onViewAttachedToWindow(View v) {
+                    TouchInputBridge.refreshInsets(activity);
+                    v.post(() -> TouchInputBridge.refreshInsets(activity));
+                }
+
+                @Override
+                public void onViewDetachedFromWindow(View v) {}
+            });
             renderThread.start();
             View decor = root;
             decor.setOnApplyWindowInsetsListener((v, insets) -> {

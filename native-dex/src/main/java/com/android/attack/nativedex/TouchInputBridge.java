@@ -91,9 +91,17 @@ public final class TouchInputBridge {
         proxyCallback = null;
     }
 
-    private static void feedTouch(MotionEvent event) {
+    private static View touchCoordView() {
         SurfaceView ov = EglOverlay.overlayView();
-        if (ov == null || ov.getParent() == null) return;
+        if (ov != null && ov.getParent() != null) return ov;
+        Activity a = attachedActivity;
+        if (a == null) return null;
+        return a.getWindow() != null ? a.getWindow().getDecorView() : null;
+    }
+
+    private static void feedTouch(MotionEvent event) {
+        View ref = touchCoordView();
+        if (ref == null) return;
         int masked = event.getActionMasked();
         int action;
         switch (masked) {
@@ -116,7 +124,7 @@ public final class TouchInputBridge {
         }
         int ptr = masked == MotionEvent.ACTION_MOVE ? 0 : event.getActionIndex();
         int[] loc = new int[2];
-        ov.getLocationOnScreen(loc);
+        ref.getLocationOnScreen(loc);
         float x;
         float y;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

@@ -97,9 +97,9 @@ public final class ActivityTrackerBridge implements Application.ActivityLifecycl
         try {
             Log.i(TAG, "resumed " + a.getClass().getName());
             nativeOnResumed(a);
+            EglOverlay.onActivityResumed(a);
             TouchInputBridge.install(a);
             KeyboardInputBridge.install(a);
-            EglOverlay.onActivityResumed(a);
             TouchInputBridge.refreshInsets(a);
         } catch (Throwable t) {
             Log.e(TAG, "resume", t);
