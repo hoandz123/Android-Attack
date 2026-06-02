@@ -23,7 +23,19 @@ void to_json(nlohmann::json& j, const PLConfig::FishingConfig& cfg) {
         {"handleBigFish", cfg.handleBigFish},
         {"tickIntervalMs", cfg.tickIntervalMs},
         {"actionIntervalMs", cfg.actionIntervalMs},
-        {"restartDelayMs", cfg.restartDelayMs}
+        {"restartDelayMs", cfg.restartDelayMs},
+        {"hitDelayMs", cfg.hitDelayMs},
+        {"liftDelayMs", cfg.liftDelayMs},
+        {"autoSellTrash", cfg.autoSellTrash},
+        {"maxSellGrade", cfg.maxSellGrade},
+        {"pauseOnRareCatch", cfg.pauseOnRareCatch},
+        {"minRareGrade", cfg.minRareGrade},
+        {"showSessionStats", cfg.showSessionStats},
+        {"showFloatMarker", cfg.showFloatMarker},
+        {"showZoneInfo", cfg.showZoneInfo},
+        {"stopWhenCountOver", cfg.stopWhenCountOver},
+        {"skipBoastDelay", cfg.skipBoastDelay},
+        {"boastSkipMs", cfg.boastSkipMs}
     };
 }
 
@@ -35,6 +47,18 @@ void from_json(const nlohmann::json& j, PLConfig::FishingConfig& cfg) {
     if (j.contains("tickIntervalMs")) j["tickIntervalMs"].get_to(cfg.tickIntervalMs);
     if (j.contains("actionIntervalMs")) j["actionIntervalMs"].get_to(cfg.actionIntervalMs);
     if (j.contains("restartDelayMs")) j["restartDelayMs"].get_to(cfg.restartDelayMs);
+    if (j.contains("hitDelayMs")) j["hitDelayMs"].get_to(cfg.hitDelayMs);
+    if (j.contains("liftDelayMs")) j["liftDelayMs"].get_to(cfg.liftDelayMs);
+    if (j.contains("autoSellTrash")) j["autoSellTrash"].get_to(cfg.autoSellTrash);
+    if (j.contains("maxSellGrade")) j["maxSellGrade"].get_to(cfg.maxSellGrade);
+    if (j.contains("pauseOnRareCatch")) j["pauseOnRareCatch"].get_to(cfg.pauseOnRareCatch);
+    if (j.contains("minRareGrade")) j["minRareGrade"].get_to(cfg.minRareGrade);
+    if (j.contains("showSessionStats")) j["showSessionStats"].get_to(cfg.showSessionStats);
+    if (j.contains("showFloatMarker")) j["showFloatMarker"].get_to(cfg.showFloatMarker);
+    if (j.contains("showZoneInfo")) j["showZoneInfo"].get_to(cfg.showZoneInfo);
+    if (j.contains("stopWhenCountOver")) j["stopWhenCountOver"].get_to(cfg.stopWhenCountOver);
+    if (j.contains("skipBoastDelay")) j["skipBoastDelay"].get_to(cfg.skipBoastDelay);
+    if (j.contains("boastSkipMs")) j["boastSkipMs"].get_to(cfg.boastSkipMs);
 }
 
 void to_json(nlohmann::json& j, const PLConfig& cfg) {

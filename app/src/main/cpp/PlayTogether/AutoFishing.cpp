@@ -17,14 +17,33 @@ struct ResolvedMethods {
     bool ready = false;
     bool ok = false;
     bool hasCloseReward = false;
+    bool hasSellReward = false;
+    bool hasCatchGrade = false;
+    bool hasCatchItemId = false;
+    bool hasFloatPos = false;
+    bool hasCatchFishId = false;
 };
 
 ResolvedMethods g_methods;
 eFishingState g_lastState = eFishingState::None;
 int g_fishCaught = 0;
+int g_failCount = 0;
+int g_missCount = 0;
+int g_catchByGrade[6] = {};
 long long g_lastActionMs = 0;
 long long g_lastCastAttemptMs = 0;
+long long g_lastRewardMs = 0;
 long long g_stateSinceMs = 0;
+long long g_sessionStartMs = 0;
+bool g_pausedByRare = false;
+bool g_rareAlert = false;
+unsigned int g_lastCatchItemId = 0;
+int g_lastCatchGrade = 0;
+Vector3 g_floatPoint{};
+bool g_hasFloatPoint = false;
+unsigned int g_castingZoneId = 0;
+unsigned int g_catchZoneId = 0;
+long long g_baitUid = 0;
 
 bool isBigFishState(eFishingState state) {
     return (int) state >= (int) eFishingState::BigFish_RaidEnter;
@@ -68,10 +87,16 @@ bool resolveMethods() {
     Class *playerCls = FindClass(OBF("ActorDefaultControlPlayer"));
     Class *baseCls = FindClass(OBF("ActorDefaultControl"));
     Class *dlgCls = FindClass(OBF("DialogFishingGetItem"));
+    Class *fishSysCls = FindClass(OBF("FishingSystem"));
     if (!playerCls || !baseCls) return false;
     bool hasBase = baseCls->find_method(OBF("get_FishingState"), 0) && baseCls->find_method(OBF("get_IsFishing"), 0) && baseCls->find_method(OBF("get_HasFishingPole"), 0);
     bool hasPlayer = playerCls->find_method(OBF("StartFishing"), 0) && playerCls->find_method(OBF("FishingHit"), 0) && playerCls->find_method(OBF("Lift"), 1);
     g_methods.hasCloseReward = dlgCls && dlgCls->find_method(OBF("OnClick_ButtonClose"), 0);
+    g_methods.hasSellReward = dlgCls && dlgCls->find_method(OBF("OnClick_Selling"), 0);
+    g_methods.hasCatchGrade = fishSysCls && fishSysCls->find_method(OBF("get_CatchItemGrade"), 0);
+    g_methods.hasCatchItemId = fishSysCls && fishSysCls->find_method(OBF("get_CatchItemID"), 0);
+    g_methods.hasFloatPos = baseCls->find_method(OBF("get_FishingFloatPos"), 0);
+    g_methods.hasCatchFishId = baseCls->find_method(OBF("get_CatchFishID"), 0);
     g_methods.ok = hasBase && hasPlayer;
     if (!g_methods.ok) LOGE(OBF("resolveMethods: thiếu method câu cá"));
     return g_methods.ok;
@@ -106,16 +131,77 @@ bool canActNow() {
     return true;
 }
 
-void tryCloseRewardDialog() {
-    if (!gPLConfig.fishing.autoCloseReward || !g_methods.hasCloseReward) return;
+bool stateDelayElapsed(int delayMs) {
+    if (delayMs <= 0) return true;
+    return Tools::getSystemMilliseconds() - g_stateSinceMs >= (long long) delayMs;
+}
+
+int readCatchGrade(Object *fishingSys) {
+    if (!fishingSys || !g_methods.hasCatchGrade) return 0;
+    return (int) fishingSys->invoke_method<int>(OBF("get_CatchItemGrade"));
+}
+
+unsigned int readCatchItemId(Object *fishingSys) {
+    if (!fishingSys || !g_methods.hasCatchItemId) return 0;
+    return fishingSys->invoke_method<unsigned int>(OBF("get_CatchItemID"));
+}
+
+void recordCatchStats(Object *player, Object *fishingSys) {
+    int grade = readCatchGrade(fishingSys);
+    unsigned int itemId = readCatchItemId(fishingSys);
+    if (itemId == 0 && player && g_methods.hasCatchFishId) itemId = player->invoke_method<unsigned int>(OBF("get_CatchFishID"));
+    g_lastCatchItemId = itemId;
+    g_lastCatchGrade = grade;
+    if (grade >= 1 && grade <= 5) g_catchByGrade[grade]++;
+    int minRare = gPLConfig.fishing.minRareGrade;
+    if (minRare < 1) minRare = 1;
+    if (minRare > 5) minRare = 5;
+    if (grade >= minRare) {
+        g_rareAlert = true;
+        if (gPLConfig.fishing.pauseOnRareCatch) g_pausedByRare = true;
+    }
+}
+
+Object *getRewardDialog() {
     Object *dlg = nullptr;
     IL2Cpp::Il2CppGetStaticFieldValue(OBF("DialogFishingGetItem"), OBF("Self"), &dlg);
+    return dlg;
+}
+
+void tryHandleRewardDialog(Object *fishingSys) {
+    long long now = Tools::getSystemMilliseconds();
+    if (g_lastRewardMs > 0 && now - g_lastRewardMs < 600) return;
+    Object *dlg = getRewardDialog();
     if (!dlg) return;
+    int grade = readCatchGrade(fishingSys);
+    if (gPLConfig.fishing.autoSellTrash && g_methods.hasSellReward && grade > 0 && grade <= gPLConfig.fishing.maxSellGrade) {
+        if (!canActNow()) return;
+        g_lastRewardMs = now;
+        dlg->invoke_method<void>(OBF("OnClick_Selling"));
+        return;
+    }
+    if (!gPLConfig.fishing.autoCloseReward || !g_methods.hasCloseReward) return;
+    if (!canActNow()) return;
+    g_lastRewardMs = now;
     dlg->invoke_method<void>(OBF("OnClick_ButtonClose"));
+}
+
+void refreshTelemetry(Object *player, Object *fishingSys, eFishingState state) {
+    g_hasFloatPoint = false;
+    if (player && g_methods.hasFloatPos && readIsFishing(player)) {
+        g_floatPoint = player->invoke_method<Vector3>(OBF("get_FishingFloatPos"));
+        g_hasFloatPoint = true;
+    }
+    if (fishingSys) {
+        g_castingZoneId = fishingSys->get_field_value<unsigned int>(OBF("CastingFishingZoneID"));
+        if (g_methods.hasCatchGrade) g_catchZoneId = fishingSys->invoke_method<unsigned int>(OBF("get_CatchFishingZone"));
+        g_baitUid = fishingSys->invoke_method<long long>(OBF("get_FishingBaitUID"));
+    }
 }
 
 void tryStartFishing(Object *player, Object *fishingSys) {
     if (!player) return;
+    if (g_pausedByRare) return;
     long long now = Tools::getSystemMilliseconds();
     int delay = gPLConfig.fishing.restartDelayMs;
     if (delay < 800) delay = 800;
@@ -125,7 +211,7 @@ void tryStartFishing(Object *player, Object *fishingSys) {
     Object *sys = fishingSys;
     if (sys) {
         bool countOver = sys->invoke_method<bool>(OBF("get_IsFishingCountOver"));
-        if (countOver) return;
+        if (countOver && gPLConfig.fishing.stopWhenCountOver) return;
         bool sysFishing = sys->get_field_value<bool>(OBF("IsFishing"));
         if (sysFishing && readState(player) == eFishingState::None) return;
     }
@@ -136,33 +222,52 @@ void tryStartFishing(Object *player, Object *fishingSys) {
 }
 
 void tryFishingHit(Object *player) {
-    if (!player) return;
+    if (!player || g_pausedByRare) return;
+    if (!stateDelayElapsed(gPLConfig.fishing.hitDelayMs)) return;
     if (!canActNow()) return;
     player->invoke_method<void>(OBF("FishingHit"));
 }
 
 void tryLift(Object *player) {
-    if (!player) return;
+    if (!player || g_pausedByRare) return;
+    if (!stateDelayElapsed(gPLConfig.fishing.liftDelayMs)) return;
     if (!canActNow()) return;
     bool success = true;
     player->invoke_method<void>(OBF("Lift"), success);
 }
 
 void tryStunHit(Object *player) {
-    if (!player) return;
+    if (!player || g_pausedByRare) return;
     if (!canActNow()) return;
     player->invoke_method<void>(OBF("FishingStunHit"));
 }
 
-void trackStateChange(eFishingState state) {
+void trackStateChange(eFishingState state, Object *player, Object *fishingSys) {
     if (state == g_lastState) return;
-    if (g_lastState == eFishingState::Fighting && state == eFishingState::Catch) g_fishCaught++;
-    if (g_lastState == eFishingState::BigFish_Fighting && state == eFishingState::BigFish_Catch) g_fishCaught++;
+    if (g_lastState == eFishingState::Fighting && state == eFishingState::Catch) {
+        g_fishCaught++;
+        recordCatchStats(player, fishingSys);
+    }
+    if (g_lastState == eFishingState::BigFish_Fighting && state == eFishingState::BigFish_Catch) {
+        g_fishCaught++;
+        recordCatchStats(player, fishingSys);
+    }
+    if (state == eFishingState::Fail || state == eFishingState::CastingFail) g_failCount++;
+    if (state == eFishingState::Miss || state == eFishingState::BigFish_Miss) g_missCount++;
     g_lastState = state;
     g_stateSinceMs = Tools::getSystemMilliseconds();
 }
 
 void tickState(Object *player, Object *fishingSys, eFishingState state) {
+    if (state == eFishingState::Boast || state == eFishingState::Finish) {
+        tryHandleRewardDialog(fishingSys);
+        if (gPLConfig.fishing.skipBoastDelay && state == eFishingState::Boast) {
+            int ms = gPLConfig.fishing.boastSkipMs;
+            if (ms < 200) ms = 200;
+            if (stateDelayElapsed(ms)) tryHandleRewardDialog(fishingSys);
+        }
+        return;
+    }
     if (isBigFishState(state)) {
         if (!gPLConfig.fishing.handleBigFish) return;
         if (state == eFishingState::BigFish_Stun || state == eFishingState::BigFish_StunBegin) tryStunHit(player);
@@ -178,8 +283,6 @@ void tickState(Object *player, Object *fishingSys, eFishingState state) {
         case eFishingState::SearchResult:
         case eFishingState::Idle:
         case eFishingState::Catch:
-        case eFishingState::Boast:
-        case eFishingState::Finish:
             break;
         case eFishingState::Hit:
             tryFishingHit(player);
@@ -205,13 +308,15 @@ void Update() {
     if (isGameLoading) return;
     if (!ActorControl::my_Player || !ActorControl::my_Motor || !ActorControl::my_Unit) return;
     if (!resolveMethods()) return;
+    if (g_sessionStartMs == 0) g_sessionStartMs = Tools::getSystemMilliseconds();
     RATE_LIMIT(gPLConfig.fishing.tickIntervalMs > 0 ? gPLConfig.fishing.tickIntervalMs : 400);
     Object *player = ActorControl::my_Player;
     Object *fishingSys = getFishingSystem();
     if (!fishingSys) return;
-    tryCloseRewardDialog();
     eFishingState state = readState(player);
-    trackStateChange(state);
+    trackStateChange(state, player, fishingSys);
+    refreshTelemetry(player, fishingSys, state);
+    if (getRewardDialog()) tryHandleRewardDialog(fishingSys);
     tickState(player, fishingSys, state);
 }
 
@@ -225,6 +330,67 @@ std::string GetStateLabel() {
 
 int GetFishCaughtCount() {
     return g_fishCaught;
+}
+
+int GetFailCount() {
+    return g_failCount;
+}
+
+int GetMissCount() {
+    return g_missCount;
+}
+
+int GetCatchCountByGrade(int grade) {
+    if (grade < 0 || grade > 5) return 0;
+    return g_catchByGrade[grade];
+}
+
+bool IsPausedByRare() {
+    return g_pausedByRare;
+}
+
+bool HasRareAlert() {
+    return g_rareAlert;
+}
+
+void ClearRareAlert() {
+    g_rareAlert = false;
+    g_pausedByRare = false;
+}
+
+unsigned int GetLastCatchItemId() {
+    return g_lastCatchItemId;
+}
+
+int GetLastCatchGrade() {
+    return g_lastCatchGrade;
+}
+
+unsigned int GetSessionElapsedSec() {
+    if (g_sessionStartMs == 0) return 0;
+    long long elapsed = Tools::getSystemMilliseconds() - g_sessionStartMs;
+    if (elapsed < 0) elapsed = 0;
+    return (unsigned int) (elapsed / 1000);
+}
+
+bool HasFloatPoint() {
+    return g_hasFloatPoint;
+}
+
+Vector3 GetFloatPoint() {
+    return g_floatPoint;
+}
+
+unsigned int GetCastingZoneId() {
+    return g_castingZoneId;
+}
+
+unsigned int GetCatchZoneId() {
+    return g_catchZoneId;
+}
+
+long long GetFishingBaitUid() {
+    return g_baitUid;
 }
 
 }

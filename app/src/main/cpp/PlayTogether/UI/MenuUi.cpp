@@ -2,6 +2,7 @@
 #include "Config/Config.h"
 #include "Config/PLConfig.h"
 #include "OverlaySnapshot.h"
+#include "../AutoFishing.h"
 #include <Includes/obfuscate.h>
 #include <ModUi.hpp>
 #include <Tools/Tools.h>
@@ -18,13 +19,77 @@ static bool UiCheckbox(const char *label, bool *v) {
     return changed;
 }
 
+static void DrawFishingLiveStats(const OverlaySnapshot::View &snap) {
+    ImGui::Text(OBF("Trạng thái: %s"), OverlaySnapshot::FishingStateLabel(snap.fishingState));
+    ImGui::Text(OBF("Đã câu (phiên): %d"), snap.fishCaught);
+    if (gPLConfig.fishing.showSessionStats) {
+        unsigned int sec = snap.sessionSec;
+        ImGui::Text(OBF("Thời gian: %um %us"), sec / 60, sec % 60);
+        ImGui::Text(OBF("Hụt: %d | Trượt: %d"), snap.failCount, snap.missCount);
+        ImGui::Text(OBF("C/B/A/S/SS: %d/%d/%d/%d/%d"), snap.catchGrade1, snap.catchGrade2, snap.catchGrade3, snap.catchGrade4, snap.catchGrade5);
+    }
+    if (snap.lastCatchItemId > 0) ImGui::Text(OBF("Cá vừa: ID %u (%s)"), snap.lastCatchItemId, OverlaySnapshot::GradeLabel(snap.lastCatchGrade));
+    if (gPLConfig.fishing.showZoneInfo && snap.castingZoneId > 0) ImGui::Text(OBF("Vùng cast: %u | bắt: %u"), snap.castingZoneId, snap.catchZoneId);
+    if (snap.baitUid != 0) ImGui::Text(OBF("Mồi UID: %lld"), (long long) snap.baitUid);
+    if (snap.pausedByRare) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.85f, 0.2f, 1.f));
+        ImGui::TextUnformatted(OBF("Tạm dừng: trúng cá hiếm"));
+        ImGui::PopStyleColor();
+        if (ImGui::Button(OBF("Tiếp tục câu##fish_resume"), ImVec2(-1, 0))) {
+            AutoFishing::ClearRareAlert();
+            SaveConfig();
+        }
+    }
+    if (snap.rareAlert && !snap.pausedByRare) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 1.f, 0.5f, 1.f));
+        ImGui::TextUnformatted(OBF("Vừa có cá hiếm — xem hộp thưởng"));
+        ImGui::PopStyleColor();
+    }
+}
+
 static void DrawTabFishing() {
     ImGui::PushID(OBF("fishing_tab"));
     UiCheckbox(OBF("Bật câu cá tự động"), &gPLConfig.fishing.enabled);
     ImGui::Separator();
+    ImGui::TextUnformatted(OBF("Hộp thưởng & lọc"));
     UiCheckbox(OBF("Đóng hộp thưởng"), &gPLConfig.fishing.autoCloseReward);
-    UiCheckbox(OBF("Hiện trạng thái"), &gPLConfig.fishing.showStatus);
+    if (ImGui::Checkbox(OBF("Tự bán cá rác (rủi ro)"), &gPLConfig.fishing.autoSellTrash)) SaveConfig();
+    if (gPLConfig.fishing.autoSellTrash) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.45f, 0.2f, 1.f));
+        ImGui::TextUnformatted(OBF("Cảnh báo: gọi bán qua dialog — có thể lệch server"));
+        ImGui::PopStyleColor();
+        ImGui::SliderInt(OBF("Bán tối đa grade##fish_sell_grade"), &gPLConfig.fishing.maxSellGrade, 1, 3);
+        if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+    }
+    UiCheckbox(OBF("Dừng khi hết lượt câu"), &gPLConfig.fishing.stopWhenCountOver);
+    if (ImGui::Checkbox(OBF("Dừng khi cá hiếm (S+)"), &gPLConfig.fishing.pauseOnRareCatch)) SaveConfig();
+    if (gPLConfig.fishing.pauseOnRareCatch) {
+        ImGui::SliderInt(OBF("Ngưỡng hiếm (grade)##fish_rare_grade"), &gPLConfig.fishing.minRareGrade, 3, 5);
+        if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+    }
     ImGui::Separator();
+    ImGui::TextUnformatted(OBF("Nhịp & hiển thị"));
+    UiCheckbox(OBF("Hiện trạng thái"), &gPLConfig.fishing.showStatus);
+    UiCheckbox(OBF("Thống kê phiên"), &gPLConfig.fishing.showSessionStats);
+    UiCheckbox(OBF("Hiện vùng / mồi"), &gPLConfig.fishing.showZoneInfo);
+    UiCheckbox(OBF("Hướng phao (2D)"), &gPLConfig.fishing.showFloatMarker);
+    ImGui::SliderInt(OBF("Nhịp tick (ms)##fish_tick"), &gPLConfig.fishing.tickIntervalMs, 250, 1200);
+    if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+    ImGui::SliderInt(OBF("Nhịp thao tác (ms)##fish_act"), &gPLConfig.fishing.actionIntervalMs, 300, 2000);
+    if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+    ImGui::SliderInt(OBF("Chờ cast lại (ms)##fish_restart"), &gPLConfig.fishing.restartDelayMs, 800, 5000);
+    if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+    ImGui::SliderInt(OBF("Trễ giật cắn (ms)##fish_hit_delay"), &gPLConfig.fishing.hitDelayMs, 0, 1500);
+    if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+    ImGui::SliderInt(OBF("Trễ kéo (ms)##fish_lift_delay"), &gPLConfig.fishing.liftDelayMs, 0, 1500);
+    if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+    UiCheckbox(OBF("Bỏ qua khoe nhanh"), &gPLConfig.fishing.skipBoastDelay);
+    if (gPLConfig.fishing.skipBoastDelay) {
+        ImGui::SliderInt(OBF("Chờ khoe (ms)##fish_boast"), &gPLConfig.fishing.boastSkipMs, 200, 2000);
+        if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+    }
+    ImGui::Separator();
+    ImGui::TextUnformatted(OBF("Cá lớn"));
     if (ImGui::Checkbox(OBF("Cá lớn / raid (rủi ro)"), &gPLConfig.fishing.handleBigFish)) SaveConfig();
     if (gPLConfig.fishing.handleBigFish) {
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.45f, 0.2f, 1.f));
@@ -32,19 +97,10 @@ static void DrawTabFishing() {
         ImGui::PopStyleColor();
     }
     ImGui::Separator();
-    ImGui::SliderInt(OBF("Nhịp tick (ms)##fish_tick"), &gPLConfig.fishing.tickIntervalMs, 250, 1200);
-    if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
-    ImGui::SliderInt(OBF("Nhịp thao tác (ms)##fish_act"), &gPLConfig.fishing.actionIntervalMs, 300, 2000);
-    if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
-    ImGui::SliderInt(OBF("Chờ cast lại (ms)##fish_restart"), &gPLConfig.fishing.restartDelayMs, 800, 5000);
-    if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
-    ImGui::Separator();
     OverlaySnapshot::View snap{};
     OverlaySnapshot::Read(snap);
-    if (snap.ready) {
-        ImGui::Text(OBF("Trạng thái: %s"), OverlaySnapshot::FishingStateLabel(snap.fishingState));
-        ImGui::Text(OBF("Đã câu (phiên): %d"), snap.fishCaught);
-    } else {
+    if (snap.ready) DrawFishingLiveStats(snap);
+    else {
         ImGui::TextUnformatted(OBF("Trạng thái: —"));
         ImGui::TextUnformatted(OBF("Đã câu (phiên): —"));
     }

@@ -16,6 +16,18 @@ struct PLConfig {
         int tickIntervalMs = 400;
         int actionIntervalMs = 500;
         int restartDelayMs = 1500;
+        int hitDelayMs = 0;
+        int liftDelayMs = 0;
+        bool autoSellTrash = false;
+        int maxSellGrade = 2;
+        bool pauseOnRareCatch = false;
+        int minRareGrade = 4;
+        bool showSessionStats = true;
+        bool showFloatMarker = false;
+        bool showZoneInfo = true;
+        bool stopWhenCountOver = true;
+        bool skipBoastDelay = false;
+        int boastSkipMs = 400;
     } fishing;
 
     static int GetPlayerMapID();

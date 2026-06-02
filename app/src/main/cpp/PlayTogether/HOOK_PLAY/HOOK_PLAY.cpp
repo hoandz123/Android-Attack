@@ -24,19 +24,42 @@ namespace {
 
 std::atomic<bool> s_initOnce{false};
 
+void DrawFloatMarker(const OverlaySnapshot::View &snap) {
+    if (!gPLConfig.fishing.showFloatMarker || !snap.hasFloatPoint) return;
+    ImDrawList *dl = ImGui::GetForegroundDrawList();
+    if (!dl) return;
+    ImVec2 center(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.55f);
+    float scale = 28.f;
+    float maxDist = 25.f;
+    float dist = snap.floatDistance;
+    if (dist > maxDist) dist = maxDist;
+    float factor = dist / maxDist;
+    float ox = snap.floatOffsetX * scale * 0.08f;
+    float oz = snap.floatOffsetZ * scale * 0.08f;
+    ImVec2 tip(center.x + ox, center.y - oz);
+    ImU32 col = IM_COL32(80, 200, 255, 200);
+    dl->AddLine(center, tip, col, 2.f);
+    dl->AddCircleFilled(tip, 5.f + (1.f - factor) * 3.f, IM_COL32(120, 220, 255, 230));
+    char distBuf[32];
+    snprintf(distBuf, sizeof(distBuf), OBF("%.1fm"), snap.floatDistance);
+    dl->AddText(ImVec2(tip.x + 8.f, tip.y - 8.f), IM_COL32(220, 240, 255, 255), distBuf);
+}
+
 }
 
 void DRAW_RENDER() {
     ShowInfoWindow();
-    if (gPLConfig.fishing.enabled && gPLConfig.fishing.showStatus && !gPLConfig.general.isInfo) {
-        OverlaySnapshot::View snap{};
-        OverlaySnapshot::Read(snap);
-        if (snap.ready) {
-            char buf[96];
-            snprintf(buf, sizeof(buf), OBF("Câu: %s | #%d"), OverlaySnapshot::FishingStateLabel(snap.fishingState), snap.fishCaught);
-            EspGUI::DrawTooltip(ImVec2(12.f, 48.f), buf);
-        }
+    if (!gPLConfig.fishing.enabled || !gPLConfig.fishing.showStatus) return;
+    OverlaySnapshot::View snap{};
+    OverlaySnapshot::Read(snap);
+    if (!snap.ready) return;
+    if (!gPLConfig.general.isInfo) {
+        char buf[128];
+        snprintf(buf, sizeof(buf), OBF("Câu: %s | #%d"), OverlaySnapshot::FishingStateLabel(snap.fishingState), snap.fishCaught);
+        if (snap.pausedByRare) snprintf(buf, sizeof(buf), OBF("Câu: TẠM DỪNG (hiếm) | #%d"), snap.fishCaught);
+        EspGUI::DrawTooltip(ImVec2(12.f, 48.f), buf);
     }
+    DrawFloatMarker(snap);
 }
 
 void init() {

@@ -29,6 +29,11 @@ void ShowInfoWindow() {
                 ImGui::Separator();
                 ImGui::Text(OBF("Câu cá: %s"), OverlaySnapshot::FishingStateLabel(snap.fishingState));
                 ImGui::Text(OBF("Đã câu: %d"), snap.fishCaught);
+                if (gPLConfig.fishing.showSessionStats) {
+                    ImGui::Text(OBF("Phiên: %um — hụt %d / trượt %d"), snap.sessionSec / 60, snap.failCount, snap.missCount);
+                    ImGui::Text(OBF("Theo grade: %d/%d/%d/%d/%d"), snap.catchGrade1, snap.catchGrade2, snap.catchGrade3, snap.catchGrade4, snap.catchGrade5);
+                }
+                if (snap.hasFloatPoint) ImGui::Text(OBF("Phao: %.1fm (Δx %.1f)"), snap.floatDistance, snap.floatOffsetX);
             }
         }
     }
