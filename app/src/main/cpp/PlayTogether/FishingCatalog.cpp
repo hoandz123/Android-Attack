@@ -158,7 +158,7 @@ int collectMapGuidePointIds(int *outIds, int maxCount) {
         }
         return 0;
     }
-    auto *list = reinterpret_cast<List<Object *> *>(rawList);
+    auto *list = (List<Object *> *)rawList;
     int count = list->get_Count();
     if (count <= 0) return 0;
     int added = 0;
@@ -198,6 +198,47 @@ bool guideCatalogHasId(const Snapshot &snap, int guidePointId) {
     return false;
 }
 
+int readTableImplCount(Object *impl) {
+    if (!impl) return -1;
+    Class *cls = impl->get_class();
+    if (!cls || !cls->find_method(OBF("get_Count"), 0)) return -2;
+    return impl->invoke_method<int>(OBF("get_Count"));
+}
+
+int readTableDictCount(Object *impl) {
+    if (!impl) return -1;
+    Class *cls = impl->get_class();
+    if (!cls || !cls->find_method(OBF("get_Container"), 0)) return -2;
+    Object *rawDict = impl->invoke_method<Object *>(OBF("get_Container"));
+    if (!rawDict) return -3;
+    auto *dict = (Dictionary<uint32_t, Object *> *)rawDict;
+    return dict->get_Count();
+}
+
+void logCatalogBuild(const char *tableName, Object *impl, int dictCount, int visited, int snapCount) {
+    static long long s_lastLogMs = 0;
+    long long now = Tools::getSystemMilliseconds();
+    if (now - s_lastLogMs < 7000) return;
+    s_lastLogMs = now;
+    LOGI(OBF("FishingCatalog %s: impl=%p get_Count=%d dictCount=%d visited=%d snap=%d"), tableName, impl, readTableImplCount(impl), dictCount, visited, snapCount);
+}
+
+std::string resolveAutoCatchRowName(Object *row) {
+    if (!row) return {};
+    Class *rowCls = row->get_class();
+    if (!rowCls) return {};
+    unsigned int guideTextId = 0;
+    unsigned int placeTextId = 0;
+    unsigned int zoneTextId = 0;
+    if (rowCls->find_method(OBF("get_GuideText"), 0)) guideTextId = row->invoke_method<unsigned int>(OBF("get_GuideText"));
+    if (rowCls->find_method(OBF("get_AutoCatchPlaceText"), 0)) placeTextId = row->invoke_method<unsigned int>(OBF("get_AutoCatchPlaceText"));
+    if (rowCls->find_method(OBF("get_AutoCatchZoneText"), 0)) zoneTextId = row->invoke_method<unsigned int>(OBF("get_AutoCatchZoneText"));
+    std::string name = resolveMessage(guideTextId);
+    if (name.empty()) name = resolveMessage(placeTextId);
+    if (name.empty()) name = resolveMessage(zoneTextId);
+    return name;
+}
+
 template<typename Fn>
 void forEachDictValues(Object *impl, int cap, Fn fn) {
     if (!impl || cap <= 0) return;
@@ -205,7 +246,7 @@ void forEachDictValues(Object *impl, int cap, Fn fn) {
     if (!cls || !cls->find_method(OBF("get_Container"), 0)) return;
     Object *rawDict = impl->invoke_method<Object *>(OBF("get_Container"));
     if (!rawDict) return;
-    auto *dict = reinterpret_cast<Dictionary<uint32_t, Object *> *>(rawDict);
+    auto *dict = (Dictionary<uint32_t, Object *> *)rawDict;
     int dictCount = dict->get_Count();
     if (dictCount <= 0) return;
     if (dictCount > cap * 4) dictCount = cap * 4;
@@ -220,6 +261,22 @@ void forEachDictValues(Object *impl, int cap, Fn fn) {
     delete[] values;
 }
 
+std::string lookupAutoCatchGuideName(int guidePointId) {
+    if (guidePointId <= 0) return {};
+    Object *impl = getTableImpl(eTableType::AutoCatchArea);
+    if (!impl) return {};
+    std::string found;
+    forEachDictValues(impl, kMaxGuides, [&](Object *row) -> bool {
+        Class *rowCls = row->get_class();
+        if (!rowCls || !rowCls->find_method(OBF("get_GuidePoint"), 0)) return false;
+        int guidePoint = (int) row->invoke_method<unsigned int>(OBF("get_GuidePoint"));
+        if (guidePoint != guidePointId) return false;
+        found = resolveAutoCatchRowName(row);
+        return false;
+    });
+    return found;
+}
+
 void buildBaits(Snapshot &snap, long long equippedUid) {
     snap.baitCount = 0;
     Object *cacheUser = CacheUser::get_Instance();
@@ -229,7 +286,7 @@ void buildBaits(Snapshot &snap, long long equippedUid) {
     int baitType = (int) Item_Type::BaitItem;
     Object *rawList = cacheUser->invoke_method<Object *>(OBF("GetItemList"), baitType);
     if (!rawList) return;
-    auto *list = reinterpret_cast<List<Object *> *>(rawList);
+    auto *list = (List<Object *> *)rawList;
     int count = list->get_Count();
     if (count <= 0) return;
     if (count > kMaxBaits) count = kMaxBaits;
@@ -265,8 +322,14 @@ void buildBaits(Snapshot &snap, long long equippedUid) {
 void buildZones(Snapshot &snap, unsigned int castingZone, unsigned int catchZone) {
     snap.zoneCount = 0;
     Object *impl = getTableImpl(eTableType::FishingArea);
-    if (!impl) return;
+    int dictCount = readTableDictCount(impl);
+    int visited = 0;
+    if (!impl) {
+        logCatalogBuild(OBF("FishingArea"), impl, dictCount, visited, snap.zoneCount);
+        return;
+    }
     forEachDictValues(impl, kMaxZones, [&](Object *row) -> bool {
+        visited++;
         if (snap.zoneCount >= kMaxZones) return false;
         Class *rowCls = row->get_class();
         if (!rowCls || !rowCls->find_method(OBF("get_FishingZoneId"), 0)) return false;
@@ -290,6 +353,7 @@ void buildZones(Snapshot &snap, unsigned int castingZone, unsigned int catchZone
         snap.zoneCount++;
         return true;
     });
+    logCatalogBuild(OBF("FishingArea"), impl, dictCount, visited, snap.zoneCount);
 }
 
 void buildGuides(Snapshot &snap, int activeGuidePoint) {
@@ -305,16 +369,8 @@ void buildGuides(Snapshot &snap, int activeGuidePoint) {
             int guidePoint = (int) row->invoke_method<unsigned int>(OBF("get_GuidePoint"));
             if (guidePoint <= 0) return false;
             unsigned int zoneId = 0;
-            unsigned int guideTextId = 0;
-            unsigned int placeTextId = 0;
-            unsigned int zoneTextId = 0;
             if (rowCls->find_method(OBF("get_AutoCatchZoneId"), 0)) zoneId = row->invoke_method<unsigned int>(OBF("get_AutoCatchZoneId"));
-            if (rowCls->find_method(OBF("get_GuideText"), 0)) guideTextId = row->invoke_method<unsigned int>(OBF("get_GuideText"));
-            if (rowCls->find_method(OBF("get_AutoCatchPlaceText"), 0)) placeTextId = row->invoke_method<unsigned int>(OBF("get_AutoCatchPlaceText"));
-            if (rowCls->find_method(OBF("get_AutoCatchZoneText"), 0)) zoneTextId = row->invoke_method<unsigned int>(OBF("get_AutoCatchZoneText"));
-            std::string name = resolveMessage(guideTextId);
-            if (name.empty()) name = resolveMessage(placeTextId);
-            if (name.empty()) name = resolveMessage(zoneTextId);
+            std::string name = resolveAutoCatchRowName(row);
             if (name.empty()) {
                 char buf[32];
                 snprintf(buf, sizeof(buf), OBF("Guide %d"), guidePoint);
@@ -338,7 +394,9 @@ void buildGuides(Snapshot &snap, int activeGuidePoint) {
         e.zoneId = 0;
         e.isActive = (activeGuidePoint > 0 && gpId == activeGuidePoint);
         e.onCurrentMap = true;
-        copyLabelFmt(e.label, kLabelLen, OBF("GP %d%s"), gpId, e.isActive ? OBF(" [đang bật]") : "");
+        std::string name = lookupAutoCatchGuideName(gpId);
+        if (name.empty()) copyLabelFmt(e.label, kLabelLen, OBF("GP %d%s"), gpId, e.isActive ? OBF(" [đang bật]") : "");
+        else copyLabelFmt(e.label, kLabelLen, OBF("%s%s (ID %d)"), name.c_str(), e.isActive ? OBF(" [đang bật]") : "", gpId);
         snap.guideCount++;
     }
     if (snap.guideCount > 1) sortGuides(snap.guides, snap.guideCount);
@@ -347,8 +405,16 @@ void buildGuides(Snapshot &snap, int activeGuidePoint) {
 void buildFish(Snapshot &snap) {
     snap.fishCount = 0;
     Object *impl = getTableImpl(eTableType::Fishlist);
-    if (!impl) return;
+    int dictCount = readTableDictCount(impl);
+    int visited = 0;
+    int skippedType = 0;
+    int skippedItem = 0;
+    if (!impl) {
+        logCatalogBuild(OBF("Fishlist"), impl, dictCount, visited, snap.fishCount);
+        return;
+    }
     forEachDictValues(impl, kMaxFish, [&](Object *row) -> bool {
+        visited++;
         if (snap.fishCount >= kMaxFish) return false;
         Class *rowCls = row->get_class();
         if (!rowCls || !rowCls->find_method(OBF("get_ItemId"), 0)) return false;
@@ -356,8 +422,14 @@ void buildFish(Snapshot &snap) {
         unsigned int itemId = row->invoke_method<unsigned int>(OBF("get_ItemId"));
         if (itemId == 0) return false;
         int fishType = (int) row->invoke_method<unsigned int>(OBF("get_FishType"));
-        if (fishType <= (int) Fish_Type::None || fishType >= (int) Fish_Type::End) return false;
-        if (!resolveItemIsFish(itemId)) return false;
+        if (fishType <= (int) Fish_Type::None || fishType >= (int) Fish_Type::End) {
+            skippedType++;
+            return false;
+        }
+        if (!resolveItemIsFish(itemId)) {
+            skippedItem++;
+            return false;
+        }
         int grade = resolveItemGrade(itemId);
         bool codex = resolveInCodex(itemId);
         std::string name = resolveItemName(itemId);
@@ -370,6 +442,13 @@ void buildFish(Snapshot &snap) {
         snap.fishCount++;
         return true;
     });
+    static long long s_lastFishDetailLogMs = 0;
+    long long now = Tools::getSystemMilliseconds();
+    if (now - s_lastFishDetailLogMs >= 7000) {
+        s_lastFishDetailLogMs = now;
+        LOGI(OBF("FishingCatalog Fishlist: skippedType=%d skippedNotFish=%d"), skippedType, skippedItem);
+    }
+    logCatalogBuild(OBF("Fishlist"), impl, dictCount, visited, snap.fishCount);
 }
 
 void publishSnapshot(const Snapshot &snap) {
@@ -406,18 +485,18 @@ void UpdateFromGameThread() {
     buildBaits(snap, baitUid);
     buildZones(snap, castZone, catchZone);
     buildGuides(snap, activeGuide);
-    if (!g_fishSessionBuilt || g_pickerOpen.load(std::memory_order_relaxed)) {
+    bool rebuildFish = !g_fishSessionBuilt || g_pickerOpen.load(std::memory_order_relaxed);
+    if (!rebuildFish && g_ready.load(std::memory_order_acquire)) {
+        int idx = g_readIndex.load(std::memory_order_acquire);
+        if (g_buffers[idx].fishCount == 0) rebuildFish = true;
+    }
+    if (rebuildFish) {
         buildFish(snap);
-        g_fishSessionBuilt = true;
+        if (snap.fishCount > 0) g_fishSessionBuilt = true;
     } else {
         int idx = g_readIndex.load(std::memory_order_acquire);
-        if (g_ready.load(std::memory_order_acquire)) {
-            snap.fishCount = g_buffers[idx].fishCount;
-            memcpy(snap.fish, g_buffers[idx].fish, sizeof(snap.fish));
-        } else {
-            buildFish(snap);
-            g_fishSessionBuilt = true;
-        }
+        snap.fishCount = g_buffers[idx].fishCount;
+        memcpy(snap.fish, g_buffers[idx].fish, sizeof(snap.fish));
     }
     g_lastRebuildMs = now;
     g_lastMapId = mapId;
