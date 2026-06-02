@@ -198,15 +198,16 @@ void Update() {
             const std::string &s = gPLConfig.fishing.keepLevels;
             bool listed = false;
             for (size_t i = 0; i < s.size();) {
-                while (i < s.size() && (s[i] == ' ' || s[i] == ',')) i++;
+                while (i < s.size() && (s[i] < '0' || s[i] > '9')) i++;
+                if (i >= s.size()) break;
                 unsigned int n = 0;
-                bool any = false;
                 while (i < s.size() && s[i] >= '0' && s[i] <= '9') {
-                    any = true;
                     n = n * 10 + (unsigned int) (s[i++] - '0');
                 }
-                if (any && n == g_fish.level) listed = true;
-                while (i < s.size() && s[i] != ',') i++;
+                if (n == g_fish.level) {
+                    listed = true;
+                    break;
+                }
             }
             if (!listed) return false;
         }
