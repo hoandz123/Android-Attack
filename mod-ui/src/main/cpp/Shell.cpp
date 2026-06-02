@@ -12,7 +12,7 @@ namespace modui {
 
 namespace {
 
-constexpr float kSidebarWidthFrac = 0.30f;
+constexpr float kSidebarMaxWidthFrac = 0.50f;
 constexpr float kSidebarMinDp = 96.f;
 constexpr float kTabRowDp = 48.f;
 constexpr float kTabGapDp = 5.f;
@@ -59,10 +59,21 @@ ImU32 ColorToU32(const ImVec4 &c) {
     return ImGui::ColorConvertFloat4ToU32(c);
 }
 
-float SidebarWidth(float content_w) {
+float SidebarWidth(const AppUi &ui, float content_w) {
     const float min_w = DpToPx(kSidebarMinDp);
-    const float frac_w = content_w * kSidebarWidthFrac;
-    return std::max(min_w, frac_w);
+    const float max_w = content_w * kSidebarMaxWidthFrac;
+    const float pad_x = DpToPx(kTabPadXDp);
+    const float ribbon_w = DpToPx(kRibbonWidthDp);
+    const float gap = DpToPx(kPanelGapDp);
+    const float border = ImGui::GetStyle().ChildBorderSize;
+    float max_text = 0.f;
+    for (int i = 0; i < ui.tab_count; ++i) {
+        const char *label = ui.tabs[i].label ? ui.tabs[i].label : "";
+        max_text = std::max(max_text, ImGui::CalcTextSize(label).x);
+    }
+    const float inner = max_text + pad_x + ribbon_w;
+    const float w = inner + gap * 2.f + border * 2.f;
+    return std::clamp(w, min_w, std::max(min_w, max_w));
 }
 
 ImVec2 ResolveMenuWindowSize(const AppUi &ui) {
@@ -281,7 +292,7 @@ void DrawMenuShell(const AppUi &ui) {
 
     const ImVec2 avail = ImGui::GetContentRegionAvail();
     const float gap = DpToPx(kPanelGapDp);
-    const float side_w = SidebarWidth(avail.x);
+    const float side_w = SidebarWidth(ui, avail.x);
 
     const ImVec2 side_size(side_w, avail.y);
     const ImVec2 content_size(std::max(32.f, avail.x - side_w - gap), avail.y);
