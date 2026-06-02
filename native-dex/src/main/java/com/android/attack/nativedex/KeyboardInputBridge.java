@@ -28,6 +28,7 @@ public final class KeyboardInputBridge {
     private static volatile Activity attachedActivity;
     private static ImeSink imeSink;
     private static boolean imeVisible;
+    private static boolean imeMultiline;
     private static boolean ctrlDown;
     private static boolean altDown;
 
@@ -69,25 +70,49 @@ public final class KeyboardInputBridge {
     }
 
     public static void syncIme(boolean want) {
+        syncIme(want, false);
+    }
+
+    public static void syncIme(boolean want, boolean multiline) {
         Activity a = attachedActivity;
-        if (a == null || imeSink == null || want == imeVisible) return;
-        a.runOnUiThread(() -> applyImeOnUi(want));
+        if (a == null || imeSink == null) return;
+        final boolean modeChanged = multiline != imeMultiline;
+        imeMultiline = multiline;
+        if (!want) {
+            if (!imeVisible) return;
+            a.runOnUiThread(() -> applyImeOnUi(false));
+            return;
+        }
+        if (imeVisible && !modeChanged) return;
+        a.runOnUiThread(() -> {
+            if (imeVisible && modeChanged) applyImeOnUi(false);
+            applyImeOnUi(true);
+        });
+    }
+
+    private static void applyImeInputType() {
+        if (imeSink == null) return;
+        int type = INPUT_TEXT;
+        if (imeMultiline) type |= InputType.TYPE_TEXT_FLAG_MULTI_LINE;
+        imeSink.setInputType(type);
     }
 
     private static void applyImeOnUi(boolean want) {
-        if (attachedActivity == null || imeSink == null || want == imeVisible) return;
+        if (attachedActivity == null || imeSink == null) return;
         try {
             InputMethodManager imm = (InputMethodManager) attachedActivity.getSystemService(
                     Context.INPUT_METHOD_SERVICE);
             if (imm == null) return;
             if (want) {
+                applyImeInputType();
                 imeSink.requestFocus();
                 imm.showSoftInput(imeSink, InputMethodManager.SHOW_IMPLICIT);
+                imeVisible = true;
             } else {
                 imm.hideSoftInputFromWindow(imeSink.getWindowToken(), 0);
                 imeSink.clearFocus();
+                imeVisible = false;
             }
-            imeVisible = want;
         } catch (Throwable t) {
             Log.w(TAG, "syncIme", t);
         }
@@ -160,8 +185,11 @@ public final class KeyboardInputBridge {
         @Override
         public InputConnection onCreateInputConnection(EditorInfo out) {
             if (out != null) {
-                out.inputType = INPUT_TEXT;
-                out.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI;
+                int type = INPUT_TEXT;
+                if (imeMultiline) type |= InputType.TYPE_TEXT_FLAG_MULTI_LINE;
+                out.inputType = type;
+                out.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI
+                        | (imeMultiline ? EditorInfo.IME_FLAG_NO_ENTER_ACTION : 0);
             }
             return new ImGuiIc(this, imeBuffer);
         }

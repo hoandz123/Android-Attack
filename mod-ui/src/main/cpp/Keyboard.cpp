@@ -94,10 +94,10 @@ void ApplyPendingKeyboard() {
     for (const auto &t : texts) io.AddInputCharactersUTF8(t.c_str());
 }
 
-void SyncSoftKeyboard(bool want) {
+void SyncSoftKeyboard(bool want, bool multiline) {
     JNIEnv *env = jni::Env();
     if (!env || !g_kb_cls || !g_sync_ime) return;
-    env->CallStaticVoidMethod(g_kb_cls, g_sync_ime, want ? JNI_TRUE : JNI_FALSE);
+    env->CallStaticVoidMethod(g_kb_cls, g_sync_ime, want ? JNI_TRUE : JNI_FALSE, multiline ? JNI_TRUE : JNI_FALSE);
     if (env->ExceptionCheck()) {
         jni::ClearException(env);
         LOGE(OBF("syncIme failed"));
@@ -108,7 +108,7 @@ bool InitKeyboardJni(JNIEnv *env, jclass kb_class) {
     if (g_kb_cls) return true;
     if (!env || !kb_class) return false;
     g_kb_cls = (jclass)env->NewGlobalRef(kb_class);
-    g_sync_ime = env->GetStaticMethodID(g_kb_cls, OBF("syncIme"), OBF("(Z)V"));
+    g_sync_ime = env->GetStaticMethodID(g_kb_cls, OBF("syncIme"), OBF("(ZZ)V"));
     if (!g_sync_ime || env->ExceptionCheck()) {
         jni::ClearException(env);
         return false;
