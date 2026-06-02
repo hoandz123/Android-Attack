@@ -1,6 +1,7 @@
 #include "OverlaySnapshot.h"
 #include "Config/Config.h"
 #include "../AutoFishing.h"
+#include "../FishingGameplay.h"
 #include "../SDK/ActorControl.h"
 #include "../SDK/CacheUser.h"
 #include "../SDK/enum/eFishingState.h"
@@ -208,6 +209,7 @@ void Read(View &out) {
     out.castFailStreak = g_castStreak.load(std::memory_order_relaxed);
     out.catchesPerHour = g_cph.load(std::memory_order_relaxed);
     out.successRatePct = g_successPct.load(std::memory_order_relaxed);
+    out.statusHint = FishingGameplay::GetStatusHint();
 }
 
 }

@@ -37,6 +37,7 @@ struct View {
     int castFailStreak = 0;
     int catchesPerHour = 0;
     int successRatePct = 0;
+    const char *statusHint = nullptr;
 };
 
 void UpdateFromGameThread();

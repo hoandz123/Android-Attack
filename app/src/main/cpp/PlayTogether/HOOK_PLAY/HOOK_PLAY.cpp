@@ -83,7 +83,13 @@ void DRAW_RENDER() {
         else if (gPLConfig.fishing.showEfficiency && snap.sessionSec >= 30) {
             snprintf(buf, sizeof(buf), OBF("Câu: %s | #%d ~%d/h"), OverlaySnapshot::FishingStateLabel(snap.fishingState), snap.fishCaught, snap.catchesPerHour);
         }
-        EspGUI::DrawTooltip(ImVec2(12.f, 48.f), buf);
+        if (snap.statusHint) {
+            char hintBuf[160];
+            snprintf(hintBuf, sizeof(hintBuf), OBF("%s | %s"), buf, snap.statusHint);
+            EspGUI::DrawTooltip(ImVec2(12.f, 48.f), hintBuf);
+        } else {
+            EspGUI::DrawTooltip(ImVec2(12.f, 48.f), buf);
+        }
     }
     DrawFloatMarker(snap);
     DrawBigFishHpBar(snap);

@@ -2,6 +2,8 @@
 
 #include <API/Vector3.h>
 #include <string>
+#include <utility>
+#include <vector>
 
 struct PLConfig {
     struct GeneralConfig {
@@ -40,6 +42,17 @@ struct PLConfig {
         int smartKeepMaxOwned = 3;
         bool autoEquipBait = false;
         int baitItemId = 0;
+        bool smartBaitByZone = false;
+        bool smartBaitAutoEffect = false;
+        std::vector<std::pair<unsigned int, unsigned int>> baitZonePrefs;
+        bool guideRouting = false;
+        int guidePointId = 0;
+        unsigned int guideTargetZoneId = 0;
+        int guideFailStreak = 3;
+        bool autoCatchNetCheck = false;
+        int autoCatchIntervalMs = 8000;
+        bool autoDailyMissionReward = false;
+        int missionClaimIntervalMs = 3500;
         int targetFishItemId = 0;
         bool adaptivePacing = true;
         bool stunOrchestrator = true;

@@ -7,6 +7,15 @@
 #define LOG_TAG OBF("ATTACK_PlayTogether")
 #include <Includes/Logger.h>
 
+void to_json(nlohmann::json& j, const std::pair<unsigned int, unsigned int>& p) {
+    j = nlohmann::json{{"zoneId", p.first}, {"baitItemId", p.second}};
+}
+
+void from_json(const nlohmann::json& j, std::pair<unsigned int, unsigned int>& p) {
+    if (j.contains("zoneId")) j["zoneId"].get_to(p.first);
+    if (j.contains("baitItemId")) j["baitItemId"].get_to(p.second);
+}
+
 void to_json(nlohmann::json& j, const PLConfig::GeneralConfig& cfg) {
     j = nlohmann::json{{"isInfo", cfg.isInfo}};
 }
@@ -48,6 +57,17 @@ void to_json(nlohmann::json& j, const PLConfig::FishingConfig& cfg) {
         {"smartKeepMaxOwned", cfg.smartKeepMaxOwned},
         {"autoEquipBait", cfg.autoEquipBait},
         {"baitItemId", cfg.baitItemId},
+        {"smartBaitByZone", cfg.smartBaitByZone},
+        {"smartBaitAutoEffect", cfg.smartBaitAutoEffect},
+        {"baitZonePrefs", cfg.baitZonePrefs},
+        {"guideRouting", cfg.guideRouting},
+        {"guidePointId", cfg.guidePointId},
+        {"guideTargetZoneId", cfg.guideTargetZoneId},
+        {"guideFailStreak", cfg.guideFailStreak},
+        {"autoCatchNetCheck", cfg.autoCatchNetCheck},
+        {"autoCatchIntervalMs", cfg.autoCatchIntervalMs},
+        {"autoDailyMissionReward", cfg.autoDailyMissionReward},
+        {"missionClaimIntervalMs", cfg.missionClaimIntervalMs},
         {"targetFishItemId", cfg.targetFishItemId},
         {"adaptivePacing", cfg.adaptivePacing},
         {"stunOrchestrator", cfg.stunOrchestrator},
@@ -91,6 +111,17 @@ void from_json(const nlohmann::json& j, PLConfig::FishingConfig& cfg) {
     if (j.contains("smartKeepMaxOwned")) j["smartKeepMaxOwned"].get_to(cfg.smartKeepMaxOwned);
     if (j.contains("autoEquipBait")) j["autoEquipBait"].get_to(cfg.autoEquipBait);
     if (j.contains("baitItemId")) j["baitItemId"].get_to(cfg.baitItemId);
+    if (j.contains("smartBaitByZone")) j["smartBaitByZone"].get_to(cfg.smartBaitByZone);
+    if (j.contains("smartBaitAutoEffect")) j["smartBaitAutoEffect"].get_to(cfg.smartBaitAutoEffect);
+    if (j.contains("baitZonePrefs")) j["baitZonePrefs"].get_to(cfg.baitZonePrefs);
+    if (j.contains("guideRouting")) j["guideRouting"].get_to(cfg.guideRouting);
+    if (j.contains("guidePointId")) j["guidePointId"].get_to(cfg.guidePointId);
+    if (j.contains("guideTargetZoneId")) j["guideTargetZoneId"].get_to(cfg.guideTargetZoneId);
+    if (j.contains("guideFailStreak")) j["guideFailStreak"].get_to(cfg.guideFailStreak);
+    if (j.contains("autoCatchNetCheck")) j["autoCatchNetCheck"].get_to(cfg.autoCatchNetCheck);
+    if (j.contains("autoCatchIntervalMs")) j["autoCatchIntervalMs"].get_to(cfg.autoCatchIntervalMs);
+    if (j.contains("autoDailyMissionReward")) j["autoDailyMissionReward"].get_to(cfg.autoDailyMissionReward);
+    if (j.contains("missionClaimIntervalMs")) j["missionClaimIntervalMs"].get_to(cfg.missionClaimIntervalMs);
     if (j.contains("targetFishItemId")) j["targetFishItemId"].get_to(cfg.targetFishItemId);
     if (j.contains("adaptivePacing")) j["adaptivePacing"].get_to(cfg.adaptivePacing);
     if (j.contains("stunOrchestrator")) j["stunOrchestrator"].get_to(cfg.stunOrchestrator);

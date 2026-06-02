@@ -7,6 +7,11 @@ namespace FishingGameplay {
     void TickPerfectTug(Object *player, Object *fishingSys, int fishingState);
     void TryFastBite(Object *player, int fishingState);
     void TryAutoEquipBait(Object *fishingSys);
+    void TickAuxMechanics(Object *player, Object *fishingSys, int fishingState, bool isFishing);
+    void OnCastRecovered();
+    void OnCastFailed(int castFailStreak, int lastFailType);
+    bool TryCheckFishingPoint(Object *player);
+    const char *GetStatusHint();
     bool ShouldKeepCatch(unsigned int itemId, int grade);
     bool CanPaceAct();
     bool IsRaidModeActive();

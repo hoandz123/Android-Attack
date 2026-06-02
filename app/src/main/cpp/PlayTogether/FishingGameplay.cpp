@@ -7,11 +7,13 @@ extern bool isGameLoading;
 #include "SDK/SystemHelper.h"
 #include "SDK/enum/eFishingState.h"
 #include "SDK/enum/eFishingFailType.h"
+#include "SDK/enum/eMissionRewardState.h"
 #include "SDK/enum/eTableType.h"
 #include "SDK/enum/Illustbook_type.h"
 #include "SDK/enum/Item_Type.h"
 #include <API/Il2CppApi.h>
 #include <Tools/Tools.h>
+#include <atomic>
 #include <Includes/obfuscate.h>
 #define LOG_TAG OBF("ATTACK_FishingGameplay")
 #include <Includes/Logger.h>
@@ -42,6 +44,12 @@ unsigned int g_castingKey = 0;
 unsigned int g_fishingDifficultyId = 0;
 bool g_earlyCatchReady = false;
 bool g_earlyCatchSell = false;
+long long g_lastBaitEquipMs = 0;
+long long g_lastGuideMs = 0;
+long long g_lastAutoCatchMs = 0;
+long long g_lastMissionClaimMs = 0;
+bool g_guideArrowOn = false;
+std::atomic<int> g_statusHint{0};
 
 float getUnityTime() {
     Class *timeCls = FindClass(OBF("UnityEngine.Time"));
@@ -54,6 +62,21 @@ float getUnityTime() {
 Object *getFishingFloat(Object *player) {
     if (!player) return nullptr;
     return player->get_field_object<Object *>(OBF("_fishingFloat"));
+}
+
+Object *getTablesRoot() {
+    Object *tableSys = SystemHelper::get_Table();
+    if (!tableSys) return nullptr;
+    return tableSys->get_field_object<Object *>(OBF("Tables"));
+}
+
+Object *getTableImpl(eTableType type) {
+    Object *tables = getTablesRoot();
+    if (!tables) return nullptr;
+    Class *tablesCls = tables->get_class();
+    if (!tablesCls || !tablesCls->find_method(OBF("get_Item"), 1)) return nullptr;
+    int key = (int) type;
+    return tables->invoke_method<Object *>(OBF("get_Item"), key);
 }
 
 Object *getItemTableImpl() {
@@ -339,15 +362,229 @@ void TryFastBite(Object *player, int fishingState) {
     player->invoke_method<void>(OBF("FishingBite"));
 }
 
+unsigned int readActiveZoneId(Object *fishingSys) {
+    if (!fishingSys) return 0;
+    unsigned int zone = fishingSys->get_field_value<unsigned int>(OBF("CastingFishingZoneID"));
+    if (zone == 0) zone = fishingSys->invoke_method<unsigned int>(OBF("get_CatchFishingZone"));
+    return zone;
+}
+
+unsigned int resolveAreaActionId(unsigned int zoneId) {
+    if (zoneId == 0) return 0;
+    Object *areaImpl = getTableImpl(eTableType::FishingArea);
+    if (!areaImpl) return 0;
+    Class *cls = areaImpl->get_class();
+    if (!cls || !cls->find_method(OBF("GetTableData"), 1)) return 0;
+    Object *area = areaImpl->invoke_method<Object *>(OBF("GetTableData"), zoneId);
+    if (!area) return 0;
+    Class *areaCls = area->get_class();
+    if (!areaCls || !areaCls->find_method(OBF("get_ActionId"), 0)) return 0;
+    return area->invoke_method<unsigned int>(OBF("get_ActionId"));
+}
+
+unsigned int pickBaitFromConfigZone(unsigned int zoneId) {
+    if (zoneId == 0) return 0;
+    for (const auto &entry : gPLConfig.fishing.baitZonePrefs) {
+        if (entry.first == zoneId && entry.second > 0) return entry.second;
+    }
+    return 0;
+}
+
+unsigned int pickBaitByEffect(unsigned int actionId) {
+    if (actionId == 0) return 0;
+    Object *baitImpl = getTableImpl(eTableType::FishingBait);
+    if (!baitImpl) return 0;
+    Class *implCls = baitImpl->get_class();
+    if (!implCls || !implCls->find_method(OBF("get_List"), 0)) return 0;
+    Object *list = baitImpl->invoke_method<Object *>(OBF("get_List"));
+    if (!list) return 0;
+    Class *listCls = list->get_class();
+    if (!listCls || !listCls->find_method(OBF("get_Count"), 0) || !listCls->find_method(OBF("get_Item"), 1)) return 0;
+    int count = list->invoke_method<int>(OBF("get_Count"));
+    unsigned int bestId = 0;
+    unsigned int bestOrder = 0;
+    for (int i = 0; i < count; i++) {
+        Object *row = list->invoke_method<Object *>(OBF("get_Item"), i);
+        if (!row) continue;
+        Class *rowCls = row->get_class();
+        if (!rowCls || !rowCls->find_method(OBF("get_EffectId"), 0) || !rowCls->find_method(OBF("get_BaitItemId"), 0)) continue;
+        unsigned int effect = row->invoke_method<unsigned int>(OBF("get_EffectId"));
+        unsigned int group = row->invoke_method<unsigned int>(OBF("get_CheckActionGroup"));
+        if (effect != actionId && group != actionId) continue;
+        unsigned int baitItem = row->invoke_method<unsigned int>(OBF("get_BaitItemId"));
+        if (baitItem == 0 || CacheUser::GetItemCount(baitItem, true) <= 0) continue;
+        unsigned int order = row->invoke_method<unsigned int>(OBF("get_Order"));
+        if (bestId == 0 || order >= bestOrder) {
+            bestId = baitItem;
+            bestOrder = order;
+        }
+    }
+    return bestId;
+}
+
+unsigned int resolveSmartBaitItemId(Object *fishingSys) {
+    unsigned int zoneId = readActiveZoneId(fishingSys);
+    if (gPLConfig.fishing.guideTargetZoneId > 0 && zoneId == 0) zoneId = gPLConfig.fishing.guideTargetZoneId;
+    if (gPLConfig.fishing.smartBaitByZone) {
+        unsigned int fromCfg = pickBaitFromConfigZone(zoneId);
+        if (fromCfg > 0) return fromCfg;
+    }
+    if (gPLConfig.fishing.smartBaitAutoEffect) {
+        unsigned int actionId = resolveAreaActionId(zoneId);
+        unsigned int fromFx = pickBaitByEffect(actionId);
+        if (fromFx > 0) return fromFx;
+    }
+    return (unsigned int) gPLConfig.fishing.baitItemId;
+}
+
+bool equipBaitUid(Object *fishingSys, unsigned int baitItemId) {
+    if (!fishingSys || baitItemId == 0) return false;
+    long long uid = CacheUser::GetItemUid(baitItemId);
+    if (uid == 0) return false;
+    long long cur = fishingSys->invoke_method<long long>(OBF("get_FishingBaitUID"));
+    if (cur == uid) return true;
+    long long now = Tools::getSystemMilliseconds();
+    if (g_lastBaitEquipMs > 0 && now - g_lastBaitEquipMs < 1200) return false;
+    g_lastBaitEquipMs = now;
+    fishingSys->invoke_method<void>(OBF("set_FishingBaitUID"), uid);
+    return true;
+}
+
 void TryAutoEquipBait(Object *fishingSys) {
     if (!gPLConfig.fishing.autoEquipBait || !fishingSys) return;
-    unsigned int baitId = (unsigned int) gPLConfig.fishing.baitItemId;
+    g_statusHint.store(0, std::memory_order_relaxed);
+    bool smart = gPLConfig.fishing.smartBaitByZone || gPLConfig.fishing.smartBaitAutoEffect;
+    unsigned int baitId = smart ? resolveSmartBaitItemId(fishingSys) : (unsigned int) gPLConfig.fishing.baitItemId;
     if (baitId == 0) return;
-    long long uid = CacheUser::GetItemUid(baitId);
-    if (uid == 0) return;
-    long long cur = fishingSys->invoke_method<long long>(OBF("get_FishingBaitUID"));
-    if (cur == uid) return;
-    fishingSys->invoke_method<void>(OBF("set_FishingBaitUID"), uid);
+    if (CacheUser::GetItemCount(baitId, true) <= 0) {
+        if (smart || gPLConfig.fishing.baitItemId > 0) g_statusHint.store(1, std::memory_order_relaxed);
+        return;
+    }
+    equipBaitUid(fishingSys, baitId);
+}
+
+bool isZoneFailType(int failType) {
+    if (failType == (int) eFishingFailType::NoFishingZone) return true;
+    if (failType == (int) eFishingFailType::InvalidCasting) return true;
+    if (failType == (int) eFishingFailType::NotWater) return true;
+    if (failType == (int) eFishingFailType::WaterLow) return true;
+    return false;
+}
+
+void disableGuideArrow() {
+    if (!g_guideArrowOn) return;
+    Object *mapSys = SystemHelper::get_Map();
+    if (!mapSys) return;
+    Class *cls = mapSys->get_class();
+    if (!cls || !cls->find_method(OBF("DisableGuideArrow"), 2)) return;
+    bool reset = true;
+    mapSys->invoke_method<void>(OBF("DisableGuideArrow"), gPLConfig.fishing.guidePointId, reset);
+    g_guideArrowOn = false;
+}
+
+void enableGuideArrowIfNeeded(int castFailStreak, int lastFailType) {
+    if (!gPLConfig.fishing.guideRouting) return;
+    if (gPLConfig.fishing.guidePointId <= 0) return;
+    int need = gPLConfig.fishing.guideFailStreak;
+    if (need < 2) need = 2;
+    if (castFailStreak < need) return;
+    if (!isZoneFailType(lastFailType)) return;
+    long long now = Tools::getSystemMilliseconds();
+    if (g_lastGuideMs > 0 && now - g_lastGuideMs < 15000) return;
+    Object *mapSys = SystemHelper::get_Map();
+    if (!mapSys) return;
+    Class *cls = mapSys->get_class();
+    if (!cls || !cls->find_method(OBF("EnableGuideArrow"), 5)) return;
+    g_lastGuideMs = now;
+    g_guideArrowOn = true;
+    bool useGpsOff = true;
+    bool useLookAt = true;
+    bool useAutoGpsOff = true;
+    mapSys->invoke_method<void>(OBF("EnableGuideArrow"), gPLConfig.fishing.guidePointId, useGpsOff, useLookAt, useAutoGpsOff, (Object *) nullptr);
+}
+
+bool tryCheckFishingPoint(Object *player) {
+    if (!player) return false;
+    Class *cls = player->get_class();
+    if (!cls || !cls->find_method(OBF("CheckFishingPoint"), 0)) return false;
+    return player->invoke_method<bool>(OBF("CheckFishingPoint"));
+}
+
+void tryAutoCatchNetPoll() {
+    if (!gPLConfig.fishing.autoCatchNetCheck) return;
+    long long now = Tools::getSystemMilliseconds();
+    int iv = gPLConfig.fishing.autoCatchIntervalMs;
+    if (iv < 5000) iv = 5000;
+    if (g_lastAutoCatchMs > 0 && now - g_lastAutoCatchMs < iv) return;
+    Class *fwCls = FindClass(OBF("FrameWork"));
+    if (!fwCls || !fwCls->find_method(OBF("get_Notification"), 0)) return;
+    Object *noti = fwCls->find_method(OBF("get_Notification"), 0)->static_invoke<Object *>();
+    if (!noti) return;
+    Class *notiCls = noti->get_class();
+    if (!notiCls || !notiCls->find_method(OBF("CheckAutoCatchFishingNet"), 0)) return;
+    g_lastAutoCatchMs = now;
+    noti->invoke_method<void>(OBF("CheckAutoCatchFishingNet"));
+}
+
+void tryClaimDailyMissionReward() {
+    if (!gPLConfig.fishing.autoDailyMissionReward) return;
+    long long now = Tools::getSystemMilliseconds();
+    int iv = gPLConfig.fishing.missionClaimIntervalMs;
+    if (iv < 2000) iv = 2000;
+    if (iv > 5000) iv = 5000;
+    if (g_lastMissionClaimMs > 0 && now - g_lastMissionClaimMs < iv) return;
+    Object *missionSys = SystemHelper::get_Mission();
+    if (!missionSys) return;
+    Class *mCls = missionSys->get_class();
+    if (!mCls || !mCls->find_method(OBF("get_HasDailyMissionReward"), 0)) return;
+    if (!missionSys->invoke_method<bool>(OBF("get_HasDailyMissionReward"))) return;
+    if (!mCls->find_method(OBF("GetDailyMissionToRewardState"), 1)) return;
+    int rewardState = (int) eMissionRewardState::Reward;
+    Object *daily = missionSys->invoke_method<Object *>(OBF("GetDailyMissionToRewardState"), rewardState);
+    if (!daily) return;
+    Class *dCls = daily->get_class();
+    if (!dCls || !dCls->find_method(OBF("get_DailyMissionId"), 0)) return;
+    if (dCls->find_method(OBF("get_IsAd"), 0) && daily->invoke_method<bool>(OBF("get_IsAd"))) return;
+    unsigned int missionId = daily->invoke_method<unsigned int>(OBF("get_DailyMissionId"));
+    if (missionId == 0) return;
+    Object *netNative = nullptr;
+    IL2Cpp::Il2CppGetStaticFieldValue(OBF("NetworkSystem"), OBF("NetNative"), &netNative);
+    if (!netNative) return;
+    Class *netCls = netNative->get_class();
+    if (!netCls || !netCls->find_method(OBF("SendToMissionReward"), 2)) return;
+    g_lastMissionClaimMs = now;
+    netNative->invoke_method<void>(OBF("SendToMissionReward"), missionId, (Object *) nullptr);
+}
+
+void TickAuxMechanics(Object *player, Object *fishingSys, int fishingState, bool isFishing) {
+    (void) fishingState;
+    if (!il2cpp_loaded.load() || isGameLoading) return;
+    if (!isFishing) {
+        tryAutoCatchNetPoll();
+        tryClaimDailyMissionReward();
+    }
+    (void) player;
+    (void) fishingSys;
+}
+
+void OnCastRecovered() {
+    disableGuideArrow();
+}
+
+const char *GetStatusHint() {
+    switch (g_statusHint.load(std::memory_order_relaxed)) {
+        case 1: return OBF("Hết mồi");
+        default: return nullptr;
+    }
+}
+
+void OnCastFailed(int castFailStreak, int lastFailType) {
+    enableGuideArrowIfNeeded(castFailStreak, lastFailType);
+}
+
+bool TryCheckFishingPoint(Object *player) {
+    if (!gPLConfig.fishing.guideRouting || gPLConfig.fishing.guidePointId <= 0) return true;
+    return tryCheckFishingPoint(player);
 }
 
 bool ShouldKeepCatch(unsigned int itemId, int grade) {

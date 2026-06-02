@@ -51,6 +51,11 @@ static void DrawFishingLiveStats(const OverlaySnapshot::View &snap) {
     if (snap.lastCatchItemId > 0) ImGui::Text(OBF("Cá vừa: ID %u (%s)"), snap.lastCatchItemId, OverlaySnapshot::GradeLabel(snap.lastCatchGrade));
     if (gPLConfig.fishing.showZoneInfo && snap.castingZoneId > 0) ImGui::Text(OBF("Vùng cast: %u | bắt: %u"), snap.castingZoneId, snap.catchZoneId);
     if (snap.baitUid != 0) ImGui::Text(OBF("Mồi UID: %lld"), (long long) snap.baitUid);
+    if (snap.statusHint) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.35f, 1.f));
+        ImGui::Text(OBF("Gợi ý: %s"), snap.statusHint);
+        ImGui::PopStyleColor();
+    }
     if (snap.pausedByRare) {
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.85f, 0.2f, 1.f));
         ImGui::TextUnformatted(gPLConfig.fishing.targetFishItemId > 0 ? OBF("Tạm dừng: đủ cá mục tiêu / hiếm")
@@ -151,7 +156,46 @@ static void DrawTabFishing() {
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.45f, 0.2f, 1.f));
         ImGui::TextUnformatted(OBF("Cảnh báo: set_FishingBaitUID trước cast"));
         ImGui::PopStyleColor();
-        ImGui::InputInt(OBF("ID mồi (item)##fish_bait_id"), &gPLConfig.fishing.baitItemId, 0, 0);
+        ImGui::InputInt(OBF("ID mồi dự phòng##fish_bait_id"), &gPLConfig.fishing.baitItemId, 0, 0);
+        if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+        UiCheckbox(OBF("Mồi theo zone (config JSON)"), &gPLConfig.fishing.smartBaitByZone);
+        UiCheckbox(OBF("Mồi auto EffectId/ActionId"), &gPLConfig.fishing.smartBaitAutoEffect);
+        if (gPLConfig.fishing.smartBaitByZone) {
+            ImGui::TextUnformatted(OBF("baitZonePrefs: [{zoneId,baitItemId}, ...] trong config.json"));
+        }
+    }
+    ImGui::Separator();
+    ImGui::TextUnformatted(OBF("Định tuyến & AFK phụ (mặc định tắt)"));
+    if (ImGui::Checkbox(OBF("Guide tới điểm câu (rủi ro)"), &gPLConfig.fishing.guideRouting)) SaveConfig();
+    if (gPLConfig.fishing.guideRouting) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.45f, 0.2f, 1.f));
+        ImGui::TextUnformatted(OBF("Chỉ mũi tên + CheckFishingPoint — không teleport"));
+        ImGui::PopStyleColor();
+        ImGui::InputInt(OBF("Guide point ID##fish_guide_pt"), &gPLConfig.fishing.guidePointId, 0, 0);
+        if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+        ImGui::InputInt(OBF("Ngưỡng lỗi cast liên tiếp##fish_guide_streak"), &gPLConfig.fishing.guideFailStreak, 1, 5);
+        if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+        int tz = (int) gPLConfig.fishing.guideTargetZoneId;
+        ImGui::InputInt(OBF("Zone mục tiêu (0=tự)##fish_guide_zone"), &tz, 0, 0);
+        if (ImGui::IsItemDeactivatedAfterEdit()) {
+            gPLConfig.fishing.guideTargetZoneId = (unsigned int) (tz < 0 ? 0 : tz);
+            SaveConfig();
+        }
+    }
+    if (ImGui::Checkbox(OBF("Poll lưới AFK (CheckAutoCatch)"), &gPLConfig.fishing.autoCatchNetCheck)) SaveConfig();
+    if (gPLConfig.fishing.autoCatchNetCheck) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.45f, 0.2f, 1.f));
+        ImGui::TextUnformatted(OBF("Chỉ CheckAutoCatchFishingNet — chưa AddAutoCatch"));
+        ImGui::PopStyleColor();
+        ImGui::SliderInt(OBF("Nhịp poll (ms)##fish_autocatch_iv"), &gPLConfig.fishing.autoCatchIntervalMs, 5000, 30000);
+        if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+    }
+    if (ImGui::Checkbox(OBF("Nhận thưởng NV ngày (rủi ro)"), &gPLConfig.fishing.autoDailyMissionReward)) SaveConfig();
+    if (gPLConfig.fishing.autoDailyMissionReward) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.45f, 0.2f, 1.f));
+        ImGui::TextUnformatted(OBF("HasDailyMissionReward + SendToMissionReward"));
+        ImGui::PopStyleColor();
+        ImGui::SliderInt(OBF("Nhịp claim (ms)##fish_mission_iv"), &gPLConfig.fishing.missionClaimIntervalMs, 2000, 5000);
         if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
     }
     ImGui::InputInt(OBF("Farm cá ID (0=tắt)##fish_target"), &gPLConfig.fishing.targetFishItemId, 0, 0);

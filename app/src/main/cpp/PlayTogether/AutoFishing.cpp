@@ -253,6 +253,7 @@ void tryStartFishing(Object *player, Object *fishingSys) {
     if (g_lastCastAttemptMs > 0 && now - g_lastCastAttemptMs < delay) return;
     if (!readHasPole(player)) return;
     FishingGameplay::TryAutoEquipBait(fishingSys);
+    if (!FishingGameplay::TryCheckFishingPoint(player)) return;
     if (readIsFishing(player)) return;
     Object *sys = fishingSys;
     if (sys) {
@@ -295,8 +296,10 @@ void trackStateChange(eFishingState state, Object *player, Object *fishingSys) {
     if (state == eFishingState::CastingFail) {
         g_castFailStreak++;
         g_lastFailType = readFailType(player);
+        FishingGameplay::OnCastFailed(g_castFailStreak, g_lastFailType);
     }
     if (state == eFishingState::Search || state == eFishingState::Hit || state == eFishingState::Fighting) {
+        if (g_castFailStreak > 0) FishingGameplay::OnCastRecovered();
         g_castFailStreak = 0;
     }
     if (g_lastState == eFishingState::Fighting && state == eFishingState::Catch) {
@@ -380,6 +383,7 @@ void Update() {
     refreshTelemetry(player, fishingSys, state);
     if (getRewardDialog()) tryHandleRewardDialog(fishingSys);
     tickState(player, fishingSys, state);
+    FishingGameplay::TickAuxMechanics(player, fishingSys, (int) state, readIsFishing(player));
 }
 
 eFishingState GetLastFishingState() {
