@@ -22,7 +22,8 @@ add_library(modui STATIC
     Touch.cpp
     Keyboard.cpp
     AndroidKeys.cpp
-    SurfaceBridge.cpp)
+    SurfaceBridge.cpp
+    DrawRender.cpp)
 
 target_include_directories(modui PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include

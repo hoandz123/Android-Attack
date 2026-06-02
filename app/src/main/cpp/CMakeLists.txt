@@ -15,7 +15,6 @@ set(PLAY_TOGETHER_SOURCES
     PlayTogether/Config/PLConfigJson.cpp
     PlayTogether/UI/MenuUi.cpp
     PlayTogether/UI/InfoWindow.cpp
-    DrawRender/DrawRender.cpp
     PlayTogether/KhoiPhucTrangThai.cpp
     PlayTogether/FishLogger.cpp
     PlayTogether/Stubs/AutoCollect.cpp
