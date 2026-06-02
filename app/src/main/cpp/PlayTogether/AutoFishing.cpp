@@ -78,6 +78,7 @@ bool resolveMethods() {
 }
 
 Object *getFishingSystem() {
+    if (!il2cpp_loaded.load()) return nullptr;
     return SystemHelper::get_Fishing();
 }
 
@@ -200,14 +201,15 @@ void tickState(Object *player, Object *fishingSys, eFishingState state) {
 
 void Update() {
     if (!gPLConfig.fishing.enabled) return;
+    if (!il2cpp_loaded.load()) return;
     if (isGameLoading) return;
-    if (!ActorControl::my_Player || !ActorControl::my_Motor) return;
+    if (!ActorControl::my_Player || !ActorControl::my_Motor || !ActorControl::my_Unit) return;
     if (!resolveMethods()) return;
-    tryCloseRewardDialog();
     RATE_LIMIT(gPLConfig.fishing.tickIntervalMs > 0 ? gPLConfig.fishing.tickIntervalMs : 400);
     Object *player = ActorControl::my_Player;
     Object *fishingSys = getFishingSystem();
     if (!fishingSys) return;
+    tryCloseRewardDialog();
     eFishingState state = readState(player);
     trackStateChange(state);
     tickState(player, fishingSys, state);

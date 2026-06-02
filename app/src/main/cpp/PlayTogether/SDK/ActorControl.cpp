@@ -24,7 +24,6 @@ namespace ActorControl {
     Object *get_Kunit(Object *instance) {
         static bool inProgress = false;
         if (inProgress) {
-            inProgress = false;
             return old_get_Kunit(instance);
         }
         inProgress = true;
@@ -37,33 +36,44 @@ namespace ActorControl {
                     my_Player = kunit->get_field_object<Object *>("actorDefaultControlPlayer");
                     static long long timeLimit = 0;
                     if (timeLimit > 0 && Tools::getSystemMilliseconds() - timeLimit < 30) {
+                        inProgress = false;
                         return kunit;
                     }
                     timeLimit = Tools::getSystemMilliseconds();
                     Object *dialog = SystemHelper::get_Dialog();
                     if (!dialog) {
                         isGameLoading = true;
+                        inProgress = false;
                         return kunit;
                     }
                     Object *loading = dialog->invoke_method<Object *>("get_GetLoading");
                     if (!loading) {
                         isGameLoading = true;
+                        inProgress = false;
                         return kunit;
                     }
-                    static long long choQuaMap = 0;
+                    static long long loadingSettledAt = 0;
+                    static bool isFirstLoading = true;
                     if (loading->invoke_method<bool>("GetIsLoading")) {
-                        choQuaMap = Tools::getSystemMilliseconds();
+                        loadingSettledAt = 0;
                         isGameLoading = true;
+                        inProgress = false;
                         return kunit;
                     }
-                    static bool isFistLoading = true;
-                    if (Tools::getSystemMilliseconds() - choQuaMap < (isFistLoading ? 10000 : 5000)) {
+                    if (loadingSettledAt == 0) {
+                        loadingSettledAt = Tools::getSystemMilliseconds();
+                    }
+                    const long long settleMs = isFirstLoading ? 10000 : 5000;
+                    if (Tools::getSystemMilliseconds() - loadingSettledAt < settleMs) {
                         isGameLoading = true;
+                        inProgress = false;
                         return kunit;
                     }
-                    isFistLoading = false;
+                    isFirstLoading = false;
                     isGameLoading = false;
-                    AutoFishing::Update();
+                    if (gPLConfig.fishing.enabled) {
+                        AutoFishing::Update();
+                    }
                 }
             }
         }
