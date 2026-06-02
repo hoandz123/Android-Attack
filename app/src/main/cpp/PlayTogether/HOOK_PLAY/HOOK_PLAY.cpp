@@ -1,0 +1,44 @@
+#include "HOOK_PLAY.h"
+#include "AntiCheat.h"
+#include "../SDK/FrameWork.h"
+#include <API/Il2CppApi.h>
+#include <Includes/obfuscate.h>
+#define LOG_TAG OBF("AttackPlugin")
+#include <Includes/Logger.h>
+#include <Tools/Tools.h>
+#include <thread>
+
+namespace HOOK_PLAY {
+
+void init() {
+    AntiCheat::init();
+    std::thread([]() {
+        Tools::Sleep(5);
+        while (true) {
+            Tools::Sleep(1);
+            if (Object *obj = FrameWork::get_Instance()) {
+                Object *AntiCheatListener = obj->get_field_object<Object *>("AntiCheatListener");
+                if (AntiCheatListener) {
+                    LOGI(OBF("AntiCheatListener found, disabling..."));
+                    obj->set_field_object("AntiCheatListener", nullptr);
+                    LOGI(OBF("AntiCheatListener disabled"));
+                    break;
+                }
+            } else {
+                LOGE(OBF("FrameWork::get_Instance() not found"));
+            }
+        }
+    }).detach();
+    // TODO G2: Tools::Hook(ActorControl::get_Kunit, ...)
+    // TODO G2: Tools::Hook(KinematicCharacterMotor::UpdatePhase1, ...)
+    // TODO G3: DialogUnit, DialogFishingGetItem, EquipmentSystem hooks
+    // TODO G3: MapGuideArrow, HeadUpSelectButton, ActorCatchUp* hooks
+    // TODO G3: DialogShopInGame, Treasure, ActorTreasureHuntPlayer hooks
+    // TODO G4: MiniGameTowerOfHell, MiniGameObby, EventPickUpItemManager, MiniGameKMGUnit, TableFishingDifficultyImpl
+    // TODO G4: FarmLandHooks, AutoTreasure
+    // TODO G5: DRAW_RENDER + DrawRender::registerTask (ESP/mod-ui)
+    // TODO G5: Config JSON slim via filemanager
+    LOGI(OBF("HOOK_PLAY skeleton init done"));
+}
+
+} // namespace HOOK_PLAY

@@ -6,7 +6,14 @@ find_package(mod-ui REQUIRED CONFIG)
 
 include(${NATIVE_CORE_CPP}/cmake/PrefabStatic.cmake)
 
-add_library(attack SHARED NativeLib.cpp Menu.cpp Games.cpp LienQuan/LienQuan.cpp PlayTogether/PlayTogether.cpp)
+add_library(attack SHARED
+    NativeLib.cpp Menu.cpp Games.cpp
+    LienQuan/LienQuan.cpp
+    PlayTogether/PlayTogether.cpp
+    PlayTogether/HOOK_PLAY/HOOK_PLAY.cpp
+    PlayTogether/HOOK_PLAY/AntiCheat.cpp
+    PlayTogether/SDK/FrameWork.cpp
+    PlayTogether/SDK/SystemHelper.cpp)
 if(EMBEDDED_DEX_DIR)
     target_include_directories(attack PRIVATE "${EMBEDDED_DEX_DIR}")
     set(_embed_hpp "${EMBEDDED_DEX_DIR}/embedded_dex.hpp")
@@ -25,6 +32,8 @@ find_library(EGL-lib EGL)
 find_library(GLESv3-lib GLESv3)
 
 target_include_directories(attack PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether
     ${NATIVE_CORE_CPP}
     ${NATIVE_CORE_CPP}/Includes
     ${NATIVE_CORE_CPP}/Tools

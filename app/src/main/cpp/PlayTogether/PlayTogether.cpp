@@ -1,4 +1,5 @@
 #include "../Games.hpp"
+#include "HOOK_PLAY/HOOK_PLAY.h"
 #include <API/Il2CppApi.h>
 #include <imgui.h>
 #include <Includes/obfuscate.h>
@@ -33,6 +34,7 @@ void Activate() {
             return;
         }
         LOGI(OBF("[PlayTogether] il2cpp da load, bat dau hook"));
+        HOOK_PLAY::init();
     }).detach();
 }
 
