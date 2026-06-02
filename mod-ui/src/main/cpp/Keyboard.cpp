@@ -1,6 +1,6 @@
 #include "Internal.hpp"
 
-#define LOG_TAG OBF("ATTACK_ModUiKey")
+#define LOGGER_TAG "ATTACK_ModUiKey"
 #include <Includes/Logger.h>
 
 #include <JNIHelper/JNIHelper.hpp>

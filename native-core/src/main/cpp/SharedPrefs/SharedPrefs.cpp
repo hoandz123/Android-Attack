@@ -1,6 +1,5 @@
 #include "SharedPrefs.h"
-#include <Includes/obfuscate.h>
-#define LOG_TAG OBF("ATTACK_PlayTogether")
+#define LOGGER_TAG "ATTACK_PlayTogether"
 #include <Includes/Logger.h>
 #include <Tools/Tools.h>
 

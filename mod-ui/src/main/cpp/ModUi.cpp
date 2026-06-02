@@ -2,7 +2,7 @@
 #include "Internal.hpp"
 #include "Theme.hpp"
 
-#define LOG_TAG OBF("ATTACK_ModUi")
+#define LOGGER_TAG "ATTACK_ModUi"
 #include <Includes/Logger.h>
 
 #include <JNIHelper/JNIHelper.hpp>

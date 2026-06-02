@@ -18,9 +18,7 @@
 #include <android/api-level.h>
 
 #include "zygisk.hpp"
-#include <Includes/obfuscate.h>
-
-#define LOG_TAG OBF("ATTACK_LoaderZygisk")
+#define LOGGER_TAG "ATTACK_LoaderZygisk"
 #include <Includes/Logger.h>
 
 #include "xdl/xdl.h"

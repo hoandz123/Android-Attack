@@ -1,6 +1,6 @@
 #include "HttpClient.hpp"
 
-#define LOG_TAG OBF("ATTACK_Http")
+#define LOGGER_TAG "ATTACK_Http"
 #include <Includes/Logger.h>
 
 #include <FileManager.hpp>

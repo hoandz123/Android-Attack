@@ -1,7 +1,7 @@
 #include "Icon.hpp"
 #include "ModUi.hpp"
 
-#define LOG_TAG OBF("ATTACK_Icon")
+#define LOGGER_TAG "ATTACK_Icon"
 #include <Includes/Logger.h>
 
 #include <FileManager.hpp>
