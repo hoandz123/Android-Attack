@@ -32,6 +32,15 @@ struct PLConfig {
         bool stopWhenCountOver = true;
         bool skipBoastDelay = false;
         int boastSkipMs = 400;
+        bool autoPerfectTug = true;
+        int perfectLiftIntervalMs = 180;
+        bool fastBite = false;
+        bool smartKeepSell = false;
+        int smartKeepMinGrade = 4;
+        int smartKeepMaxOwned = 3;
+        bool autoEquipBait = false;
+        int baitItemId = 0;
+        int targetFishItemId = 0;
     } fishing;
 
     static int GetPlayerMapID();

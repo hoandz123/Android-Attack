@@ -1,4 +1,5 @@
 #include "AutoFishing.h"
+#include "FishingGameplay.h"
 #include "Config/Config.h"
 #include "SDK/ActorControl.h"
 #include "SDK/SystemHelper.h"
@@ -39,6 +40,7 @@ long long g_lastRewardMs = 0;
 long long g_stateSinceMs = 0;
 long long g_sessionStartMs = 0;
 bool g_pausedByRare = false;
+bool g_pausedByTarget = false;
 bool g_rareAlert = false;
 unsigned int g_lastCatchItemId = 0;
 int g_lastCatchGrade = 0;
@@ -170,6 +172,10 @@ void recordCatchStats(Object *player, Object *fishingSys) {
         g_rareAlert = true;
         if (gPLConfig.fishing.pauseOnRareCatch) g_pausedByRare = true;
     }
+    if (gPLConfig.fishing.targetFishItemId > 0 && itemId == (unsigned int) gPLConfig.fishing.targetFishItemId) {
+        g_pausedByTarget = true;
+        g_rareAlert = true;
+    }
 }
 
 Object *getRewardDialog() {
@@ -184,7 +190,14 @@ void tryHandleRewardDialog(Object *fishingSys) {
     Object *dlg = getRewardDialog();
     if (!dlg) return;
     int grade = readCatchGrade(fishingSys);
-    if (gPLConfig.fishing.autoSellTrash && g_methods.hasSellReward && grade > 0 && grade <= gPLConfig.fishing.maxSellGrade) {
+    unsigned int itemId = readCatchItemId(fishingSys);
+    bool sellTrash = gPLConfig.fishing.autoSellTrash && g_methods.hasSellReward && grade > 0
+                     && grade <= gPLConfig.fishing.maxSellGrade;
+    if (gPLConfig.fishing.smartKeepSell) {
+        if (FishingGameplay::ShouldKeepCatch(itemId, grade)) sellTrash = false;
+        else if (grade > 0 && grade <= gPLConfig.fishing.maxSellGrade) sellTrash = true;
+    }
+    if (sellTrash) {
         if (!canActNow()) return;
         g_lastRewardMs = now;
         dlg->invoke_method<void>(OBF("OnClick_Selling"));
@@ -224,7 +237,7 @@ void refreshTelemetry(Object *player, Object *fishingSys, eFishingState state) {
 
 void tryStartFishing(Object *player, Object *fishingSys) {
     if (!player) return;
-    if (g_pausedByRare) return;
+    if (g_pausedByRare || g_pausedByTarget) return;
     long long now = Tools::getSystemMilliseconds();
     int delay = gPLConfig.fishing.restartDelayMs;
     if (delay < 800) delay = 800;
@@ -235,6 +248,7 @@ void tryStartFishing(Object *player, Object *fishingSys) {
     }
     if (g_lastCastAttemptMs > 0 && now - g_lastCastAttemptMs < delay) return;
     if (!readHasPole(player)) return;
+    FishingGameplay::TryAutoEquipBait(fishingSys);
     if (readIsFishing(player)) return;
     Object *sys = fishingSys;
     if (sys) {
@@ -250,14 +264,14 @@ void tryStartFishing(Object *player, Object *fishingSys) {
 }
 
 void tryFishingHit(Object *player) {
-    if (!player || g_pausedByRare) return;
+    if (!player || g_pausedByRare || g_pausedByTarget) return;
     if (!stateDelayElapsed(gPLConfig.fishing.hitDelayMs)) return;
     if (!canActNow()) return;
     player->invoke_method<void>(OBF("FishingHit"));
 }
 
 void tryLift(Object *player) {
-    if (!player || g_pausedByRare) return;
+    if (!player || g_pausedByRare || g_pausedByTarget) return;
     if (!stateDelayElapsed(gPLConfig.fishing.liftDelayMs)) return;
     if (!canActNow()) return;
     bool success = true;
@@ -265,7 +279,7 @@ void tryLift(Object *player) {
 }
 
 void tryStunHit(Object *player) {
-    if (!player || g_pausedByRare) return;
+    if (!player || g_pausedByRare || g_pausedByTarget) return;
     if (!canActNow()) return;
     player->invoke_method<void>(OBF("FishingStunHit"));
 }
@@ -306,7 +320,10 @@ void tickState(Object *player, Object *fishingSys, eFishingState state) {
     if (isBigFishState(state)) {
         if (!gPLConfig.fishing.handleBigFish) return;
         if (state == eFishingState::BigFish_Stun || state == eFishingState::BigFish_StunBegin) tryStunHit(player);
-        else if (state == eFishingState::BigFish_Tug || state == eFishingState::BigFish_Fighting || state == eFishingState::BigFish_Pumpin || state == eFishingState::BigFish_Drag) tryLift(player);
+        else if (state == eFishingState::BigFish_Tug || state == eFishingState::BigFish_Fighting || state == eFishingState::BigFish_Pumpin || state == eFishingState::BigFish_Drag) {
+            FishingGameplay::TickPerfectTug(player, fishingSys, (int) state);
+            if (!gPLConfig.fishing.autoPerfectTug) tryLift(player);
+        }
         return;
     }
     switch (state) {
@@ -314,16 +331,19 @@ void tickState(Object *player, Object *fishingSys, eFishingState state) {
             tryStartFishing(player, fishingSys);
             break;
         case eFishingState::Casting:
-        case eFishingState::Search:
         case eFishingState::SearchResult:
         case eFishingState::Idle:
         case eFishingState::Catch:
+            break;
+        case eFishingState::Search:
+            FishingGameplay::TryFastBite(player, (int) state);
             break;
         case eFishingState::Hit:
             tryFishingHit(player);
             break;
         case eFishingState::Fighting:
-            tryLift(player);
+            FishingGameplay::TickPerfectTug(player, fishingSys, (int) state);
+            if (!gPLConfig.fishing.autoPerfectTug) tryLift(player);
             break;
         case eFishingState::Fail:
         case eFishingState::Miss:
@@ -343,6 +363,7 @@ void Update() {
     if (isGameLoading) return;
     if (!ActorControl::my_Player || !ActorControl::my_Motor || !ActorControl::my_Unit) return;
     if (!resolveMethods()) return;
+    FishingGameplay::InitHooks();
     if (g_sessionStartMs == 0) g_sessionStartMs = Tools::getSystemMilliseconds();
     RATE_LIMIT(gPLConfig.fishing.tickIntervalMs > 0 ? gPLConfig.fishing.tickIntervalMs : 400);
     Object *player = ActorControl::my_Player;
@@ -381,7 +402,7 @@ int GetCatchCountByGrade(int grade) {
 }
 
 bool IsPausedByRare() {
-    return g_pausedByRare;
+    return g_pausedByRare || g_pausedByTarget;
 }
 
 bool HasRareAlert() {
@@ -391,6 +412,7 @@ bool HasRareAlert() {
 void ClearRareAlert() {
     g_rareAlert = false;
     g_pausedByRare = false;
+    g_pausedByTarget = false;
 }
 
 unsigned int GetLastCatchItemId() {
@@ -470,6 +492,7 @@ void ResetSessionStats() {
     g_lastFailType = 0;
     g_castFailStreak = 0;
     g_pausedByRare = false;
+    g_pausedByTarget = false;
     g_rareAlert = false;
     g_sessionStartMs = Tools::getSystemMilliseconds();
 }

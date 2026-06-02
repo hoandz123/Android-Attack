@@ -39,7 +39,16 @@ void to_json(nlohmann::json& j, const PLConfig::FishingConfig& cfg) {
         {"adaptiveCastBackoff", cfg.adaptiveCastBackoff},
         {"stopWhenCountOver", cfg.stopWhenCountOver},
         {"skipBoastDelay", cfg.skipBoastDelay},
-        {"boastSkipMs", cfg.boastSkipMs}
+        {"boastSkipMs", cfg.boastSkipMs},
+        {"autoPerfectTug", cfg.autoPerfectTug},
+        {"perfectLiftIntervalMs", cfg.perfectLiftIntervalMs},
+        {"fastBite", cfg.fastBite},
+        {"smartKeepSell", cfg.smartKeepSell},
+        {"smartKeepMinGrade", cfg.smartKeepMinGrade},
+        {"smartKeepMaxOwned", cfg.smartKeepMaxOwned},
+        {"autoEquipBait", cfg.autoEquipBait},
+        {"baitItemId", cfg.baitItemId},
+        {"targetFishItemId", cfg.targetFishItemId}
     };
 }
 
@@ -67,6 +76,15 @@ void from_json(const nlohmann::json& j, PLConfig::FishingConfig& cfg) {
     if (j.contains("stopWhenCountOver")) j["stopWhenCountOver"].get_to(cfg.stopWhenCountOver);
     if (j.contains("skipBoastDelay")) j["skipBoastDelay"].get_to(cfg.skipBoastDelay);
     if (j.contains("boastSkipMs")) j["boastSkipMs"].get_to(cfg.boastSkipMs);
+    if (j.contains("autoPerfectTug")) j["autoPerfectTug"].get_to(cfg.autoPerfectTug);
+    if (j.contains("perfectLiftIntervalMs")) j["perfectLiftIntervalMs"].get_to(cfg.perfectLiftIntervalMs);
+    if (j.contains("fastBite")) j["fastBite"].get_to(cfg.fastBite);
+    if (j.contains("smartKeepSell")) j["smartKeepSell"].get_to(cfg.smartKeepSell);
+    if (j.contains("smartKeepMinGrade")) j["smartKeepMinGrade"].get_to(cfg.smartKeepMinGrade);
+    if (j.contains("smartKeepMaxOwned")) j["smartKeepMaxOwned"].get_to(cfg.smartKeepMaxOwned);
+    if (j.contains("autoEquipBait")) j["autoEquipBait"].get_to(cfg.autoEquipBait);
+    if (j.contains("baitItemId")) j["baitItemId"].get_to(cfg.baitItemId);
+    if (j.contains("targetFishItemId")) j["targetFishItemId"].get_to(cfg.targetFishItemId);
 }
 
 void to_json(nlohmann::json& j, const PLConfig& cfg) {

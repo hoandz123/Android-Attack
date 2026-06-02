@@ -53,7 +53,8 @@ static void DrawFishingLiveStats(const OverlaySnapshot::View &snap) {
     if (snap.baitUid != 0) ImGui::Text(OBF("Mồi UID: %lld"), (long long) snap.baitUid);
     if (snap.pausedByRare) {
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.85f, 0.2f, 1.f));
-        ImGui::TextUnformatted(OBF("Tạm dừng: trúng cá hiếm"));
+        ImGui::TextUnformatted(gPLConfig.fishing.targetFishItemId > 0 ? OBF("Tạm dừng: đủ cá mục tiêu / hiếm")
+                                                                       : OBF("Tạm dừng: trúng cá hiếm"));
         ImGui::PopStyleColor();
         if (ImGui::Button(OBF("Tiếp tục câu##fish_resume"), ImVec2(-1, 0))) {
             AutoFishing::ClearRareAlert();
@@ -110,6 +111,42 @@ static void DrawTabFishing() {
     if (gPLConfig.fishing.skipBoastDelay) {
         ImGui::SliderInt(OBF("Chờ khoe (ms)##fish_boast"), &gPLConfig.fishing.boastSkipMs, 200, 2000);
         if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+    }
+    ImGui::Separator();
+    ImGui::TextUnformatted(OBF("Cơ chế gameplay"));
+    UiCheckbox(OBF("Giật chuẩn (timing phao)"), &gPLConfig.fishing.autoPerfectTug);
+    if (gPLConfig.fishing.autoPerfectTug) {
+        ImGui::SliderInt(OBF("Nhịp giật (ms)##fish_perfect"), &gPLConfig.fishing.perfectLiftIntervalMs, 120, 600);
+        if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+    }
+    if (ImGui::Checkbox(OBF("Cắn nhanh (rủi ro)"), &gPLConfig.fishing.fastBite)) SaveConfig();
+    if (gPLConfig.fishing.fastBite) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.45f, 0.2f, 1.f));
+        ImGui::TextUnformatted(OBF("Cảnh báo: ép FishingBite — có thể lệch server"));
+        ImGui::PopStyleColor();
+    }
+    if (ImGui::Checkbox(OBF("Bán/giữ theo túi (rủi ro)"), &gPLConfig.fishing.smartKeepSell)) SaveConfig();
+    if (gPLConfig.fishing.smartKeepSell) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.45f, 0.2f, 1.f));
+        ImGui::TextUnformatted(OBF("Cảnh báo: đọc CacheUser + grade, vẫn qua dialog"));
+        ImGui::PopStyleColor();
+        ImGui::SliderInt(OBF("Giữ grade ≥##fish_keep_grade"), &gPLConfig.fishing.smartKeepMinGrade, 3, 5);
+        if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+        ImGui::SliderInt(OBF("Giữ nếu sở hữu <##fish_keep_cnt"), &gPLConfig.fishing.smartKeepMaxOwned, 1, 20);
+        if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+    }
+    if (ImGui::Checkbox(OBF("Tự gắn mồi UID (rủi ro)"), &gPLConfig.fishing.autoEquipBait)) SaveConfig();
+    if (gPLConfig.fishing.autoEquipBait) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.45f, 0.2f, 1.f));
+        ImGui::TextUnformatted(OBF("Cảnh báo: set_FishingBaitUID trước cast"));
+        ImGui::PopStyleColor();
+        ImGui::InputInt(OBF("ID mồi (item)##fish_bait_id"), &gPLConfig.fishing.baitItemId, 0, 0);
+        if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+    }
+    ImGui::InputInt(OBF("Farm cá ID (0=tắt)##fish_target"), &gPLConfig.fishing.targetFishItemId, 0, 0);
+    if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+    if (gPLConfig.fishing.targetFishItemId > 0) {
+        ImGui::TextUnformatted(OBF("Dừng cast khi bắt đúng cá mục tiêu — bấm Tiếp tục"));
     }
     ImGui::Separator();
     ImGui::TextUnformatted(OBF("Cá lớn"));
