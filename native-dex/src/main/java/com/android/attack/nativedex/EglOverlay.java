@@ -35,6 +35,12 @@ public final class EglOverlay {
         return overlay;
     }
 
+    /** Overlay SurfaceView đã add vào decor và còn parent. */
+    public static boolean isAttached() {
+        SurfaceView v = overlay;
+        return attachedActivity != null && v != null && v.getParent() != null;
+    }
+
     public static void onActivityResumed(Activity activity) {
         if (activity == null) return;
         if (Looper.myLooper() == Looper.getMainLooper()) attach(activity);

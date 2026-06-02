@@ -58,7 +58,9 @@ Script: `gradle/embed-native-dex.gradle.kts` (apply trong `native-dex/build.grad
 
 - Retry `currentApplication` (Java 30×20ms; native dex init cũng retry)
 - `registerActivityLifecycleCallbacks`
-- `syncExistingActivities()` — reflection `ActivityThread.mActivities` (try/catch, có thể 0 activity trên API cao)
+- `syncExistingActivities()` — reflection `ActivityThread.mActivities` (try/catch)
+- `startOverlayProbe()` — quét 200ms/lần tới khi `EglOverlay.isAttached()` (không chỉ chờ lifecycle)
+- `onActivityStarted` / `onActivityResumed` — kích hoạt lại probe nếu overlay chưa gắn
 - Lifecycle → `nativeOnResumed/Paused/Destroyed` (C++ global ref)
 
 Gọi từ `activity_tracker::Init` sau `RegisterNatives`.
