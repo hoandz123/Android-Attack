@@ -6032,6 +6032,13 @@ static ImGuiWindow* FindScrollableWindow(ImGuiWindow* win)
     return NULL;
 }
 
+static bool IsMouseHoveringWindowRect(ImGuiContext& g, ImGuiWindow* window)
+{
+    if (!window || !ImGui::IsMousePosValid(&g.IO.MousePos))
+        return false;
+    return window->Rect().Contains(g.IO.MousePos);
+}
+
 void ImGui::HandleDragScroll()
 {
     ImGuiContext& g = *GImGui;
@@ -6088,6 +6095,12 @@ void ImGui::HandleDragScroll()
             g.DragScrollWindow = NULL;
             return;
         }
+
+        if (!IsMouseHoveringWindowRect(g, g.DragScrollWindow))
+        {
+            g.DragScrollWindow = NULL;
+            return;
+        }
     }
 
     if (IsMouseDown(io.DragScrollButton))
@@ -6125,6 +6138,12 @@ void ImGui::HandleDragScroll()
 
         if (!g.DragScrollWindow)
             return;
+
+        if (!IsMouseHoveringWindowRect(g, g.DragScrollWindow))
+        {
+            g.DragScrollWindow = NULL;
+            return;
+        }
 
         if (!IsMouseDragging(io.DragScrollButton))
             return;
