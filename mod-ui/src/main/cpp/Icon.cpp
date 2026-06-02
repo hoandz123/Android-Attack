@@ -1,4 +1,5 @@
 #include "Icon.hpp"
+#include "ModUi.hpp"
 
 #define LOG_TAG OBF("ATTACK_Icon")
 #include <Includes/Logger.h>
@@ -8,6 +9,7 @@
 #include <GLES3/gl3.h>
 #include <imgui.h>
 #include <atomic>
+#include <chrono>
 #include <cstring>
 #include <string>
 #include <thread>
@@ -22,14 +24,25 @@ namespace modui {
 
 namespace {
 
+constexpr int kMaxFabRetries = 5;
+constexpr int64_t kFabBackoffMs = 30000;
+
 const char *FabIconUrl() { return OBF("https://tools-mod.com/storage/brand/logo.png"); }
-const char *FabIconPath() { return OBF("/data/user/0/com.android.attack/fab.png"); }
 
 std::atomic<bool> g_fab_downloading{false};
 std::atomic<bool> g_fab_file_ready{false};
+std::atomic<int> g_fab_fail_count{0};
+std::atomic<int64_t> g_fab_next_retry_ms{0};
 ImTextureID g_fab_icon = (ImTextureID) 0;
 GLuint g_load_icon_tex = 0;
 char g_load_icon_path[8192]{};
+
+int64_t NowMs() {
+    using namespace std::chrono;
+    return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
+}
+
+const std::string &FabIconPath() { return GetAppUi().fab_icon_path; }
 
 void DropLoadIconCache() {
     g_load_icon_tex = 0;
@@ -155,19 +168,28 @@ bool DownloadIcon(const char *url, const char *save_path) {
 }
 
 void PollFabDownload() {
-    if (g_fab_icon || g_fab_file_ready.load(std::memory_order_acquire)) return;
+    if (g_fab_icon) return;
+    if (g_fab_file_ready.load(std::memory_order_acquire)) return;
+    const std::string &path = FabIconPath();
+    if (path.empty()) return;
+    if (g_fab_fail_count.load(std::memory_order_acquire) >= kMaxFabRetries) return;
+    const int64_t now = NowMs();
+    if (now < g_fab_next_retry_ms.load(std::memory_order_acquire)) return;
     bool expected = false;
-    if (!g_fab_downloading.compare_exchange_strong(expected, true)) {
-        LOGI(OBF("PollFabDownload skip (download already in progress)"));
-        return;
-    }
-    LOGI(OBF("PollFabDownload spawning download thread url=%s path=%s"), FabIconUrl(), FabIconPath());
-    std::thread([] {
+    if (!g_fab_downloading.compare_exchange_strong(expected, true, std::memory_order_acq_rel)) return;
+    LOGI(OBF("PollFabDownload spawning download thread url=%s path=%s"), FabIconUrl(), path.c_str());
+    std::thread([path, now] {
         LOGI(OBF("FabDownload thread started"));
-        const bool ok = DownloadIcon(FabIconUrl(), FabIconPath());
-        g_fab_file_ready.store(ok, std::memory_order_release);
+        const bool ok = DownloadIcon(FabIconUrl(), path.c_str());
+        if (ok) {
+            g_fab_file_ready.store(true, std::memory_order_release);
+        } else {
+            const int n = g_fab_fail_count.fetch_add(1, std::memory_order_acq_rel) + 1;
+            g_fab_next_retry_ms.store(now + kFabBackoffMs, std::memory_order_release);
+            if (n >= kMaxFabRetries) LOGW(OBF("FabDownload abandoned after %d failures path=%s"), n, path.c_str());
+        }
         g_fab_downloading.store(false, std::memory_order_release);
-        LOGI(OBF("FabDownload thread done ok=%d file_ready=%d size=%lld"), ok ? 1 : 0, ok ? 1 : 0, (long long) (fs::IsFile(FabIconPath()) ? fs::FileSize(FabIconPath()) : -1));
+        LOGI(OBF("FabDownload thread done ok=%d file_ready=%d size=%lld"), ok ? 1 : 0, ok ? 1 : 0, (long long) (fs::IsFile(path) ? fs::FileSize(path) : -1));
     }).detach();
 }
 
@@ -183,11 +205,12 @@ ImTextureID GetFabIcon() {
     if (!g_fab_icon) {
         PollFabDownload();
         if (g_fab_file_ready.load(std::memory_order_acquire)) {
-            LOGI(OBF("GetFabIcon loading texture from %s"), FabIconPath());
-            g_fab_icon = LoadIcon(FabIconPath());
+            const std::string &path = FabIconPath();
+            LOGI(OBF("GetFabIcon loading texture from %s"), path.c_str());
+            g_fab_icon = LoadIcon(path.c_str());
             if (!g_fab_icon) {
-                LOGW(OBF("GetFabIcon LoadIcon failed — removing %s and retry later"), FabIconPath());
-                fs::Remove(FabIconPath());
+                LOGW(OBF("GetFabIcon LoadIcon failed — removing %s and retry later"), path.c_str());
+                fs::Remove(path);
                 g_fab_file_ready.store(false, std::memory_order_release);
             } else {
                 LOGI(OBF("GetFabIcon texture ready id=%p"), (void *) g_fab_icon);

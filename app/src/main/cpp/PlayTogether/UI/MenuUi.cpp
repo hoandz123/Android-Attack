@@ -5,6 +5,7 @@
 #include "Stubs/AutoCollect.h"
 #include <Includes/obfuscate.h>
 #include <ModUi.hpp>
+#include <Tools/Tools.h>
 #include <imgui.h>
 #include <algorithm>
 #include <sstream>
@@ -707,6 +708,7 @@ static void DrawTabSettings() {
 void SetupMenuUi() {
     modui::AppUi ui{};
     ui.menu_size = ImVec2(720.f, 520.f);
+    ui.fab_icon_path = OBF("/data/user/0/") + Tools::GetPackageName() + OBF("/files/fab.png");
     ui.set_window_title(OBF("Play Together##modui_shell"));
     ui.add_tab(OBF("chung"), OBF("Chung"), DrawTabChung);
     ui.add_tab(OBF("cauca"), OBF("Câu Cá"), DrawTabCauCa);
