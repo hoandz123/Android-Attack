@@ -1,3 +1,4 @@
+#include "../Games.hpp"
 #include <imgui.h>
 #include <Includes/obfuscate.h>
 #include <ModUi.hpp>
@@ -7,8 +8,6 @@
 #include <Includes/Logger.h>
 
 namespace playtogether {
-
-const char* kPackage = OBF("com.vng.playtogether");
 
 static void DrawMainTab() {
     if (ImGui::CollapsingHeader(OBF("Play Together"), ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -32,5 +31,7 @@ void Activate() {
     ui.add_tab(OBF("main"), OBF("Chính"), DrawMainTab);
     modui::SetAppUi(ui);
 }
+
+REGISTER_GAME(OBF("com.vng.playtogether"), Activate);
 
 } // namespace playtogether

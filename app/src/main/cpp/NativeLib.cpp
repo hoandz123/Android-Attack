@@ -28,13 +28,7 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
     std::string pkg = Tools::GetPackageName();
     LOGI(OBF("package=%s"), pkg.c_str());
 
-    if (pkg == lienquan::kPackage) {
-        lienquan::Activate();
-    } else if (pkg == playtogether::kPackage) {
-        playtogether::Activate();
-    } else {
-        appui::RegisterMenu();
-    }
+    if (!games::Dispatch(pkg.c_str())) appui::RegisterMenu();
     LOGI(OBF("curl %s, mod-ui ready, page=%ld"), curl_version(), (long) _SYS_PAGE_SIZE_);
     s_plugin_ready = true;
     return JNI_VERSION_1_6;

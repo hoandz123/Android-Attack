@@ -1,3 +1,4 @@
+#include "../Games.hpp"
 #include <imgui.h>
 #include <Includes/obfuscate.h>
 #include <ModUi.hpp>
@@ -7,8 +8,6 @@
 #include <Includes/Logger.h>
 
 namespace lienquan {
-
-const char* kPackage = OBF("com.garena.game.kgvn");
 
 static void DrawMainTab() {
     if (ImGui::CollapsingHeader(OBF("Liên Quân"), ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -32,5 +31,7 @@ void Activate() {
     ui.add_tab(OBF("main"), OBF("Chính"), DrawMainTab);
     modui::SetAppUi(ui);
 }
+
+REGISTER_GAME(OBF("com.garena.game.kgvn"), Activate);
 
 } // namespace lienquan

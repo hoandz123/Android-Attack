@@ -6,7 +6,7 @@ find_package(mod-ui REQUIRED CONFIG)
 
 include(${NATIVE_CORE_CPP}/cmake/PrefabStatic.cmake)
 
-add_library(attack SHARED NativeLib.cpp Menu.cpp LienQuan/LienQuan.cpp PlayTogether/PlayTogether.cpp)
+add_library(attack SHARED NativeLib.cpp Menu.cpp Games.cpp LienQuan/LienQuan.cpp PlayTogether/PlayTogether.cpp)
 if(EMBEDDED_DEX_DIR)
     target_include_directories(attack PRIVATE "${EMBEDDED_DEX_DIR}")
     set(_embed_hpp "${EMBEDDED_DEX_DIR}/embedded_dex.hpp")
