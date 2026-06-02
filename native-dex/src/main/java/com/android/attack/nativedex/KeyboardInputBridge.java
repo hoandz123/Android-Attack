@@ -36,7 +36,7 @@ public final class KeyboardInputBridge {
     public static void install(Activity activity) {
         if (activity == null) return;
         if (attachedActivity == activity && imeSink != null && imeSink.getParent() != null) return;
-        uninstall(activity);
+        if (attachedActivity != null) uninstall(attachedActivity);
         attachedActivity = activity;
         try {
             ViewGroup root = (ViewGroup) activity.getWindow().getDecorView();
@@ -151,6 +151,8 @@ public final class KeyboardInputBridge {
     }
 
     private static final class ImeSink extends EditText {
+        private final Editable imeBuffer = Editable.Factory.getInstance().newEditable("");
+
         ImeSink(Context context) {
             super(context);
         }
@@ -161,20 +163,24 @@ public final class KeyboardInputBridge {
                 out.inputType = INPUT_TEXT;
                 out.imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI;
             }
-            return new ImGuiIc(this);
+            return new ImGuiIc(this, imeBuffer);
         }
     }
 
     private static final class ImGuiIc extends BaseInputConnection {
         private int composingChars;
+        private final Editable buffer;
 
-        ImGuiIc(ImeSink v) {
+        ImGuiIc(ImeSink v, Editable buffer) {
             super(v, false);
+            this.buffer = buffer;
         }
 
         @Override
         public Editable getEditable() {
-            return Editable.Factory.getInstance().newEditable("");
+            buffer.clear();
+            buffer.clearSpans();
+            return buffer;
         }
 
         @Override

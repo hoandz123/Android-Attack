@@ -26,6 +26,7 @@ public final class EglOverlay {
 
     private static volatile Activity attachedActivity;
     private static SurfaceView overlay;
+    private static View insetsDecor;
     private static RenderThread renderThread;
 
     private EglOverlay() {}
@@ -77,13 +78,13 @@ public final class EglOverlay {
                 public void onViewDetachedFromWindow(View v) {}
             });
             renderThread.start();
-            View decor = root;
-            decor.setOnApplyWindowInsetsListener((v, insets) -> {
+            insetsDecor = root;
+            insetsDecor.setOnApplyWindowInsetsListener((v, insets) -> {
                 TouchInputBridge.refreshInsets(activity);
                 return insets;
             });
             TouchInputBridge.refreshInsets(activity);
-            decor.post(() -> TouchInputBridge.refreshInsets(activity));
+            insetsDecor.post(() -> TouchInputBridge.refreshInsets(activity));
             Log.i(TAG, "attached " + activity.getClass().getSimpleName() + " zOrderOnTop=false");
         } catch (Throwable t) {
             Log.e(TAG, "attach", t);
@@ -114,6 +115,12 @@ public final class EglOverlay {
             ViewGroup p = (ViewGroup) overlay.getParent();
             if (p != null) p.removeView(overlay);
             overlay = null;
+        }
+        if (insetsDecor != null) {
+            try {
+                insetsDecor.setOnApplyWindowInsetsListener(null);
+            } catch (Throwable ignored) {}
+            insetsDecor = null;
         }
         attachedActivity = null;
     }

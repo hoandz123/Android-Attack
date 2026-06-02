@@ -32,15 +32,25 @@ std::vector<KeyEvt> g_keys;
 std::vector<std::string> g_text;
 std::vector<ReplaceEvt> g_replace;
 
+constexpr size_t kMaxPendingKeyboard = 512;
+
+void TrimPendingKeyboard() {
+    if (g_keys.size() > kMaxPendingKeyboard) g_keys.clear();
+    if (g_text.size() > kMaxPendingKeyboard) g_text.clear();
+    if (g_replace.size() > kMaxPendingKeyboard) g_replace.clear();
+}
+
 } // namespace
 
 void FeedKey(int key_code, int action, int meta, int unicode) {
     g_keys.push_back({key_code, action, meta, unicode});
+    TrimPendingKeyboard();
 }
 
 void FeedTextUtf8(const char *utf8) {
     if (!utf8 || !*utf8) return;
     g_text.emplace_back(utf8);
+    TrimPendingKeyboard();
 }
 
 void FeedReplaceTail(int delete_chars, const char *utf8) {
@@ -49,6 +59,7 @@ void FeedReplaceTail(int delete_chars, const char *utf8) {
     e.delete_chars = delete_chars;
     if (utf8 && *utf8) e.insert = utf8;
     g_replace.push_back(std::move(e));
+    TrimPendingKeyboard();
 }
 
 void ApplyPendingKeyboard() {

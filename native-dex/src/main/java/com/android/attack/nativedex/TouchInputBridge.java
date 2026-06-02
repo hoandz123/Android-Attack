@@ -29,6 +29,8 @@ public final class TouchInputBridge {
     private static int touchDispatchCount;
     private static int touchFedCount;
     private static long lastTouchLogMs;
+    /** Reuse on main thread — feedTouch chỉ chạy trên UI thread qua Window.Callback. */
+    private static final int[] sTouchLoc = new int[2];
 
     private TouchInputBridge() {}
 
@@ -61,25 +63,10 @@ public final class TouchInputBridge {
                 refreshInsets(activity);
                 return;
             }
-            previousCallback = base;
-            final Window.Callback delegate = base;
-            InvocationHandler handler = (proxy, method, args) -> {
-                if ("dispatchTouchEvent".equals(method.getName()) && args != null && args.length == 1
-                        && args[0] instanceof MotionEvent) {
-                    feedTouch((MotionEvent) args[0]);
-                    logTouchDispatch(activity);
-                } else if ("dispatchKeyEvent".equals(method.getName()) && args != null && args.length == 1
-                        && args[0] instanceof KeyEvent) {
-                    KeyboardInputBridge.feedKeyEvent((KeyEvent) args[0]);
-                }
-                return method.invoke(delegate, args);
-            };
-            proxyCallback = Proxy.newProxyInstance(
-                    base.getClass().getClassLoader(), new Class<?>[] {Window.Callback.class}, handler);
-            w.setCallback((Window.Callback) proxyCallback);
+            wrapWindowCallback(activity, w, base);
             refreshInsets(activity);
             Log.i(TAG, "install ok (main) " + activity.getClass().getSimpleName()
-                    + " delegate=" + delegate.getClass().getSimpleName());
+                    + " delegate=" + base.getClass().getSimpleName());
         } catch (Throwable t) {
             Log.e(TAG, "install", t);
             uninstall(activity);
@@ -104,18 +91,40 @@ public final class TouchInputBridge {
         proxyCallback = null;
     }
 
-    /** Gắn lại proxy nếu engine/app đã ghi đè Window.Callback sau install. */
+    /** Gắn lại proxy; nếu app/engine ghi đè callback thì bọc delegate mới (không chồng proxy). */
     private static void ensureCallback(Activity activity) {
         if (activity == null || proxyCallback == null) return;
         try {
             Window w = activity.getWindow();
-            if (w != null && w.getCallback() != proxyCallback) {
-                Log.w(TAG, "callback replaced, re-set " + activity.getClass().getSimpleName());
-                w.setCallback((Window.Callback) proxyCallback);
-            }
+            if (w == null) return;
+            Window.Callback cur = w.getCallback();
+            if (cur == proxyCallback) return;
+            Window.Callback base = cur != null ? cur : activity;
+            if (base == proxyCallback) return;
+            Log.w(TAG, "callback replaced, re-wrap " + activity.getClass().getSimpleName());
+            wrapWindowCallback(activity, w, base);
         } catch (Throwable t) {
             Log.w(TAG, "ensureCallback", t);
         }
+    }
+
+    private static void wrapWindowCallback(Activity activity, Window w, Window.Callback base) {
+        previousCallback = base;
+        final Window.Callback delegate = base;
+        InvocationHandler handler = (proxy, method, args) -> {
+            if ("dispatchTouchEvent".equals(method.getName()) && args != null && args.length == 1
+                    && args[0] instanceof MotionEvent) {
+                feedTouch((MotionEvent) args[0]);
+                logTouchDispatch(activity);
+            } else if ("dispatchKeyEvent".equals(method.getName()) && args != null && args.length == 1
+                    && args[0] instanceof KeyEvent) {
+                KeyboardInputBridge.feedKeyEvent((KeyEvent) args[0]);
+            }
+            return method.invoke(delegate, args);
+        };
+        proxyCallback = Proxy.newProxyInstance(
+                base.getClass().getClassLoader(), new Class<?>[] {Window.Callback.class}, handler);
+        w.setCallback((Window.Callback) proxyCallback);
     }
 
     private static void logTouchDispatch(Activity activity) {
@@ -123,8 +132,9 @@ public final class TouchInputBridge {
         long now = System.currentTimeMillis();
         if (touchDispatchCount == 1 || now - lastTouchLogMs >= 3000L) {
             lastTouchLogMs = now;
-            Log.d(TAG, "dispatchTouch #" + touchDispatchCount + " fed=" + touchFedCount
-                    + " " + (activity != null ? activity.getClass().getSimpleName() : "?"));
+            Log.d(TAG, "dispatchTouch total=" + touchDispatchCount + " fed=" + touchFedCount
+                    + " (lifetime counter, log 3s) "
+                    + (activity != null ? activity.getClass().getSimpleName() : "?"));
         }
     }
 
@@ -169,16 +179,15 @@ public final class TouchInputBridge {
         }
         touchFedCount++;
         int ptr = masked == MotionEvent.ACTION_MOVE ? 0 : event.getActionIndex();
-        int[] loc = new int[2];
-        ref.getLocationOnScreen(loc);
+        ref.getLocationOnScreen(sTouchLoc);
         float x;
         float y;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            x = event.getRawX(ptr) - loc[0];
-            y = event.getRawY(ptr) - loc[1];
+            x = event.getRawX(ptr) - sTouchLoc[0];
+            y = event.getRawY(ptr) - sTouchLoc[1];
         } else {
-            x = event.getRawX() - loc[0];
-            y = event.getRawY() - loc[1];
+            x = event.getRawX() - sTouchLoc[0];
+            y = event.getRawY() - sTouchLoc[1];
         }
         nativeOnTouch(action, x, y);
     }
