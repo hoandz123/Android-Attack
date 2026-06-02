@@ -8,7 +8,7 @@
 
 namespace playtogether {
 
-const char* kPackage = OBF("com.haegin.BabyShark");
+const char* kPackage = OBF("com.vng.playtogether");
 
 static void DrawMainTab() {
     if (ImGui::CollapsingHeader(OBF("Play Together"), ImGuiTreeNodeFlags_DefaultOpen)) {
