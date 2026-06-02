@@ -210,6 +210,33 @@ static void DrawTabCauCa() {
             ImGui::EndChild();
             ImGui::EndTabItem();
         }
+        if (ImGui::BeginTabItem(OBF("Bo Tro"))) {
+            auto &magicWater = fishing.magicWater;
+            UiCheckbox(OBF("Tu Dong Dung Nuoc Phep"), &magicWater.isEnable);
+            ImGui::TextUnformatted(OBF("Phan Bo Nuoc Phep (Toi da 5)"));
+            int totalUses = magicWater.levelUses[0] + magicWater.levelUses[1] + magicWater.levelUses[2];
+            ImGui::Text(OBF("Tong: %d / 5"), totalUses);
+            const char *levels[] = {OBF("Cap 1"), OBF("Cap 2"), OBF("Cap 3")};
+            for (int i = 0; i < 3; i++) {
+                ImGui::Separator();
+                ImGui::TextUnformatted(levels[i]);
+                ImGui::SameLine();
+                std::string minusId = OBF("-##MW") + std::to_string(i);
+                std::string plusId = OBF("+##MW") + std::to_string(i);
+                if (ImGui::Button(minusId.c_str()) && magicWater.levelUses[i] > 0) {
+                    magicWater.levelUses[i]--;
+                    SaveConfig();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button(plusId.c_str()) && totalUses < 5) {
+                    magicWater.levelUses[i]++;
+                    SaveConfig();
+                }
+                ImGui::SameLine();
+                ImGui::Text(OBF("So luong: %d"), magicWater.levelUses[i]);
+            }
+            ImGui::EndTabItem();
+        }
         if (ImGui::BeginTabItem(OBF("Fake Zone [Rui Ro]"))) {
             ImGui::TextColored(ImVec4(1.f, 0.3f, 0.2f, 1.f), "%s", OBF("CANH BAO: Fake zone co the gay ban/crash. Tu chiu trach nhiem."));
             if (UiCheckbox(OBF("Fake Rong (zone 503)"), &fishing.isFakeVR) && fishing.isFakeVR) fishing.isFishZone = false;
@@ -416,23 +443,80 @@ static void DrawTabEvent() {
         }
         if (ImGui::BeginTabItem(OBF("Nong Trai"))) {
             auto &farm = gPLConfig.farm;
+            ImVec2 avail = ImGui::GetContentRegionAvail();
+            ImGui::BeginChild(OBF("FarmL"), ImVec2(avail.x * 0.5f, avail.y), true);
             UiCheckbox(OBF("Tu Dong Click Thu"), &farm.isAutoClickCollect);
+            ImGui::Separator();
             UiCheckbox(OBF("Tu Dong Trong"), &farm.isAutoPlant);
             if (farm.isAutoPlant) {
                 int seedId = (int) farm.selectedSeedId;
                 if (UiSliderInt(OBF("Seed ID"), &seedId, 0, 999999)) farm.selectedSeedId = (uint32_t) seedId;
                 UiSliderInt(OBF("Delay Trong (ms)"), &farm.delayPlant, 500, 5000);
+                ImGui::TextUnformatted(OBF("Chon O Dat (trong = tat ca):"));
+                for (int i = 0; i < 50; i++) {
+                    bool checked = false;
+                    auto plotIt = farm.selectedPlotPositions.find(i);
+                    if (plotIt != farm.selectedPlotPositions.end()) checked = plotIt->second;
+                    std::string plotLbl = OBF("O ") + std::to_string(i) + OBF("##plot") + std::to_string(i);
+                    if (ImGui::Checkbox(plotLbl.c_str(), &checked)) {
+                        if (checked) farm.selectedPlotPositions[i] = true;
+                        else farm.selectedPlotPositions.erase(i);
+                        SaveConfig();
+                    }
+                }
             }
-            UiCheckbox(OBF("Tu Dong Thu Hoach"), &farm.isAutoReap);
-            if (farm.isAutoReap) UiSliderInt(OBF("Delay Thu (ms)"), &farm.delayReap, 500, 5000);
-            auto &esp = farm.esp;
             ImGui::Separator();
+            UiCheckbox(OBF("Tu Dong Thu Hoach"), &farm.isAutoReap);
+            if (farm.isAutoReap) {
+                UiSliderInt(OBF("Delay Thu (ms)"), &farm.delayReap, 500, 5000);
+                ImGui::TextUnformatted(OBF("Chon Loai Cay (trong = tat ca):"));
+                static char addCropBuf[64] = {};
+                ImGui::InputText(OBF("##AddCropId"), addCropBuf, sizeof(addCropBuf));
+                ImGui::SameLine();
+                if (ImGui::Button(OBF("Them ID Cay"))) {
+                    try {
+                        uint32_t cropId = (uint32_t) std::stoul(addCropBuf);
+                        farm.selectedCropTypes[cropId] = true;
+                        addCropBuf[0] = '\0';
+                        SaveConfig();
+                    } catch (...) {}
+                }
+                for (auto it = farm.selectedCropTypes.begin(); it != farm.selectedCropTypes.end();) {
+                    std::string cropLbl = OBF("Cay ") + std::to_string(it->first);
+                    UiCheckbox(cropLbl.c_str(), &it->second);
+                    ImGui::SameLine();
+                    std::string delCrop = OBF("Xoa##crop") + std::to_string(it->first);
+                    if (ImGui::Button(delCrop.c_str())) {
+                        it = farm.selectedCropTypes.erase(it);
+                        SaveConfig();
+                        continue;
+                    }
+                    ++it;
+                }
+                ImGui::TextUnformatted(OBF("Chon O Thu Hoach (trong = tat ca):"));
+                for (int i = 0; i < 50; i++) {
+                    bool checked = false;
+                    auto reapIt = farm.selectedReapPositions.find(i);
+                    if (reapIt != farm.selectedReapPositions.end()) checked = reapIt->second;
+                    std::string reapLbl = OBF("O ") + std::to_string(i) + OBF("##reap") + std::to_string(i);
+                    if (ImGui::Checkbox(reapLbl.c_str(), &checked)) {
+                        if (checked) farm.selectedReapPositions[i] = true;
+                        else farm.selectedReapPositions.erase(i);
+                        SaveConfig();
+                    }
+                }
+            }
+            ImGui::EndChild();
+            ImGui::SameLine();
+            ImGui::BeginChild(OBF("FarmR"), ImVec2(0, avail.y), true);
+            auto &esp = farm.esp;
             UiCheckbox(OBF("ESP Farm"), &esp.isEnable);
             if (esp.isEnable) {
                 UiCheckbox(OBF("Hien Ten"), &esp.isShowName);
                 UiCheckbox(OBF("Hien Loai"), &esp.isShowType);
                 UiCheckbox(OBF("Nut Teleport"), &esp.isTeleportButton);
             }
+            ImGui::EndChild();
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
@@ -521,6 +605,8 @@ static void DrawTabMiniGame() {
         }
         if (ImGui::BeginTabItem(OBF("Kho Bau"))) {
             auto &d = gPLConfig.miniGame.digging;
+            ImVec2 avail = ImGui::GetContentRegionAvail();
+            ImGui::BeginChild(OBF("DigL"), ImVec2(avail.x * 0.5f, avail.y), true);
             UiCheckbox(OBF("Kich Hoat"), &d.isEnable);
             if (d.isEnable) {
                 UiCheckbox(OBF("Tu Dong Dao Ruong"), &d.isAutoDigTreasure);
@@ -535,8 +621,37 @@ static void DrawTabMiniGame() {
                     UiCheckbox(OBF("Di Ngau Nhien Het Ruong"), &d.autoMoveKhiHetRuong);
                 }
                 UiCheckbox(OBF("Tu Mua Xeng"), &d.isAutoBuyXeng);
-                UiCheckbox(OBF("ESP Kho Bau"), &d.esp.isEnable);
+                ImGui::Separator();
+                ImGui::TextUnformatted(OBF("Loc Loai Ruong (trong = tat ca):"));
+                static char addBoxTypeBuf[64] = {};
+                ImGui::InputText(OBF("##AddBoxType"), addBoxTypeBuf, sizeof(addBoxTypeBuf));
+                ImGui::SameLine();
+                if (ImGui::Button(OBF("Them Loai"))) {
+                    try {
+                        int boxType = std::stoi(addBoxTypeBuf);
+                        d.filterLoaiRuong[boxType] = true;
+                        addBoxTypeBuf[0] = '\0';
+                        SaveConfig();
+                    } catch (...) {}
+                }
+                for (auto it = d.filterLoaiRuong.begin(); it != d.filterLoaiRuong.end();) {
+                    std::string boxLbl = OBF("Loai ") + std::to_string(it->first);
+                    UiCheckbox(boxLbl.c_str(), &it->second);
+                    ImGui::SameLine();
+                    std::string delBox = OBF("Xoa##box") + std::to_string(it->first);
+                    if (ImGui::Button(delBox.c_str())) {
+                        it = d.filterLoaiRuong.erase(it);
+                        SaveConfig();
+                        continue;
+                    }
+                    ++it;
+                }
             }
+            ImGui::EndChild();
+            ImGui::SameLine();
+            ImGui::BeginChild(OBF("DigR"), ImVec2(0, avail.y), true);
+            if (d.isEnable) UiCheckbox(OBF("ESP Kho Bau"), &d.esp.isEnable);
+            ImGui::EndChild();
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem(OBF("Leo Thap"))) {
@@ -555,6 +670,12 @@ static void DrawTabMiniGame() {
             auto &s = gPLConfig.miniGame.ThapGa;
             UiCheckbox(OBF("Kich Hoat"), &s.isEnable);
             if (s.isEnable) UiSliderInt(OBF("Delay Step (ms)"), &s.delayNextPoint, 5000, 30000);
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem(OBF("Party"))) {
+            auto &party = gPLConfig.miniGame.Party;
+            UiCheckbox(OBF("Kich Hoat"), &party.isEnable);
+            if (party.isEnable) UiSliderInt(OBF("Delay Step (ms)"), &party.delayNextPoint, 5000, 30000);
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
