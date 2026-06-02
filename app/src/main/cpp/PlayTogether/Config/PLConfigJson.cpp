@@ -54,16 +54,40 @@ void from_json(const nlohmann::json& j, PLConfig::GeneralConfig& cfg) {
     if (j.contains("nhaycao")) j["nhaycao"].get_to(cfg.nhaycao);
 }
 
+void to_json(nlohmann::json& j, const PLConfig::FishingConfig& cfg) {
+    j = nlohmann::json{
+        {"enabled", cfg.enabled},
+        {"autoCloseReward", cfg.autoCloseReward},
+        {"showStatus", cfg.showStatus},
+        {"handleBigFish", cfg.handleBigFish},
+        {"tickIntervalMs", cfg.tickIntervalMs},
+        {"actionIntervalMs", cfg.actionIntervalMs},
+        {"restartDelayMs", cfg.restartDelayMs}
+    };
+}
+
+void from_json(const nlohmann::json& j, PLConfig::FishingConfig& cfg) {
+    if (j.contains("enabled")) j["enabled"].get_to(cfg.enabled);
+    if (j.contains("autoCloseReward")) j["autoCloseReward"].get_to(cfg.autoCloseReward);
+    if (j.contains("showStatus")) j["showStatus"].get_to(cfg.showStatus);
+    if (j.contains("handleBigFish")) j["handleBigFish"].get_to(cfg.handleBigFish);
+    if (j.contains("tickIntervalMs")) j["tickIntervalMs"].get_to(cfg.tickIntervalMs);
+    if (j.contains("actionIntervalMs")) j["actionIntervalMs"].get_to(cfg.actionIntervalMs);
+    if (j.contains("restartDelayMs")) j["restartDelayMs"].get_to(cfg.restartDelayMs);
+}
+
 void to_json(nlohmann::json& j, const PLConfig& cfg) {
     j = nlohmann::json{
         {"viTriCoSan", cfg.viTriCoSan},
-        {"general", cfg.general}
+        {"general", cfg.general},
+        {"fishing", cfg.fishing}
     };
 }
 
 void from_json(const nlohmann::json& j, PLConfig& cfg) {
     if (j.contains("viTriCoSan")) j["viTriCoSan"].get_to(cfg.viTriCoSan);
     if (j.contains("general")) j["general"].get_to(cfg.general);
+    if (j.contains("fishing")) j["fishing"].get_to(cfg.fishing);
 }
 
 static std::string g_config_file_path;

@@ -15,6 +15,7 @@ set(PLAY_TOGETHER_SOURCES
     PlayTogether/UI/MenuUi.cpp
     PlayTogether/UI/InfoWindow.cpp
     PlayTogether/KhoiPhucTrangThai.cpp
+    PlayTogether/AutoFishing.cpp
     PlayTogether/SDK/FrameWork.cpp
     PlayTogether/SDK/SystemHelper.cpp
     PlayTogether/SDK/CacheSystem.cpp

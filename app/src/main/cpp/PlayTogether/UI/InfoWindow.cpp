@@ -1,5 +1,6 @@
 #include "InfoWindow.h"
 #include "Config/Config.h"
+#include "../AutoFishing.h"
 #include <Includes/obfuscate.h>
 #include <imgui.h>
 #include <chrono>
@@ -22,6 +23,11 @@ void ShowInfoWindow() {
         ImGui::Text(OBF("Map: %d"), PLConfig::GetPlayerMapID());
         Vector3 pos = PLConfig::GetPlayerPosition();
         ImGui::Text(OBF("Tọa độ: %.1f, %.1f, %.1f"), pos.x, pos.y, pos.z);
+        if (gPLConfig.fishing.enabled && gPLConfig.fishing.showStatus) {
+            ImGui::Separator();
+            ImGui::Text(OBF("Câu cá: %s"), AutoFishing::GetStateLabel().c_str());
+            ImGui::Text(OBF("Đã câu: %d"), AutoFishing::GetFishCaughtCount());
+        }
     }
     ImGui::End();
 }

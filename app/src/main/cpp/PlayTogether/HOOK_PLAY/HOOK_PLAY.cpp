@@ -6,6 +6,7 @@
 #include <GameUI/EspGUI.h>
 #include <GameUI/GameViewport.h>
 #include "../UI/InfoWindow.h"
+#include "../AutoFishing.h"
 #include "../SDK/FrameWork.h"
 #include "../SDK/ActorControl.h"
 #include "../SDK/KinematicCharacterMotor.h"
@@ -54,6 +55,11 @@ void DRAW_RENDER() {
         }
     }
     ShowInfoWindow();
+    if (gPLConfig.fishing.enabled && gPLConfig.fishing.showStatus && !gPLConfig.general.isInfo) {
+        char buf[96];
+        snprintf(buf, sizeof(buf), OBF("Câu: %s | #%d"), AutoFishing::GetStateLabel().c_str(), AutoFishing::GetFishCaughtCount());
+        EspGUI::DrawTooltip(ImVec2(12.f, 48.f), buf);
+    }
 }
 
 void init() {

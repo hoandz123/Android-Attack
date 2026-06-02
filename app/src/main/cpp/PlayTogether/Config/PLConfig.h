@@ -33,6 +33,16 @@ struct PLConfig {
         int nhaycao = 0;
     } general;
 
+    struct FishingConfig {
+        bool enabled = false;
+        bool autoCloseReward = true;
+        bool showStatus = true;
+        bool handleBigFish = false;
+        int tickIntervalMs = 400;
+        int actionIntervalMs = 500;
+        int restartDelayMs = 1500;
+    } fishing;
+
     struct MapInfo {
         std::string name;
         int id = 0;
