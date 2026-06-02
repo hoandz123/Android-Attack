@@ -74,6 +74,12 @@ android {
         create("tools") {
             headers = "src/main/cpp/Tools"
         }
+        create("xdl") {
+            headers = "src/main/cpp/xdl"
+        }
+        create("gameapi") {
+            headers = "src/main/cpp"
+        }
     }
 
     externalNativeBuild {
