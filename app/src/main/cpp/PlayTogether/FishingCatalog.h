@@ -9,6 +9,8 @@ constexpr int kMaxBaits = 64;
 constexpr int kMaxZones = 128;
 constexpr int kMaxGuides = 128;
 constexpr int kMaxFish = 300;
+constexpr int kMaxLevels = 64;
+constexpr int kMaxLearnedFishPerLevel = 16;
 constexpr int kLabelLen = 96;
 
 struct BaitEntry {
@@ -44,6 +46,16 @@ struct FishEntry {
     char label[kLabelLen]{};
 };
 
+struct LevelEntry {
+    unsigned int levelId = 0;
+    int shadowIndex = 0;
+    bool bigFish = false;
+    float minigameHp = 0.f;
+    char label[kLabelLen]{};
+    int learnedFishCount = 0;
+    char learnedFish[kMaxLearnedFishPerLevel][kLabelLen]{};
+};
+
 struct Snapshot {
     bool ready = false;
     int mapId = 0;
@@ -55,6 +67,8 @@ struct Snapshot {
     GuideEntry guides[kMaxGuides]{};
     int fishCount = 0;
     FishEntry fish[kMaxFish]{};
+    int levelCount = 0;
+    LevelEntry levels[kMaxLevels]{};
 };
 
 void UpdateFromGameThread();

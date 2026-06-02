@@ -16,6 +16,15 @@ void from_json(const nlohmann::json& j, std::pair<unsigned int, unsigned int>& p
     if (j.contains("baitItemId")) j["baitItemId"].get_to(p.second);
 }
 
+void to_json(nlohmann::json& j, const std::pair<unsigned int, std::vector<unsigned int>>& p) {
+    j = nlohmann::json{{"levelId", p.first}, {"fishIds", p.second}};
+}
+
+void from_json(const nlohmann::json& j, std::pair<unsigned int, std::vector<unsigned int>>& p) {
+    if (j.contains("levelId")) j["levelId"].get_to(p.first);
+    if (j.contains("fishIds")) j["fishIds"].get_to(p.second);
+}
+
 void to_json(nlohmann::json& j, const PLConfig::GeneralConfig& cfg) {
     j = nlohmann::json{{"isInfo", cfg.isInfo}};
 }
@@ -82,7 +91,8 @@ void to_json(nlohmann::json& j, const PLConfig::FishingConfig& cfg) {
         {"filterByLevel", cfg.filterByLevel},
         {"levelMin", cfg.levelMin},
         {"levelMax", cfg.levelMax},
-        {"keepLevelIds", cfg.keepLevelIds}
+        {"keepLevelIds", cfg.keepLevelIds},
+        {"learnedLevelFish", cfg.learnedLevelFish}
     };
 }
 
@@ -147,6 +157,7 @@ void from_json(const nlohmann::json& j, PLConfig::FishingConfig& cfg) {
     if (j.contains("levelMin")) j["levelMin"].get_to(cfg.levelMin);
     if (j.contains("levelMax")) j["levelMax"].get_to(cfg.levelMax);
     if (j.contains("keepLevelIds")) j["keepLevelIds"].get_to(cfg.keepLevelIds);
+    if (j.contains("learnedLevelFish")) j["learnedLevelFish"].get_to(cfg.learnedLevelFish);
 }
 
 void to_json(nlohmann::json& j, const PLConfig& cfg) {

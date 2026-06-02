@@ -1,4 +1,6 @@
 #include "FishingGameplay.h"
+#include "AutoFishing.h"
+#include "FishingCatalog.h"
 #include "Config/Config.h"
 
 extern bool isGameLoading;
@@ -269,6 +271,15 @@ void hook_ReceiveFishingCatch(Object *self, Object *rewardInfo) {
     unsigned int itemId = rewardInfo->invoke_method<unsigned int>(OBF("get_CatchItemID"));
     unsigned int extraId = rewardInfo->invoke_method<unsigned int>(OBF("get_ExtraCatchItemID"));
     evaluateEarlyCatch(self, itemId, extraId);
+    unsigned int levelId = AutoFishing::GetCurrentFishLevel();
+    if (levelId == 0) levelId = GetCachedCastDifficultyId();
+    bool learnedNew = false;
+    if (RecordLearnedLevelFish(levelId, itemId)) learnedNew = true;
+    if (extraId > 0 && RecordLearnedLevelFish(levelId, extraId)) learnedNew = true;
+    if (learnedNew) {
+        SaveConfig();
+        FishingCatalog::RequestRebuild();
+    }
 }
 
 void hook_ReceiveFishingTug(Object *self, Object *tugInfo) {
@@ -636,7 +647,7 @@ unsigned int GetPendingRaidIdx() {
     return g_raidIdx;
 }
 
-int shadowIndexFromAssetName(const char *name) {
+int ShadowIndexFromAssetName(const char *name) {
     if (!name || !name[0]) return 0;
     if (strcmp(name, OBF("fish_s_shadow")) == 0) return 1;
     if (strcmp(name, OBF("fish_m_shadow")) == 0) return 2;
@@ -646,6 +657,21 @@ int shadowIndexFromAssetName(const char *name) {
     if (strcmp(name, OBF("fish_xxxl_shadow")) == 0) return 6;
     if (strcmp(name, OBF("fish_4xl_shadow")) == 0) return 7;
     return 0;
+}
+
+bool RecordLearnedLevelFish(unsigned int levelId, unsigned int itemId) {
+    if (levelId == 0 || itemId == 0) return false;
+    auto &entries = gPLConfig.fishing.learnedLevelFish;
+    for (auto &e : entries) {
+        if (e.first != levelId) continue;
+        for (unsigned int id : e.second) {
+            if (id == itemId) return false;
+        }
+        e.second.push_back(itemId);
+        return true;
+    }
+    entries.emplace_back(levelId, std::vector<unsigned int>{itemId});
+    return true;
 }
 
 unsigned int GetCachedCastDifficultyId() {
@@ -671,7 +697,7 @@ bool QueryFishDifficulty(unsigned int sid, int *outShadowIndex, unsigned int *ou
         if (!rowCls->find_method(OBF("get_AssetName"), 0)) return false;
         String *asset = row->invoke_method<String *>(OBF("get_AssetName"));
         if (!asset) return false;
-        *outShadowIndex = shadowIndexFromAssetName(asset->to_string().c_str());
+        *outShadowIndex = ShadowIndexFromAssetName(asset->to_string().c_str());
     }
     return true;
 }

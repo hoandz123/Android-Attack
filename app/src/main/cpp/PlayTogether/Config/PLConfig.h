@@ -68,6 +68,7 @@ struct PLConfig {
         int levelMin = 0;
         int levelMax = 0;
         std::vector<unsigned int> keepLevelIds;
+        std::vector<std::pair<unsigned int, std::vector<unsigned int>>> learnedLevelFish;
     } fishing;
 
     static int GetPlayerMapID();

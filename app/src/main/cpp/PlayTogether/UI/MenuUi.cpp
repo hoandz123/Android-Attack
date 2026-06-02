@@ -95,6 +95,78 @@ static const char *FindFishLabel(const FishingCatalog::Snapshot &cat, int fishIt
     return nullptr;
 }
 
+static bool IsLevelKept(unsigned int levelId) {
+    for (unsigned int id : gPLConfig.fishing.keepLevelIds) {
+        if (id == levelId) return true;
+    }
+    return false;
+}
+
+static void SetLevelKept(unsigned int levelId, bool kept) {
+    for (size_t i = 0; i < gPLConfig.fishing.keepLevelIds.size(); i++) {
+        if (gPLConfig.fishing.keepLevelIds[i] == levelId) {
+            if (!kept) gPLConfig.fishing.keepLevelIds.erase(gPLConfig.fishing.keepLevelIds.begin() + (long) i);
+            return;
+        }
+    }
+    if (kept) gPLConfig.fishing.keepLevelIds.push_back(levelId);
+}
+
+static bool DrawLevelPicker() {
+    static char s_levelSearch[64] = {};
+    bool changed = false;
+    FishingCatalog::Snapshot cat{};
+    FishingCatalog::Read(cat);
+    int keptCount = 0;
+    for (unsigned int id : gPLConfig.fishing.keepLevelIds) {
+        if (id > 0) keptCount++;
+    }
+    char summary[64];
+    snprintf(summary, sizeof(summary), OBF("Đã chọn %d level"), keptCount);
+    ImGui::TextUnformatted(summary);
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputTextWithHint(OBF("##level_search"), OBF("Tên/ID…"), s_levelSearch, sizeof(s_levelSearch));
+    if (!cat.ready) {
+        ImGui::TextUnformatted(OBF("Đang tải danh sách…"));
+        return false;
+    }
+    if (cat.levelCount <= 0) {
+        ImGui::TextUnformatted(OBF("Chưa có level (vào game?)"));
+        return false;
+    }
+    FishingCatalog::NotifyPickerOpen();
+    ImGui::BeginChild(OBF("level_list##child"), ImVec2(0, 220), true);
+    for (int i = 0; i < cat.levelCount; i++) {
+        const auto &e = cat.levels[i];
+        if (!MatchSearch(e.label, s_levelSearch)) {
+            char idBuf[16];
+            snprintf(idBuf, sizeof(idBuf), "%u", e.levelId);
+            if (!MatchSearch(idBuf, s_levelSearch)) continue;
+        }
+        ImGui::PushID(i);
+        bool kept = IsLevelKept(e.levelId);
+        char row[FishingCatalog::kLabelLen + 48];
+        snprintf(row, sizeof(row), OBF("%s | bóng %s%s HP%.0f"), e.label, OverlaySnapshot::ShadowLabel(e.shadowIndex), e.bigFish ? OBF(" | Lớn") : "", e.minigameHp);
+        if (ImGui::Checkbox(row, &kept)) {
+            SetLevelKept(e.levelId, kept);
+            changed = true;
+        }
+        if (e.learnedFishCount > 0) {
+            ImGui::Indent();
+            ImGui::TextUnformatted(OBF("Cá đã học:"));
+            for (int j = 0; j < e.learnedFishCount; j++) ImGui::BulletText("%s", e.learnedFish[j]);
+            ImGui::Unindent();
+        } else if (gPLConfig.fishing.filterByLevel) {
+            ImGui::Indent();
+            ImGui::TextUnformatted(OBF("(chưa học cá — câu để ghi nhận)"));
+            ImGui::Unindent();
+        }
+        ImGui::PopID();
+    }
+    ImGui::EndChild();
+    return changed;
+}
+
 static bool DrawBaitPicker(const char *id, int *baitItemId) {
     if (!baitItemId) return false;
     FishingCatalog::Snapshot cat{};
@@ -439,12 +511,13 @@ static void DrawTabFilter() {
     ImGui::Separator();
     ImGui::TextUnformatted(OBF("Lọc theo level"));
     UiCheckbox(OBF("Bật lọc level"), &gPLConfig.fishing.filterByLevel);
-    if (gPLConfig.fishing.filterByLevel) {
+    if (DrawLevelPicker()) SaveConfig();
+    if (ImGui::CollapsingHeader(OBF("Khoảng level (nâng cao)##fish_lv_range"))) {
         ImGui::InputInt(OBF("Level tối thiểu (0=tắt)##fish_lv_min"), &gPLConfig.fishing.levelMin, 0, 0);
         if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
         ImGui::InputInt(OBF("Level tối đa (0=tắt)##fish_lv_max"), &gPLConfig.fishing.levelMax, 0, 0);
         if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
-        ImGui::TextUnformatted(OBF("Hoặc keepLevelIds trong config.json"));
+        ImGui::TextUnformatted(OBF("Chỉ dùng khi keepLevelIds rỗng"));
     }
     ImGui::Separator();
     ImGui::TextUnformatted(OBF("Hiếm & mục tiêu"));

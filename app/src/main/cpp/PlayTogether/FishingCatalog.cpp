@@ -1,5 +1,7 @@
 #include "FishingCatalog.h"
 #include "AutoFishing.h"
+#include "Config/Config.h"
+#include "FishingGameplay.h"
 #include "SDK/CacheUser.h"
 #include "SDK/SystemHelper.h"
 #include "SDK/enum/eTableType.h"
@@ -173,6 +175,38 @@ int collectMapGuidePointIds(int *outIds, int maxCount) {
         outIds[added++] = (int) gpId;
     }
     return added;
+}
+
+void sortLevels(LevelEntry *entries, int count) {
+    for (int i = 1; i < count; i++) {
+        LevelEntry key = entries[i];
+        int j = i - 1;
+        while (j >= 0 && entries[j].levelId > key.levelId) {
+            entries[j + 1] = entries[j];
+            j--;
+        }
+        entries[j + 1] = key;
+    }
+}
+
+const std::vector<unsigned int> *findLearnedFishIds(unsigned int levelId) {
+    for (const auto &e : gPLConfig.fishing.learnedLevelFish) {
+        if (e.first == levelId) return &e.second;
+    }
+    return nullptr;
+}
+
+void attachLearnedFishNames(LevelEntry &e) {
+    e.learnedFishCount = 0;
+    const std::vector<unsigned int> *ids = findLearnedFishIds(e.levelId);
+    if (!ids) return;
+    for (unsigned int itemId : *ids) {
+        if (e.learnedFishCount >= kMaxLearnedFishPerLevel) break;
+        if (itemId == 0) continue;
+        std::string name = resolveItemName(itemId);
+        copyLabelFmt(e.learnedFish[e.learnedFishCount], kLabelLen, OBF("%s (%u)"), name.c_str(), itemId);
+        e.learnedFishCount++;
+    }
 }
 
 void sortGuides(GuideEntry *entries, int count) {
@@ -451,6 +485,53 @@ void buildFish(Snapshot &snap) {
     logCatalogBuild(OBF("Fishlist"), impl, dictCount, visited, snap.fishCount);
 }
 
+void buildLevels(Snapshot &snap) {
+    snap.levelCount = 0;
+    Object *impl = getTableImpl(eTableType::FishingDifficulty);
+    int dictCount = readTableDictCount(impl);
+    int visited = 0;
+    if (!impl) {
+        logCatalogBuild(OBF("FishingDifficulty"), impl, dictCount, visited, snap.levelCount);
+        return;
+    }
+    forEachDictValues(impl, kMaxLevels, [&](Object *row) -> bool {
+        visited++;
+        if (snap.levelCount >= kMaxLevels) return false;
+        Class *rowCls = row->get_class();
+        if (!rowCls || !rowCls->find_method(OBF("get_FishingDifficultyId"), 0)) return false;
+        unsigned int sid = row->invoke_method<unsigned int>(OBF("get_FishingDifficultyId"));
+        if (sid == 0) return false;
+        int shadowIdx = 0;
+        if (rowCls->find_method(OBF("get_AssetName"), 0)) {
+            String *asset = row->invoke_method<String *>(OBF("get_AssetName"));
+            std::string assetName = asset ? asset->to_string() : std::string();
+            shadowIdx = FishingGameplay::ShadowIndexFromAssetName(assetName.empty() ? nullptr : assetName.c_str());
+        }
+        bool bigFish = false;
+        if (rowCls->find_method(OBF("get_BigFish"), 0)) bigFish = row->invoke_method<bool>(OBF("get_BigFish"));
+        float minigameHp = 0.f;
+        if (rowCls->find_method(OBF("get_MinigameHp"), 0)) minigameHp = row->invoke_method<float>(OBF("get_MinigameHp"));
+        unsigned int titleId = 0;
+        if (rowCls->find_method(OBF("get_FishMinigameTitle"), 0)) titleId = row->invoke_method<unsigned int>(OBF("get_FishMinigameTitle"));
+        LevelEntry &e = snap.levels[snap.levelCount];
+        e.levelId = sid;
+        e.shadowIndex = shadowIdx;
+        e.bigFish = bigFish;
+        e.minigameHp = minigameHp;
+        std::string label = resolveMessage(titleId);
+        if (label.empty()) {
+            copyLabelFmt(e.label, kLabelLen, OBF("Lv %u | Bóng %s"), sid, FishingGameplay::ShadowLabelFromIndex(shadowIdx));
+        } else {
+            copyLabelFmt(e.label, kLabelLen, OBF("%s"), label.c_str());
+        }
+        attachLearnedFishNames(e);
+        snap.levelCount++;
+        return true;
+    });
+    if (snap.levelCount > 1) sortLevels(snap.levels, snap.levelCount);
+    logCatalogBuild(OBF("FishingDifficulty"), impl, dictCount, visited, snap.levelCount);
+}
+
 void publishSnapshot(const Snapshot &snap) {
     int writeIdx = 1 - g_readIndex.load(std::memory_order_relaxed);
     g_buffers[writeIdx] = snap;
@@ -485,6 +566,7 @@ void UpdateFromGameThread() {
     buildBaits(snap, baitUid);
     buildZones(snap, castZone, catchZone);
     buildGuides(snap, activeGuide);
+    buildLevels(snap);
     bool rebuildFish = !g_fishSessionBuilt || g_pickerOpen.load(std::memory_order_relaxed);
     if (!rebuildFish && g_ready.load(std::memory_order_acquire)) {
         int idx = g_readIndex.load(std::memory_order_acquire);

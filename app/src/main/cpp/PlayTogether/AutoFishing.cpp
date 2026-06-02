@@ -298,7 +298,7 @@ bool isShadowFilterBlocking() {
 void trySkipUnwantedFish(Object *player, eFishingState state) {
     if (!isFilterEnabled() || !player) return;
     if (g_pausedByRare || g_pausedByTarget) return;
-    if (state != eFishingState::Idle && state != eFishingState::Search && state != eFishingState::Hit) return;
+    if (state != eFishingState::Idle && state != eFishingState::Search && state != eFishingState::Hit && state != eFishingState::Fighting) return;
     updateCurrentFishInfo(player);
     if (shouldKeepCurrentFish()) return;
     if (g_skipFishThisCycle && g_skipCycleLevel == g_currentFishLevel) return;
@@ -308,7 +308,7 @@ void trySkipUnwantedFish(Object *player, eFishingState state) {
     g_lastSkipMs = now;
     g_skipFishThisCycle = true;
     g_skipCycleLevel = g_currentFishLevel;
-    if (state == eFishingState::Hit && g_methods.hasFishingMiss) player->invoke_method<void>(OBF("FishingMiss"));
+    if ((state == eFishingState::Hit || state == eFishingState::Fighting) && g_methods.hasFishingMiss) player->invoke_method<void>(OBF("FishingMiss"));
     else if (g_methods.hasFishLeave) player->invoke_method<void>(OBF("FishLeave"));
     LOGD(OBF("Bỏ cá: lv=%u bóng=%s"), g_currentFishLevel, FishingGameplay::ShadowLabelFromIndex(g_currentShadowIndex));
 }
@@ -332,7 +332,7 @@ void refreshTelemetry(Object *player, Object *fishingSys, eFishingState state) {
             g_bigFishHpMax = fishingSys->invoke_method<int>(OBF("get_BigFishHP_Org"));
         }
     }
-    if (player && readIsFishing(player) && (state == eFishingState::Idle || state == eFishingState::Search || state == eFishingState::Hit)) updateCurrentFishInfo(player);
+    if (player && readIsFishing(player) && (state == eFishingState::Idle || state == eFishingState::Search || state == eFishingState::Hit || state == eFishingState::Fighting)) updateCurrentFishInfo(player);
 }
 
 void tryStartFishing(Object *player, Object *fishingSys) {
