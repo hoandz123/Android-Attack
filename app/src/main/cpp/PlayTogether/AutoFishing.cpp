@@ -191,22 +191,25 @@ void tryHandleRewardDialog(Object *fishingSys) {
     if (!dlg) return;
     int grade = readCatchGrade(fishingSys);
     unsigned int itemId = readCatchItemId(fishingSys);
-    bool sellTrash = gPLConfig.fishing.autoSellTrash && g_methods.hasSellReward && grade > 0
-                     && grade <= gPLConfig.fishing.maxSellGrade;
+    bool sellTrash = gPLConfig.fishing.autoSellTrash && g_methods.hasSellReward && grade > 0 && grade <= gPLConfig.fishing.maxSellGrade;
     if (gPLConfig.fishing.smartKeepSell) {
         if (FishingGameplay::ShouldKeepCatch(itemId, grade)) sellTrash = false;
         else if (grade > 0 && grade <= gPLConfig.fishing.maxSellGrade) sellTrash = true;
     }
+    bool earlySell = false;
+    if (FishingGameplay::GetEarlyCatchSellDecision(&earlySell)) sellTrash = earlySell;
     if (sellTrash) {
         if (!canActNow()) return;
         g_lastRewardMs = now;
         dlg->invoke_method<void>(OBF("OnClick_Selling"));
+        FishingGameplay::ClearEarlyCatchDecision();
         return;
     }
     if (!gPLConfig.fishing.autoCloseReward || !g_methods.hasCloseReward) return;
     if (!canActNow()) return;
     g_lastRewardMs = now;
     dlg->invoke_method<void>(OBF("OnClick_ButtonClose"));
+    FishingGameplay::ClearEarlyCatchDecision();
 }
 
 int readFailType(Object *player) {
@@ -238,6 +241,7 @@ void refreshTelemetry(Object *player, Object *fishingSys, eFishingState state) {
 void tryStartFishing(Object *player, Object *fishingSys) {
     if (!player) return;
     if (g_pausedByRare || g_pausedByTarget) return;
+    if (!FishingGameplay::CanPaceAct()) return;
     long long now = Tools::getSystemMilliseconds();
     int delay = gPLConfig.fishing.restartDelayMs;
     if (delay < 800) delay = 800;
@@ -265,6 +269,7 @@ void tryStartFishing(Object *player, Object *fishingSys) {
 
 void tryFishingHit(Object *player) {
     if (!player || g_pausedByRare || g_pausedByTarget) return;
+    if (!FishingGameplay::CanPaceAct()) return;
     if (!stateDelayElapsed(gPLConfig.fishing.hitDelayMs)) return;
     if (!canActNow()) return;
     player->invoke_method<void>(OBF("FishingHit"));
@@ -272,6 +277,7 @@ void tryFishingHit(Object *player) {
 
 void tryLift(Object *player) {
     if (!player || g_pausedByRare || g_pausedByTarget) return;
+    if (!FishingGameplay::CanPaceAct()) return;
     if (!stateDelayElapsed(gPLConfig.fishing.liftDelayMs)) return;
     if (!canActNow()) return;
     bool success = true;
@@ -318,7 +324,7 @@ void tickState(Object *player, Object *fishingSys, eFishingState state) {
         return;
     }
     if (isBigFishState(state)) {
-        if (!gPLConfig.fishing.handleBigFish) return;
+        if (!gPLConfig.fishing.handleBigFish && !FishingGameplay::IsRaidModeActive()) return;
         if (state == eFishingState::BigFish_Stun || state == eFishingState::BigFish_StunBegin) tryStunHit(player);
         else if (state == eFishingState::BigFish_Tug || state == eFishingState::BigFish_Fighting || state == eFishingState::BigFish_Pumpin || state == eFishingState::BigFish_Drag) {
             FishingGameplay::TickPerfectTug(player, fishingSys, (int) state);

@@ -41,6 +41,13 @@ struct PLConfig {
         bool autoEquipBait = false;
         int baitItemId = 0;
         int targetFishItemId = 0;
+        bool adaptivePacing = true;
+        bool stunOrchestrator = true;
+        int stunHitIntervalMs = 220;
+        int maxStunHitsPerPhase = 8;
+        int minSellValue = 0;
+        bool keepCodexFish = true;
+        bool autoRaidEnter = false;
     } fishing;
 
     static int GetPlayerMapID();

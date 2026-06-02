@@ -97,6 +97,7 @@ static void DrawTabFishing() {
     UiCheckbox(OBF("Hiệu suất phiên"), &gPLConfig.fishing.showEfficiency);
     UiCheckbox(OBF("Hướng phao (2D)"), &gPLConfig.fishing.showFloatMarker);
     UiCheckbox(OBF("Backoff cast thông minh"), &gPLConfig.fishing.adaptiveCastBackoff);
+    UiCheckbox(OBF("Nhịp chống captcha"), &gPLConfig.fishing.adaptivePacing);
     ImGui::SliderInt(OBF("Nhịp tick (ms)##fish_tick"), &gPLConfig.fishing.tickIntervalMs, 250, 1200);
     if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
     ImGui::SliderInt(OBF("Nhịp thao tác (ms)##fish_act"), &gPLConfig.fishing.actionIntervalMs, 300, 2000);
@@ -119,6 +120,13 @@ static void DrawTabFishing() {
         ImGui::SliderInt(OBF("Nhịp giật (ms)##fish_perfect"), &gPLConfig.fishing.perfectLiftIntervalMs, 120, 600);
         if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
     }
+    UiCheckbox(OBF("Giật stun theo server"), &gPLConfig.fishing.stunOrchestrator);
+    if (gPLConfig.fishing.stunOrchestrator) {
+        ImGui::SliderInt(OBF("Nhịp stun (ms)##fish_stun_iv"), &gPLConfig.fishing.stunHitIntervalMs, 180, 800);
+        if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+        ImGui::SliderInt(OBF("Tối đa stun/phase##fish_stun_cap"), &gPLConfig.fishing.maxStunHitsPerPhase, 1, 16);
+        if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+    }
     if (ImGui::Checkbox(OBF("Cắn nhanh (rủi ro)"), &gPLConfig.fishing.fastBite)) SaveConfig();
     if (gPLConfig.fishing.fastBite) {
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.45f, 0.2f, 1.f));
@@ -128,12 +136,15 @@ static void DrawTabFishing() {
     if (ImGui::Checkbox(OBF("Bán/giữ theo túi (rủi ro)"), &gPLConfig.fishing.smartKeepSell)) SaveConfig();
     if (gPLConfig.fishing.smartKeepSell) {
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.45f, 0.2f, 1.f));
-        ImGui::TextUnformatted(OBF("Cảnh báo: đọc CacheUser + grade, vẫn qua dialog"));
+        ImGui::TextUnformatted(OBF("Cảnh báo: giá trị + codex + áp lực túi"));
         ImGui::PopStyleColor();
         ImGui::SliderInt(OBF("Giữ grade ≥##fish_keep_grade"), &gPLConfig.fishing.smartKeepMinGrade, 3, 5);
         if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
         ImGui::SliderInt(OBF("Giữ nếu sở hữu <##fish_keep_cnt"), &gPLConfig.fishing.smartKeepMaxOwned, 1, 20);
         if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+        ImGui::SliderInt(OBF("Bán nếu giá <##fish_min_sell"), &gPLConfig.fishing.minSellValue, 0, 5000);
+        if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
+        UiCheckbox(OBF("Giữ cá thiếu codex"), &gPLConfig.fishing.keepCodexFish);
     }
     if (ImGui::Checkbox(OBF("Tự gắn mồi UID (rủi ro)"), &gPLConfig.fishing.autoEquipBait)) SaveConfig();
     if (gPLConfig.fishing.autoEquipBait) {
@@ -156,6 +167,12 @@ static void DrawTabFishing() {
         ImGui::TextUnformatted(OBF("Cảnh báo: dễ lệch server, mặc định tắt"));
         ImGui::PopStyleColor();
         UiCheckbox(OBF("Thanh HP cá lớn"), &gPLConfig.fishing.showBigFishHp);
+    }
+    if (ImGui::Checkbox(OBF("Tự vào raid (rủi ro cao)"), &gPLConfig.fishing.autoRaidEnter)) SaveConfig();
+    if (gPLConfig.fishing.autoRaidEnter) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.45f, 0.2f, 1.f));
+        ImGui::TextUnformatted(OBF("Cảnh báo: SendToFishingRaidEnter — mặc định tắt"));
+        ImGui::PopStyleColor();
     }
     ImGui::Separator();
     if (ImGui::Button(OBF("Reset thống kê phiên##fish_reset_stats"), ImVec2(-1, 0))) {

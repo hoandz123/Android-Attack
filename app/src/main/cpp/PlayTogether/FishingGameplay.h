@@ -8,4 +8,10 @@ namespace FishingGameplay {
     void TryFastBite(Object *player, int fishingState);
     void TryAutoEquipBait(Object *fishingSys);
     bool ShouldKeepCatch(unsigned int itemId, int grade);
+    bool CanPaceAct();
+    bool IsRaidModeActive();
+    bool GetEarlyCatchSellDecision(bool *outSell);
+    void ClearEarlyCatchDecision();
+    bool HasPendingRaid();
+    unsigned int GetPendingRaidIdx();
 }

@@ -48,7 +48,14 @@ void to_json(nlohmann::json& j, const PLConfig::FishingConfig& cfg) {
         {"smartKeepMaxOwned", cfg.smartKeepMaxOwned},
         {"autoEquipBait", cfg.autoEquipBait},
         {"baitItemId", cfg.baitItemId},
-        {"targetFishItemId", cfg.targetFishItemId}
+        {"targetFishItemId", cfg.targetFishItemId},
+        {"adaptivePacing", cfg.adaptivePacing},
+        {"stunOrchestrator", cfg.stunOrchestrator},
+        {"stunHitIntervalMs", cfg.stunHitIntervalMs},
+        {"maxStunHitsPerPhase", cfg.maxStunHitsPerPhase},
+        {"minSellValue", cfg.minSellValue},
+        {"keepCodexFish", cfg.keepCodexFish},
+        {"autoRaidEnter", cfg.autoRaidEnter}
     };
 }
 
@@ -85,6 +92,13 @@ void from_json(const nlohmann::json& j, PLConfig::FishingConfig& cfg) {
     if (j.contains("autoEquipBait")) j["autoEquipBait"].get_to(cfg.autoEquipBait);
     if (j.contains("baitItemId")) j["baitItemId"].get_to(cfg.baitItemId);
     if (j.contains("targetFishItemId")) j["targetFishItemId"].get_to(cfg.targetFishItemId);
+    if (j.contains("adaptivePacing")) j["adaptivePacing"].get_to(cfg.adaptivePacing);
+    if (j.contains("stunOrchestrator")) j["stunOrchestrator"].get_to(cfg.stunOrchestrator);
+    if (j.contains("stunHitIntervalMs")) j["stunHitIntervalMs"].get_to(cfg.stunHitIntervalMs);
+    if (j.contains("maxStunHitsPerPhase")) j["maxStunHitsPerPhase"].get_to(cfg.maxStunHitsPerPhase);
+    if (j.contains("minSellValue")) j["minSellValue"].get_to(cfg.minSellValue);
+    if (j.contains("keepCodexFish")) j["keepCodexFish"].get_to(cfg.keepCodexFish);
+    if (j.contains("autoRaidEnter")) j["autoRaidEnter"].get_to(cfg.autoRaidEnter);
 }
 
 void to_json(nlohmann::json& j, const PLConfig& cfg) {
