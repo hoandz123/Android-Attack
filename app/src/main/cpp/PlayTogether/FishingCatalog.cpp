@@ -257,6 +257,44 @@ void logCatalogBuild(const char *tableName, Object *impl, int dictCount, int vis
     LOGI(OBF("FishingCatalog %s: impl=%p get_Count=%d dictCount=%d visited=%d snap=%d"), tableName, impl, readTableImplCount(impl), dictCount, visited, snapCount);
 }
 
+bool tryForceLoadFishingDifficulty(Object *impl) {
+    static long long s_lastTryMs = 0;
+    long long now = Tools::getSystemMilliseconds();
+    if (now - s_lastTryMs < 7000) return false;
+    if (!impl) return false;
+    Class *implCls = impl->get_class();
+    if (!implCls) return false;
+    int dictCount = readTableDictCount(impl);
+    if (dictCount > 0) return true;
+    s_lastTryMs = now;
+    bool isBuild = false;
+    if (implCls->find_method(OBF("get_IsBuild"), 0)) isBuild = impl->invoke_method<bool>(OBF("get_IsBuild"));
+    LOGI(OBF("FishingCatalog: thử force-load FishingDifficulty isBuild=%d dictCount=%d"), isBuild ? 1 : 0, dictCount);
+    if (implCls->find_method(OBF("LoadBuildToTable"), 0)) {
+        impl->invoke_method<void>(OBF("LoadBuildToTable"));
+        dictCount = readTableDictCount(impl);
+        if (dictCount > 0) {
+            LOGI(OBF("FishingCatalog: force-load OK LoadBuildToTable dictCount=%d"), dictCount);
+            return true;
+        }
+    }
+    Object *tableSys = SystemHelper::get_Table();
+    if (tableSys) {
+        Class *tsCls = tableSys->get_class();
+        if (tsCls && tsCls->find_method(OBF("LoadTable"), 2)) {
+            int key = (int) eTableType::FishingDifficulty;
+            tableSys->invoke_method<void>(OBF("LoadTable"), key, impl);
+            dictCount = readTableDictCount(impl);
+            if (dictCount > 0) {
+                LOGI(OBF("FishingCatalog: force-load OK TableSystem.LoadTable dictCount=%d"), dictCount);
+                return true;
+            }
+        }
+    }
+    LOGW(OBF("FishingCatalog: force-load FishingDifficulty thất bại dictCount=%d"), dictCount);
+    return false;
+}
+
 std::string resolveAutoCatchRowName(Object *row) {
     if (!row) return {};
     Class *rowCls = row->get_class();
@@ -508,8 +546,19 @@ void buildLevels(Snapshot &snap) {
     auto *dict = (Dictionary<uint32_t, Object *> *)rawDict;
     int count = dict->get_Count();
     if (count <= 0) {
-        logCatalogBuild(OBF("FishingDifficulty"), impl, dictCount, visited, snap.levelCount);
-        return;
+        tryForceLoadFishingDifficulty(impl);
+        rawDict = impl->invoke_method<Object *>(OBF("get_Container"));
+        if (!rawDict) {
+            logCatalogBuild(OBF("FishingDifficulty"), impl, readTableDictCount(impl), visited, snap.levelCount);
+            return;
+        }
+        dict = (Dictionary<uint32_t, Object *> *)rawDict;
+        count = dict->get_Count();
+        dictCount = count;
+        if (count <= 0) {
+            logCatalogBuild(OBF("FishingDifficulty"), impl, dictCount, visited, snap.levelCount);
+            return;
+        }
     }
     if (count > kMaxLevels * 4) count = kMaxLevels * 4;
     uint32_t *keys = dict->CollectKeys();
