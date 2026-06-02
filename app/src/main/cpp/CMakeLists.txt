@@ -16,6 +16,7 @@ set(PLAY_TOGETHER_SOURCES
     PlayTogether/UI/InfoWindow.cpp
     PlayTogether/UI/OverlaySnapshot.cpp
     PlayTogether/AutoFishing.cpp
+    PlayTogether/FishingCatalog.cpp
     PlayTogether/FishingGameplay.cpp
     PlayTogether/SDK/FrameWork.cpp
     PlayTogether/SDK/SystemHelper.cpp

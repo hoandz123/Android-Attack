@@ -1,6 +1,7 @@
 #include "OverlaySnapshot.h"
 #include "Config/Config.h"
 #include "../AutoFishing.h"
+#include "../FishingCatalog.h"
 #include "../FishingGameplay.h"
 #include "../SDK/ActorControl.h"
 #include "../SDK/CacheUser.h"
@@ -182,6 +183,7 @@ void UpdateFromGameThread() {
     g_shadowIdx.store(AutoFishing::GetCurrentShadowIndex(), std::memory_order_relaxed);
     g_diffId.store(AutoFishing::GetCurrentDifficultyId(), std::memory_order_relaxed);
     g_shadowFilter.store(gPLConfig.fishing.filterByShadow || gPLConfig.fishing.filterByLevel, std::memory_order_relaxed);
+    FishingCatalog::UpdateFromGameThread();
     g_ready.store(true, std::memory_order_release);
 }
 
