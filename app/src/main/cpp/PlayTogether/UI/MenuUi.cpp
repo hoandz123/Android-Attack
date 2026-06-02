@@ -129,16 +129,7 @@ static void DrawFishingPage() {
             ImGui::TableNextColumn();
             UiCheckbox(OBF("Đóng thưởng"), &gPLConfig.fishing.autoCloseReward);
             ImGui::TableNextColumn();
-            if (ImGui::Checkbox(OBF("Bán rác"), &gPLConfig.fishing.autoSellTrash)) SaveConfig();
             ImGui::EndTable();
-        }
-        if (gPLConfig.fishing.autoSellTrash) {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.45f, 0.2f, 1.f));
-            ImGui::TextUnformatted(OBF("Dialog bán — có thể lệch server"));
-            ImGui::PopStyleColor();
-            ImGui::SetNextItemWidth(-1);
-            ImGui::SliderInt(OBF("Grade bán##fish_sell_grade"), &gPLConfig.fishing.maxSellGrade, 1, 3);
-            if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
         }
         ImGui::EndChild();
         ImGui::EndTabItem();
@@ -177,6 +168,46 @@ static void DrawFishingPage() {
                     gPLConfig.fishing.keepLevels = keepLevelsBuf;
                     keepLevelsSynced = gPLConfig.fishing.keepLevels;
                     SaveConfig();
+                }
+            }
+            ImGui::EndTable();
+        }
+        ImGui::EndChild();
+        ImGui::EndTabItem();
+    }
+
+    if (ImGui::BeginTabItem(OBF("Bán Cá"))) {
+        ImGui::BeginChild(OBF("sub_sell##scroll"), ImVec2(0, 0));
+        if (ImGui::BeginTable(OBF("##sell_cols"), 2, ImGuiTableFlags_SizingStretchSame)) {
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(OBF("Bán theo bóng"));
+            UiCheckbox(OBF("Bật bán theo bóng"), &gPLConfig.fishing.sellByShadow);
+            if (gPLConfig.fishing.sellByShadow) {
+                ImGui::TextUnformatted(OBF("Bán bóng:"));
+                for (int i = 0; i < 7; i++) {
+                    char label[16];
+                    snprintf(label, sizeof(label), OBF("Bóng %d"), i + 1);
+                    ImGui::PushID(i);
+                    if (ImGui::Checkbox(label, &gPLConfig.fishing.sellShadow[i])) SaveConfig();
+                    ImGui::PopID();
+                }
+            }
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(OBF("Bán theo độ hiếm"));
+            UiCheckbox(OBF("Bật bán theo màu nền"), &gPLConfig.fishing.sellByGrade);
+            if (gPLConfig.fishing.sellByGrade) {
+                static const char *kSellGradeLabels[5] = {
+                    OBF("Trắng - Thường"),
+                    OBF("Xanh lá - Cao cấp"),
+                    OBF("Xanh dương - Hiếm"),
+                    OBF("Tím - Huyền thoại"),
+                    OBF("Cực quang - Truyền thuyết"),
+                };
+                ImGui::TextUnformatted(OBF("Bán khi khớp:"));
+                for (int i = 0; i < 5; i++) {
+                    ImGui::PushID(i);
+                    if (ImGui::Checkbox(kSellGradeLabels[i], &gPLConfig.fishing.sellGrade[i])) SaveConfig();
+                    ImGui::PopID();
                 }
             }
             ImGui::EndTable();
