@@ -6,6 +6,7 @@
 #include "Config/Config.h"
 #include "SystemHelper.h"
 #include "../AutoFishing.h"
+#include "../UI/OverlaySnapshot.h"
 #include <Tools/Tools.h>
 #include <Includes/obfuscate.h>
 #define LOG_TAG OBF("ATTACK_PlayTogether")
@@ -74,6 +75,7 @@ namespace ActorControl {
                     if (gPLConfig.fishing.enabled) {
                         AutoFishing::Update();
                     }
+                    OverlaySnapshot::UpdateFromGameThread();
                 }
             }
         }

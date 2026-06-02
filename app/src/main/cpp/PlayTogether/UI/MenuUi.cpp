@@ -1,7 +1,7 @@
 #include "MenuUi.h"
 #include "Config/Config.h"
 #include "Config/PLConfig.h"
-#include "../AutoFishing.h"
+#include "OverlaySnapshot.h"
 #include <Includes/obfuscate.h>
 #include <ModUi.hpp>
 #include <Tools/Tools.h>
@@ -39,8 +39,15 @@ static void DrawTabFishing() {
     ImGui::SliderInt(OBF("Chờ cast lại (ms)##fish_restart"), &gPLConfig.fishing.restartDelayMs, 800, 5000);
     if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
     ImGui::Separator();
-    ImGui::Text(OBF("Trạng thái: %s"), AutoFishing::GetStateLabel().c_str());
-    ImGui::Text(OBF("Đã câu (phiên): %d"), AutoFishing::GetFishCaughtCount());
+    OverlaySnapshot::View snap{};
+    OverlaySnapshot::Read(snap);
+    if (snap.ready) {
+        ImGui::Text(OBF("Trạng thái: %s"), OverlaySnapshot::FishingStateLabel(snap.fishingState));
+        ImGui::Text(OBF("Đã câu (phiên): %d"), snap.fishCaught);
+    } else {
+        ImGui::TextUnformatted(OBF("Trạng thái: —"));
+        ImGui::TextUnformatted(OBF("Đã câu (phiên): —"));
+    }
     ImGui::TextUnformatted(OBF("Cần cầm cần câu, đứng vùng nước hợp lệ."));
     ImGui::PopID();
 }
@@ -51,9 +58,15 @@ static void DrawTabSettings() {
     if (ImGui::Button(OBF("Lưu##settings_save"), ImVec2(-1, 0))) SaveConfig();
     if (ImGui::Button(OBF("Tải##settings_load"), ImVec2(-1, 0))) LoadConfig();
     ImGui::Separator();
-    ImGui::Text(OBF("Map: %d"), PLConfig::GetPlayerMapID());
-    Vector3 pos = PLConfig::GetPlayerPosition();
-    ImGui::Text(OBF("Tọa độ: %.1f, %.1f, %.1f"), pos.x, pos.y, pos.z);
+    OverlaySnapshot::View snap{};
+    OverlaySnapshot::Read(snap);
+    if (snap.ready) {
+        ImGui::Text(OBF("Map: %d"), snap.mapId);
+        ImGui::Text(OBF("Tọa độ: %.1f, %.1f, %.1f"), snap.position.x, snap.position.y, snap.position.z);
+    } else {
+        ImGui::TextUnformatted(OBF("Map: —"));
+        ImGui::TextUnformatted(OBF("Tọa độ: —"));
+    }
 }
 
 }

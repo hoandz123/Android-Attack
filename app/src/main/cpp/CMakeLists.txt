@@ -14,6 +14,7 @@ set(PLAY_TOGETHER_SOURCES
     PlayTogether/Config/PLConfigJson.cpp
     PlayTogether/UI/MenuUi.cpp
     PlayTogether/UI/InfoWindow.cpp
+    PlayTogether/UI/OverlaySnapshot.cpp
     PlayTogether/AutoFishing.cpp
     PlayTogether/SDK/FrameWork.cpp
     PlayTogether/SDK/SystemHelper.cpp

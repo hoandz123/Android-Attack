@@ -5,6 +5,7 @@
 
 namespace AutoFishing {
     void Update();
+    eFishingState GetLastFishingState();
     std::string GetStateLabel();
     int GetFishCaughtCount();
 }

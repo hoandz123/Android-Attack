@@ -215,6 +215,10 @@ void Update() {
     tickState(player, fishingSys, state);
 }
 
+eFishingState GetLastFishingState() {
+    return g_lastState;
+}
+
 std::string GetStateLabel() {
     return std::string(stateName(g_lastState));
 }

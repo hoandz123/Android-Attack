@@ -4,7 +4,7 @@
 #include <DrawRender.hpp>
 #include <GameUI/EspGUI.h>
 #include "../UI/InfoWindow.h"
-#include "../AutoFishing.h"
+#include "../UI/OverlaySnapshot.h"
 #include "../SDK/FrameWork.h"
 #include "../SDK/ActorControl.h"
 #include <API/Il2CppApi.h>
@@ -29,9 +29,13 @@ std::atomic<bool> s_initOnce{false};
 void DRAW_RENDER() {
     ShowInfoWindow();
     if (gPLConfig.fishing.enabled && gPLConfig.fishing.showStatus && !gPLConfig.general.isInfo) {
-        char buf[96];
-        snprintf(buf, sizeof(buf), OBF("Câu: %s | #%d"), AutoFishing::GetStateLabel().c_str(), AutoFishing::GetFishCaughtCount());
-        EspGUI::DrawTooltip(ImVec2(12.f, 48.f), buf);
+        OverlaySnapshot::View snap{};
+        OverlaySnapshot::Read(snap);
+        if (snap.ready) {
+            char buf[96];
+            snprintf(buf, sizeof(buf), OBF("Câu: %s | #%d"), OverlaySnapshot::FishingStateLabel(snap.fishingState), snap.fishCaught);
+            EspGUI::DrawTooltip(ImVec2(12.f, 48.f), buf);
+        }
     }
 }
 
