@@ -1,7 +1,6 @@
 #include "CacheUser.h"
 #include "CacheSystem.h"
-#include <Includes/obfuscate.h>
-#define LOG_TAG OBF("ATTACK_PlayTogether")
+#define LOGGER_TAG "ATTACK_PlayTogether"
 #include <Includes/Logger.h>
 
 namespace CacheUser {

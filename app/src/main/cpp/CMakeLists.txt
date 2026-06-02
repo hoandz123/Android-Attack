@@ -8,21 +8,24 @@ include(${NATIVE_CORE_CPP}/cmake/PrefabStatic.cmake)
 
 set(PLAY_TOGETHER_SOURCES
     PlayTogether/PlayTogether.cpp
-    PlayTogether/HOOK_PLAY/HOOK_PLAY.cpp
-    PlayTogether/HOOK_PLAY/AntiCheat.cpp
+    PlayTogether/Hook/Hook.cpp
+    PlayTogether/Hook/AntiCheat.cpp
     PlayTogether/Config/Config.cpp
-    PlayTogether/Config/PLConfigJson.cpp
     PlayTogether/UI/MenuUi.cpp
-    PlayTogether/UI/InfoWindow.cpp
-    PlayTogether/UI/OverlaySnapshot.cpp
-    PlayTogether/AutoFishing.cpp
-    PlayTogether/FishingCatalog.cpp
-    PlayTogether/FishingGameplay.cpp
-    PlayTogether/SDK/FrameWork.cpp
-    PlayTogether/SDK/SystemHelper.cpp
-    PlayTogether/SDK/CacheSystem.cpp
-    PlayTogether/SDK/CacheUser.cpp
-    PlayTogether/SDK/ActorControl.cpp)
+    PlayTogether/Hook/AutoFishing/AutoFishing.cpp
+    PlayTogether/Hook/AutoFishing/PickerSnapshot.cpp
+    PlayTogether/Hook/SDK/FrameWork.cpp
+    PlayTogether/Hook/SDK/SystemHelper.cpp
+    PlayTogether/Hook/SDK/CacheSystem.cpp
+    PlayTogether/Hook/SDK/CacheUser.cpp
+    PlayTogether/Hook/SDK/ActorControl.cpp
+    PlayTogether/Hook/SDK/TableSystem.cpp
+    PlayTogether/Hook/SDK/TableItemImpl.cpp
+    PlayTogether/Hook/SDK/TableMessagesImpl.cpp
+    PlayTogether/Hook/SDK/FishingSystem.cpp
+    PlayTogether/Hook/SDK/TableFishingDifficultyImpl.cpp
+    PlayTogether/Hook/SDK/TableFishingAreaImpl.cpp
+    PlayTogether/Hook/SDK/TableFishingBaitImpl.cpp)
 
 add_library(attack SHARED
     NativeLib.cpp Menu.cpp Games.cpp
@@ -48,10 +51,10 @@ find_library(GLESv3-lib GLESv3)
 target_include_directories(attack PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether
-    ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether/SDK
+    ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether/Hook/SDK
     ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether/Config
     ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether/UI
-    ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether/Stubs
+    ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether/Hook
     ${NATIVE_CORE_CPP}
     ${NATIVE_CORE_CPP}/Includes
     ${NATIVE_CORE_CPP}/Tools

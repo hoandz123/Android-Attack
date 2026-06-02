@@ -5,7 +5,7 @@
 #include "Menu.hpp"
 #include <Tools/Tools.h>
 
-#define LOG_TAG OBF("ATTACK_PlayTogether")
+#define LOGGER_TAG "ATTACK_PlayTogether"
 #include <Includes/Logger.h>
 
 #include <ActivityTracker/ActivityTracker.hpp>

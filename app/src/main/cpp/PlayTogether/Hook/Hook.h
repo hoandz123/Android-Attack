@@ -1,5 +1,5 @@
 #pragma once
 
-namespace HOOK_PLAY {
+namespace Hook {
     void init();
 }

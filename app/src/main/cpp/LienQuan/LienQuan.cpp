@@ -1,10 +1,9 @@
 #include "../Games.hpp"
 #include <imgui.h>
-#include <Includes/obfuscate.h>
 #include <ModUi.hpp>
 #include <Tools/Tools.h>
 
-#define LOG_TAG OBF("ATTACK_PlayTogether")
+#define LOGGER_TAG "ATTACK_PlayTogether"
 #include <Includes/Logger.h>
 
 namespace lienquan {

@@ -5,11 +5,9 @@
 #include "ActorControl.h"
 #include "Config/Config.h"
 #include "SystemHelper.h"
-#include "../AutoFishing.h"
-#include "../UI/OverlaySnapshot.h"
+#include "../AutoFishing/AutoFishing.h"
 #include <Tools/Tools.h>
-#include <Includes/obfuscate.h>
-#define LOG_TAG OBF("ATTACK_PlayTogether")
+#define LOGGER_TAG "ATTACK_PlayTogether"
 #include <Includes/Logger.h>
 
 namespace ActorControl {
@@ -75,7 +73,7 @@ namespace ActorControl {
                     if (gPLConfig.fishing.enabled) {
                         AutoFishing::Update();
                     }
-                    OverlaySnapshot::UpdateFromGameThread();
+                    AutoFishing::UpdatePickerFromGameThread();
                 }
             }
         }

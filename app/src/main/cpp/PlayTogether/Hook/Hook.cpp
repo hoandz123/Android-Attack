@@ -1,21 +1,17 @@
-#include "HOOK_PLAY.h"
+#include "Hook.h"
 #include "AntiCheat.h"
+#include "AutoFishing/AutoFishing.h"
 #include "../Config/Config.h"
-#include <DrawRender.hpp>
-#include "../UI/InfoWindow.h"
-#include "../SDK/FrameWork.h"
-#include "../SDK/ActorControl.h"
+#include "SDK/FrameWork.h"
+#include "SDK/ActorControl.h"
 #include <API/Il2CppApi.h>
-#include <Includes/obfuscate.h>
-
-#define LOG_TAG OBF("ATTACK_PlayTogether")
-
+#define LOGGER_TAG "ATTACK_PlayTogether"
 #include <Includes/Logger.h>
 #include <Tools/Tools.h>
 #include <thread>
 #include <atomic>
 
-namespace HOOK_PLAY {
+namespace Hook {
 
 namespace {
 
@@ -23,14 +19,10 @@ std::atomic<bool> s_initOnce{false};
 
 }
 
-void DRAW_RENDER() {
-    ShowInfoWindow();
-}
-
 void init() {
     bool expected = false;
     if (!s_initOnce.compare_exchange_strong(expected, true)) {
-        LOGI(OBF("HOOK_PLAY init skipped (already done)"));
+        LOGI(OBF("Hook init skipped (already done)"));
         return;
     }
     LoadConfig();
@@ -50,9 +42,10 @@ void init() {
             }
         }
     }).detach();
-    Tools::Hook(ActorControl::get_class()->find_method(OBF("get_Kunit"), 0)->methodPointer, (void *) ActorControl::get_Kunit, (void **) &ActorControl::old_get_Kunit);
-    DrawRender::registerTask(DRAW_RENDER);
-    LOGI(OBF("HOOK_PLAY init done"));
+    Tools::Hook((void *)GET_METHOD("ActorControl", "get_Kunit", 0), (void *)ActorControl::get_Kunit, (void **)&ActorControl::old_get_Kunit);
+    Tools::Hook((void *)GET_METHOD("FishingSystem", "ReceiveFishingCatch", 1), (void *)AutoFishing::onReceiveFishingCatch, (void **)&AutoFishing::old_ReceiveFishingCatch);
+    Tools::Hook((void *)GET_METHOD("NetNativeProtocol", "PID_FISHING_CASTING", 1), (void *)AutoFishing::onPID_FISHING_CASTING, (void **)&AutoFishing::old_PID_FISHING_CASTING);
+    LOGI(OBF("Hook init done"));
 }
 
 }
