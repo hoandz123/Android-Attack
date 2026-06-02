@@ -145,9 +145,7 @@ static bool DrawLevelPicker() {
         }
         ImGui::PushID(i);
         bool kept = IsLevelKept(e.levelId);
-        char row[FishingCatalog::kLabelLen + 48];
-        snprintf(row, sizeof(row), OBF("%s | bóng %s%s HP%.0f"), e.label, OverlaySnapshot::ShadowLabel(e.shadowIndex), e.bigFish ? OBF(" | Lớn") : "", e.minigameHp);
-        if (ImGui::Checkbox(row, &kept)) {
+        if (ImGui::Checkbox(e.label, &kept)) {
             SetLevelKept(e.levelId, kept);
             changed = true;
         }

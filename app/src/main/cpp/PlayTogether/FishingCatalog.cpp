@@ -566,23 +566,31 @@ void buildLevels(Snapshot &snap) {
         logCatalogBuild(OBF("FishingDifficulty"), impl, dictCount, visited, snap.levelCount);
         return;
     }
-    bool hasGetTableData = implCls->find_method(OBF("GetTableData"), 1) != nullptr;
+    Object **values = dict->CollectValues();
+    if (!values) {
+        delete[] keys;
+        logCatalogBuild(OBF("FishingDifficulty"), impl, dictCount, visited, snap.levelCount);
+        return;
+    }
+    unsigned int sampleLv[3] = {0, 0, 0};
+    int sampleSh[3] = {0, 0, 0};
+    float sampleHp[3] = {0.f, 0.f, 0.f};
+    int sampleN = 0;
     for (int i = 0; i < count && snap.levelCount < kMaxLevels; i++) {
         visited++;
-        unsigned int sid = keys[i];
-        if (sid == 0) continue;
-        Object *row = hasGetTableData ? impl->invoke_method<Object *>(OBF("GetTableData"), sid) : dict->get_Item(sid);
+        Object *row = values[i];
         if (!row) {
             skippedNoRow++;
             continue;
         }
         Class *rowCls = row->get_class();
         if (!rowCls) continue;
-        unsigned int levelId = sid;
+        unsigned int levelId = keys[i];
         if (rowCls->find_method(OBF("get_FishingDifficultyId"), 0)) {
             unsigned int rowId = row->invoke_method<unsigned int>(OBF("get_FishingDifficultyId"));
             if (rowId != 0) levelId = rowId;
         }
+        if (levelId == 0) continue;
         int shadowIdx = 0;
         if (rowCls->find_method(OBF("get_AssetName"), 0)) {
             String *asset = row->invoke_method<String *>(OBF("get_AssetName"));
@@ -593,28 +601,28 @@ void buildLevels(Snapshot &snap) {
         if (rowCls->find_method(OBF("get_BigFish"), 0)) bigFish = row->invoke_method<bool>(OBF("get_BigFish"));
         float minigameHp = 0.f;
         if (rowCls->find_method(OBF("get_MinigameHp"), 0)) minigameHp = row->invoke_method<float>(OBF("get_MinigameHp"));
-        unsigned int titleId = 0;
-        if (rowCls->find_method(OBF("get_FishMinigameTitle"), 0)) titleId = row->invoke_method<unsigned int>(OBF("get_FishMinigameTitle"));
         LevelEntry &e = snap.levels[snap.levelCount];
         e.levelId = levelId;
         e.shadowIndex = shadowIdx;
         e.bigFish = bigFish;
         e.minigameHp = minigameHp;
-        std::string label = resolveMessage(titleId);
-        if (label.empty()) {
-            copyLabelFmt(e.label, kLabelLen, OBF("Lv %u | Bóng %s"), levelId, FishingGameplay::ShadowLabelFromIndex(shadowIdx));
-        } else {
-            copyLabelFmt(e.label, kLabelLen, OBF("%s"), label.c_str());
-        }
+        copyLabelFmt(e.label, kLabelLen, OBF("Lv %u | Bóng %s | HP %.0f%s"), levelId, FishingGameplay::ShadowLabelFromIndex(shadowIdx), minigameHp, bigFish ? OBF(" | Lớn") : "");
         attachLearnedFishNames(e);
+        if (sampleN < 3) {
+            sampleLv[sampleN] = levelId;
+            sampleSh[sampleN] = shadowIdx;
+            sampleHp[sampleN] = minigameHp;
+            sampleN++;
+        }
         snap.levelCount++;
     }
     delete[] keys;
+    delete[] values;
     static long long s_lastLevelDetailLogMs = 0;
     long long now = Tools::getSystemMilliseconds();
     if (now - s_lastLevelDetailLogMs >= 7000) {
         s_lastLevelDetailLogMs = now;
-        LOGI(OBF("FishingCatalog FishingDifficulty: skippedNoRow=%d"), skippedNoRow);
+        LOGI(OBF("FishingCatalog FishingDifficulty: skippedNoRow=%d mẫu0=Lv%u/sh%d/hp%.0f mẫu1=Lv%u/sh%d/hp%.0f mẫu2=Lv%u/sh%d/hp%.0f"), skippedNoRow, sampleLv[0], sampleSh[0], sampleHp[0], sampleLv[1], sampleSh[1], sampleHp[1], sampleLv[2], sampleSh[2], sampleHp[2]);
     }
     if (snap.levelCount > 1) sortLevels(snap.levels, snap.levelCount);
     logCatalogBuild(OBF("FishingDifficulty"), impl, dictCount, visited, snap.levelCount);
