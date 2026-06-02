@@ -76,9 +76,17 @@
 
 #include <thread>
 
+#include <atomic>
+
 
 
 namespace HOOK_PLAY {
+
+namespace {
+
+std::atomic<bool> s_initOnce{false};
+
+}
 
 
 
@@ -88,7 +96,11 @@ void DRAW_RENDER() {
 
     int glHeight = GameViewport::height();
 
-    for (const auto &pair : ESPManager::GetEntries()) {
+    ESPManager::TickStale();
+
+    const auto &espEntries = ESPManager::GetEntries();
+
+    for (const auto &pair : espEntries) {
 
         const ESPEntry &e = pair.second;
 
@@ -116,7 +128,7 @@ void DRAW_RENDER() {
 
     }
 
-    int currentCount = (int) ESPManager::GetEntries().size();
+    int currentCount = (int) espEntries.size();
 
     if (currentCount > 0) {
 
@@ -153,6 +165,16 @@ void DRAW_RENDER() {
 
 
 void init() {
+
+    bool expected = false;
+
+    if (!s_initOnce.compare_exchange_strong(expected, true)) {
+
+        LOGI(OBF("HOOK_PLAY init skipped (already done)"));
+
+        return;
+
+    }
 
     LoadConfig();
 

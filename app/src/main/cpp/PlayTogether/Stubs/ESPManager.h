@@ -40,7 +40,8 @@ public:
         }
     }
 
-    static std::unordered_map<void *, ESPEntry> GetEntries() {
+    /** Gọi một lần mỗi frame render (trước khi vẽ ESP). */
+    static void TickStale() {
         auto &map = entries();
         for (auto it = map.begin(); it != map.end(); ) {
             it->second.staleCount++;
@@ -50,7 +51,10 @@ public:
                 ++it;
             }
         }
-        return map;
+    }
+
+    static const std::unordered_map<void *, ESPEntry> &GetEntries() {
+        return entries();
     }
 
     static ESPEntry GetEntry(void *obj) {

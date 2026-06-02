@@ -22,7 +22,6 @@ namespace ActorCatchUpOther {
 
     void (*old_OnUpdate)(Object*);
     void OnUpdate(Object* instance){
-        LOGI("ActorCatchUpOther::OnUpdate called");
         old_OnUpdate(instance);
         if (!instance || isGameLoading || !gPLConfig.miniGame.zombie.isEnable) return;
 

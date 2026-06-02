@@ -113,7 +113,11 @@ namespace CollectSys {
         return std::find(blockPoiter.begin(), blockPoiter.end(), p) != blockPoiter.end();
     }
 
-    void themBlock(void *p) { blockPoiter.push_back(p); }
+    void themBlock(void *p) {
+        if (isBlockPointer(p)) return;
+        if (blockPoiter.size() > 512) blockPoiter.clear();
+        blockPoiter.push_back(p);
+    }
 
     eAutoState currentState = eAutoState::None;
     Object *currentVein = nullptr;

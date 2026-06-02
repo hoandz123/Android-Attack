@@ -6,12 +6,23 @@
 #include <ModUi.hpp>
 #include <Includes/Logger.h>
 #include <thread>
+#include <atomic>
 
 #define LOG_TAG OBF("ATTACK_PlayTogether")
 
 namespace playtogether {
 
+namespace {
+
+std::atomic<bool> s_activateOnce{false};
+
+}
+
 void Activate() {
+    bool expected = false;
+    if (!s_activateOnce.compare_exchange_strong(expected, true)) {
+        return;
+    }
     SetupMenuUi();
     std::thread([]() {
         Init_Il2cpp_Symbol();
