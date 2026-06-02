@@ -23,7 +23,7 @@ void ApplyVkEngineMoonlightMetrics(ImGuiStyle &s) {
     s.ChildRounding = 3.f;
     s.FrameRounding = 3.f;
     s.PopupRounding = 2.f;
-    s.ScrollbarRounding = 4.f;
+    s.ScrollbarRounding = 0.f;
     s.GrabRounding = 4.f;
     s.TabRounding = 3.f;
     s.WindowBorderSize = 1.f;
@@ -32,12 +32,12 @@ void ApplyVkEngineMoonlightMetrics(ImGuiStyle &s) {
     s.FrameBorderSize = 1.f;
     s.SeparatorTextBorderSize = 1.f;
     s.FramePadding = ImVec2(6.f, 6.f);
-    s.ItemSpacing = ImVec2(8.f, 8.f);
+    s.ItemSpacing = ImVec2(4.f, 4.f);
     s.ItemInnerSpacing = ImVec2(8.f, 6.f);
     s.CellPadding = ImVec2(6.f, 4.f);
     s.IndentSpacing = 20.f;
-    s.ScrollbarSize = 12.f;
-    s.GrabMinSize = 5.f;
+    s.ScrollbarSize = 20.f;
+    s.GrabMinSize = 14.f;
 }
 
 void ApplyVkEngineMoonlightPalette(ImGuiStyle &s) {
