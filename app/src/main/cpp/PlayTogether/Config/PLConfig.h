@@ -5,7 +5,6 @@
 #include <unordered_map>
 #include <vector>
 #include <API/Vector3.h>
-#include "../FishLogger.h"
 
 struct PLConfig {
     struct NPCData {
@@ -33,44 +32,6 @@ struct PLConfig {
         int chaynhanh = 0;
         int nhaycao = 0;
     } general;
-
-    struct FishingConfig {
-        inline static int curFishLevel = 0;
-        inline static int curFishShadowLevel = 0;
-        inline static int curFishZone = 0;
-        inline static FishLogger gFishLogger;
-        inline static int totalCaught = 0;
-        inline static int totalSkipped = 0;
-        inline static int totalFailed = 0;
-        inline static std::string curStateName = "None";
-
-        bool isCauCa = false;
-        bool isFakeVR = false;
-        bool isLocID = false;
-        int locFish = 0;
-        bool isFishZone = false;
-        int fishZone = 0;
-        int RollCapDo = 0;
-        int delayAutoMs = 500;
-        std::map<int, bool> IDLocCa;
-        std::map<int, bool> locBong;
-
-        bool isBaoQuan = false;
-        bool isBanGoi = false;
-        bool isDuNenVip = false;
-        bool isDuB67 = false;
-
-        struct MagicWater {
-            bool isEnable = false;
-            int levelUses[3] = {0, 0, 0};
-        } magicWater;
-
-        struct ESP {
-            bool isEnable = false;
-            bool isShowZone = false;
-            bool isShowStatus = true;
-        } esp;
-    } fishing;
 
     struct MapInfo {
         std::string name;

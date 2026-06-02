@@ -10,13 +10,11 @@ set(PLAY_TOGETHER_SOURCES
     PlayTogether/PlayTogether.cpp
     PlayTogether/HOOK_PLAY/HOOK_PLAY.cpp
     PlayTogether/HOOK_PLAY/AntiCheat.cpp
-    PlayTogether/RollCongCu.cpp
     PlayTogether/Config/Config.cpp
     PlayTogether/Config/PLConfigJson.cpp
     PlayTogether/UI/MenuUi.cpp
     PlayTogether/UI/InfoWindow.cpp
     PlayTogether/KhoiPhucTrangThai.cpp
-    PlayTogether/FishLogger.cpp
     PlayTogether/SDK/FrameWork.cpp
     PlayTogether/SDK/SystemHelper.cpp
     PlayTogether/SDK/CacheSystem.cpp
@@ -24,20 +22,13 @@ set(PLAY_TOGETHER_SOURCES
     PlayTogether/SDK/ActorControl.cpp
     PlayTogether/SDK/KinematicCharacterMotor.cpp
     PlayTogether/SDK/LayerSystem.cpp
-    PlayTogether/SDK/FishingSystem.cpp
-    PlayTogether/SDK/ActorDefaultControlPlayer.cpp
     PlayTogether/SDK/TableSystem.cpp
     PlayTogether/SDK/NetNativeProtocol.cpp
-    PlayTogether/SDK/NetWebProtocol.cpp
-    PlayTogether/SDK/TableItemImpl.cpp
-    PlayTogether/SDK/TableFishingDifficultyImpl.cpp
     PlayTogether/SDK/JsonConvert.cpp
     PlayTogether/SDK/NguiExtensions.cpp
     PlayTogether/SDK/UILabel.cpp
     PlayTogether/SDK/DialogJoyStick.cpp
-    PlayTogether/SDK/DialogActionButtons.cpp
     PlayTogether/SDK/DialogUnit.cpp
-    PlayTogether/SDK/DialogFishingGetItem.cpp
     PlayTogether/SDK/EquipmentSystem.cpp
     PlayTogether/SDK/MapGuideArrow.cpp
     PlayTogether/SDK/HeadUpSelectButton.cpp

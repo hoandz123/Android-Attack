@@ -111,10 +111,6 @@ namespace KhoiPhucTrangThai {
                 }
                 break;
             case State::Teleport:
-                if (!gPLConfig.fishing.isCauCa) {
-                    st = State::EquipHand;
-                    break;
-                }
                 if (data.vehicleUID > 0) {
                     if (data.mapID > 0) {
                         if (currentMapId != data.mapID) {
@@ -162,7 +158,7 @@ namespace KhoiPhucTrangThai {
                 }
                 break;
             case State::EquipVehicle:
-                if (data.vehicleUID && gPLConfig.fishing.isCauCa) {
+                if (data.vehicleUID) {
                     if (vehicleItemUID == data.vehicleUID) {
                         if (DialogJoyStick::get_Instance()) {
                             RATE_LIMIT(3000);

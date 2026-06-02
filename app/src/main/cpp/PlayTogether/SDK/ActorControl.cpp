@@ -9,8 +9,6 @@
 #include "enum/eNickNameHeadUpTag.h"
 #include "KhoiPhucTrangThai.h"
 #include "LayerSystem.h"
-#include "FishingSystem.h"
-#include "ActorDefaultControlPlayer.h"
 #include <Tools/Tools.h>
 #include <Includes/obfuscate.h>
 #define LOG_TAG OBF("ATTACK_PlayTogether")
@@ -106,9 +104,6 @@ namespace ActorControl {
                     isGameLoading = false;
                     KhoiPhucTrangThai::Update();
                     LayerSystem::Update();
-                    FishingSystem::Update();
-                    ActorDefaultControlPlayer::Update();
-                    FishingSystem::UpdateEsp();
                     GetListNPC();
                 }
             }

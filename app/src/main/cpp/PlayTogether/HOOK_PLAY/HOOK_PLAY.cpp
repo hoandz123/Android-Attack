@@ -5,21 +5,15 @@
 #include <DrawRender.hpp>
 #include <GameUI/EspGUI.h>
 #include <GameUI/GameViewport.h>
-#include "../RollCongCu.h"
 #include "../UI/InfoWindow.h"
-#include "../SDK/ActorDefaultControlPlayer.h"
-#include "../SDK/NetNativeProtocol.h"
 #include "../SDK/FrameWork.h"
 #include "../SDK/ActorControl.h"
 #include "../SDK/KinematicCharacterMotor.h"
 #include "../SDK/DialogUnit.h"
-#include "../SDK/DialogFishingGetItem.h"
 #include "../SDK/EquipmentSystem.h"
 #include "../SDK/MapGuideArrow.h"
 #include "../SDK/HeadUpSelectButton.h"
 #include "../SDK/DialogShopInGame.h"
-#include "../SDK/TableFishingDifficultyImpl.h"
-#include "../SDK/FishingSystem.h"
 #include <API/Il2CppApi.h>
 #include <API/Vector2.h>
 #include <Includes/obfuscate.h>
@@ -59,7 +53,6 @@ void DRAW_RENDER() {
             }
         }
     }
-    FishingSystem::DrawOverlay();
     ShowInfoWindow();
 }
 
@@ -87,22 +80,13 @@ void init() {
         }
     }).detach();
     Tools::Hook(DialogUnit::get_class()->find_method(OBF("DialogShow"), 0)->methodPointer, (void *) DialogUnit::DialogShow, (void **) &DialogUnit::old_DialogShow);
-    Tools::Hook(DialogFishingGetItem::get_class()->find_method(OBF("OnItemSell"), 1)->methodPointer, (void *) DialogFishingGetItem::OnItemSell, (void **) &DialogFishingGetItem::old_OnItemSell);
     Tools::Hook(EquipmentSystem::get_class()->find_method(OBF("ShowRepairItem"), 2)->methodPointer, (void *) EquipmentSystem::ShowRepairItem, (void **) &EquipmentSystem::old_ShowRepairItem);
     Tools::Hook(ActorControl::get_class()->find_method(OBF("get_Kunit"), 0)->methodPointer, (void *) ActorControl::get_Kunit, (void **) &ActorControl::old_get_Kunit);
-    if (NetNativeProtocol::get_class()) {
-        Tools::Hook(NetNativeProtocol::get_class()->find_method(OBF("SendToFishingCasting"), 1)->methodPointer, (void *) ActorDefaultControlPlayer::Hook_SendToFishingCasting, (void **) &ActorDefaultControlPlayer::old_SendToFishingCasting);
-    }
-    if (Class *zoneTitle = FindClass(OBF("DialogZoneTitle"))) {
-        Tools::Hook(zoneTitle->find_method(OBF("SetTitle"), 1)->methodPointer, (void *) ActorDefaultControlPlayer::Hook_DialogZoneTitle_SetTitle, (void **) &ActorDefaultControlPlayer::old_DialogZoneTitle_SetTitle);
-    }
     Tools::Hook(KinematicCharacterMotor::get_class()->find_method(OBF("UpdatePhase1"), 1)->methodPointer, (void *) KinematicCharacterMotor::UpdatePhase1, (void **) &KinematicCharacterMotor::old_UpdatePhase1);
     Tools::Hook(MapGuideArrow::get_class()->find_method(OBF("Update"), 0)->methodPointer, (void *) MapGuideArrow::Update, (void **) &MapGuideArrow::old_Update);
     Tools::Hook(HeadUpSelectButton::get_class()->find_method(OBF("SetSprite"), 1)->methodPointer, (void *) HeadUpSelectButton::SetSprite, (void **) &HeadUpSelectButton::old_SetSprite);
     Tools::Hook(HeadUpSelectButton::get_class()->find_method(OBF("UpdatePosition"), 0)->methodPointer, (void *) HeadUpSelectButton::UpdatePosition, (void **) &HeadUpSelectButton::old_UpdatePosition);
     Tools::Hook(DialogShopInGame::get_class()->find_method(OBF("Update"), 0)->methodPointer, (void *) DialogShopInGame::Update, (void **) &DialogShopInGame::old_Update);
-    TableFishingDifficultyImpl::init();
-    ItemAffixOptionView_NS::init();
     DrawRender::registerTask(DRAW_RENDER);
     LOGI(OBF("HOOK_PLAY init done"));
 }
