@@ -3,6 +3,8 @@
 //
 
 #include "KinematicCharacterMotor.h"
+#include "Stubs/AutoInsect.h"
+#include "Config/Config.h"
 #include "ActorControl.h"
 
 namespace KinematicCharacterMotor { //Dịch chuyển
@@ -32,7 +34,11 @@ namespace KinematicCharacterMotor { //Dịch chuyển
 
     void (*old_UpdatePhase1)(Object *instance, float deltaTime);
     void UpdatePhase1(Object *instance, float deltaTime) {
-        // TODO G4: gate fly-hack (gPLConfig.insect.isBatBoTrenTroi + InsectSys::isStopDiTrenKhong + isGameLoading)
+        if (gPLConfig.insect.isBatBoTrenTroi) {
+            if (!InsectSys::isStopDiTrenKhong && !isGameLoading) {
+                return;
+            }
+        }
         old_UpdatePhase1(instance, deltaTime);
     }
 }

@@ -13,6 +13,12 @@
 #include "../SDK/DialogShopInGame.h"
 #include "../SDK/Treasure.h"
 #include "../SDK/ActorTreasureHuntPlayer.h"
+#include "../SDK/FarmLandHooks.h"
+#include "../SDK/MiniGameTowerOfHell.h"
+#include "../SDK/MiniGameObby.h"
+#include "../SDK/EventPickUpItemManager.h"
+#include "../SDK/MiniGameKMGUnit.h"
+#include "../SDK/TableFishingDifficultyImpl.h"
 #include <API/Il2CppApi.h>
 #include <Includes/obfuscate.h>
 #define LOG_TAG OBF("AttackPlugin")
@@ -54,11 +60,15 @@ void init() {
     Tools::Hook(DialogShopInGame::get_class()->find_method(OBF("Update"), 0)->methodPointer, (void *) DialogShopInGame::Update, (void **) &DialogShopInGame::old_Update);
     Tools::Hook(Treasure::get_class()->find_method(OBF("Update"), 0)->methodPointer, (void *) Treasure::Update, (void **) &Treasure::old_Update);
     Tools::Hook(ActorTreasureHuntPlayer::get_class()->find_method(OBF("OnUpdate"), 0)->methodPointer, (void *) ActorTreasureHuntPlayer::OnUpdate, (void **) &ActorTreasureHuntPlayer::old_OnUpdate);
-    // TODO G4: MiniGameTowerOfHell, MiniGameObby, EventPickUpItemManager, MiniGameKMGUnit, TableFishingDifficultyImpl::init
-    // TODO G4: FarmLandHooks, AutoTreasure logic, NetNativeProtocol fishing cast hooks
+    FarmLandHooks::Init();
+    MiniGameTowerOfHell::init();
+    MiniGameObby::init();
+    EventPickUpItemManager::init();
+    MiniGameKMGUnit::init();
+    TableFishingDifficultyImpl::init();
     // TODO G5: DRAW_RENDER + DrawRender::registerTask (ESP/mod-ui)
     // TODO G5: Config JSON load/save via filemanager
-    LOGI(OBF("HOOK_PLAY G3 init done"));
+    LOGI(OBF("HOOK_PLAY G4 init done"));
 }
 
 }

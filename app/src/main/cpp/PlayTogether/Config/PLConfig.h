@@ -111,6 +111,14 @@ struct PLConfig {
 
     struct FarmConfig {
         bool isAutoClickCollect = false;
+        bool isAutoPlant = false;
+        uint32_t selectedSeedId = 0;
+        std::map<int, bool> selectedPlotPositions;
+        int delayPlant = 1000;
+        bool isAutoReap = false;
+        std::map<uint32_t, bool> selectedCropTypes;
+        std::map<int, bool> selectedReapPositions;
+        int delayReap = 1000;
         struct ESP {
             bool isEnable = false;
             bool isShowName = false;
@@ -152,7 +160,19 @@ struct PLConfig {
         struct DiggingConfig {
             bool isEnable = false;
             bool isAutoKB = false;
+            bool isLocDaoKB = false;
             bool isAutoBuyXeng = false;
+            float speedDaoKB = 0;
+            bool isAutoDigTreasure = false;
+            int capDoAnToan = 5;
+            float gocLechToiDa = 0.0f;
+            float chuKyChuS = 0.0f;
+            float doCongChuS = 0.0f;
+            float khoangCachBatDauCham = 15.0f;
+            bool autoMoveKhiHetRuong = true;
+            float radiusTim = 100.0f;
+            float maxKhoangCach = 200.0f;
+            std::map<int, bool> filterLoaiRuong;
             struct EspConfig {
                 bool isEnable = false;
                 bool isShowName = false;
@@ -164,12 +184,25 @@ struct PLConfig {
             bool isChemXa = false;
             bool isEsp = false;
         } zombie;
+        struct TowerClimb {
+            bool isEnable = false;
+            int delayNextPoint = 10000;
+        } towerClimb;
+        struct Obby {
+            bool isEnable = false;
+            int delayNextPoint = 10000;
+        } obby;
         struct ThapGa {
             bool isEnable = false;
             int delayNextPoint = 10000;
         } ThapGa;
+        struct Party {
+            bool isEnable = false;
+            int delayNextPoint = 10000;
+        } Party;
     } miniGame;
 
+    static int GetPlayerMapID();
     static void NextMapPos(int mapID, Vector3 pos);
 };
 

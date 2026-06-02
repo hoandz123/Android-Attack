@@ -15,6 +15,7 @@
 #include "CollectSystem.h"
 #include "FishingSystem.h"
 #include "ActorDefaultControlPlayer.h"
+#include "FarmSystem.h"
 #include <Tools/Tools.h>
 #include <Includes/obfuscate.h>
 #define LOG_TAG OBF("AttackPlugin")
@@ -117,7 +118,7 @@ namespace ActorControl {
                     CollectSystem::Update();
                     FishingSystem::Update();
                     ActorDefaultControlPlayer::Update();
-                    // TODO G4: FarmSystem::Update()
+                    FarmSystem::Update();
                     GetListNPC();
                 }
             }

@@ -38,6 +38,13 @@ set(PLAY_TOGETHER_SOURCES
     PlayTogether/SDK/NetWebProtocol.cpp
     PlayTogether/SDK/TableItemImpl.cpp
     PlayTogether/SDK/TableFishingDifficultyImpl.cpp
+    PlayTogether/SDK/FarmSystem.cpp
+    PlayTogether/SDK/FarmLandProbe.cpp
+    PlayTogether/SDK/FarmLandHooks.cpp
+    PlayTogether/SDK/MiniGameTowerOfHell.cpp
+    PlayTogether/SDK/MiniGameObby.cpp
+    PlayTogether/SDK/EventPickUpItemManager.cpp
+    PlayTogether/SDK/MiniGameKMGUnit.cpp
     PlayTogether/SDK/JsonConvert.cpp
     PlayTogether/SDK/NguiExtensions.cpp
     PlayTogether/SDK/UILabel.cpp
@@ -78,6 +85,7 @@ find_library(GLESv3-lib GLESv3)
 target_include_directories(attack PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether
+    ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether/SDK
     ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether/Config
     ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether/Stubs
     ${NATIVE_CORE_CPP}
