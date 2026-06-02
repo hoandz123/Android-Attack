@@ -4,6 +4,7 @@
 #include "SDK/SystemHelper.h"
 #include "SDK/enum/eTableType.h"
 #include "SDK/enum/Illustbook_type.h"
+#include "SDK/enum/Fish_Type.h"
 #include "SDK/enum/Item_Type.h"
 #include <API/Il2CppApi.h>
 #include <API/Il2cpp_Struct.h>
@@ -118,6 +119,85 @@ int readActiveGuidePoint() {
     return mapSys->invoke_method<int>(OBF("get_CurrentShowGuidePoint"));
 }
 
+Object *getCurrentMap() {
+    Object *mapSys = SystemHelper::get_Map();
+    if (mapSys) {
+        Object *cur = mapSys->get_field_object<Object *>(OBF("m_CurrentMap"));
+        if (cur) return cur;
+    }
+    Class *fwCls = FindClass(OBF("FrameWork"));
+    if (!fwCls || !fwCls->find_method(OBF("get_CurrentMap"), 0)) return nullptr;
+    return fwCls->find_method(OBF("get_CurrentMap"), 0)->static_invoke<Object *>();
+}
+
+bool mapGuideIdListed(const int *ids, int count, int guidePointId) {
+    for (int i = 0; i < count; i++) {
+        if (ids[i] == guidePointId) return true;
+    }
+    return false;
+}
+
+int collectMapGuidePointIds(int *outIds, int maxCount) {
+    if (!outIds || maxCount <= 0) return 0;
+    static bool s_mapGuideSkipLogged = false;
+    Object *map = getCurrentMap();
+    if (!map) {
+        if (!s_mapGuideSkipLogged) {
+            LOGW(OBF("FishingCatalog: không đọc được map hiện tại — bỏ qua mapGuidePoints"));
+            s_mapGuideSkipLogged = true;
+        }
+        return 0;
+    }
+    Class *mapCls = map->get_class();
+    if (!mapCls) return 0;
+    Object *rawList = map->get_field_object<Object *>(OBF("mapGuidePoints"));
+    if (!rawList) {
+        if (!s_mapGuideSkipLogged) {
+            LOGW(OBF("FishingCatalog: mapGuidePoints null — chỉ dùng AutoCatchArea"));
+            s_mapGuideSkipLogged = true;
+        }
+        return 0;
+    }
+    auto *list = reinterpret_cast<List<Object *> *>(rawList);
+    int count = list->get_Count();
+    if (count <= 0) return 0;
+    int added = 0;
+    for (int i = 0; i < count && added < maxCount; i++) {
+        Object *pt = list->get_item(i);
+        if (!pt) continue;
+        Class *ptCls = pt->get_class();
+        if (!ptCls) continue;
+        unsigned int gpId = pt->get_field_value<unsigned int>(OBF("guidePointID"));
+        if (gpId == 0) continue;
+        if (mapGuideIdListed(outIds, added, (int) gpId)) continue;
+        outIds[added++] = (int) gpId;
+    }
+    return added;
+}
+
+void sortGuides(GuideEntry *entries, int count) {
+    for (int i = 1; i < count; i++) {
+        GuideEntry key = entries[i];
+        int j = i - 1;
+        while (j >= 0) {
+            bool after = false;
+            if (entries[j].onCurrentMap != key.onCurrentMap) after = entries[j].onCurrentMap < key.onCurrentMap;
+            else if (entries[j].guidePointId > key.guidePointId) after = true;
+            if (!after) break;
+            entries[j + 1] = entries[j];
+            j--;
+        }
+        entries[j + 1] = key;
+    }
+}
+
+bool guideCatalogHasId(const Snapshot &snap, int guidePointId) {
+    for (int i = 0; i < snap.guideCount; i++) {
+        if (snap.guides[i].guidePointId == guidePointId) return true;
+    }
+    return false;
+}
+
 template<typename Fn>
 void forEachDictValues(Object *impl, int cap, Fn fn) {
     if (!impl || cap <= 0) return;
@@ -214,45 +294,60 @@ void buildZones(Snapshot &snap, unsigned int castingZone, unsigned int catchZone
 
 void buildGuides(Snapshot &snap, int activeGuidePoint) {
     snap.guideCount = 0;
+    int mapGpIds[kMaxGuides]{};
+    int mapGpCount = collectMapGuidePointIds(mapGpIds, kMaxGuides);
     Object *impl = getTableImpl(eTableType::AutoCatchArea);
-    if (!impl) return;
-    forEachDictValues(impl, kMaxGuides, [&](Object *row) -> bool {
-        if (snap.guideCount >= kMaxGuides) return false;
-        Class *rowCls = row->get_class();
-        if (!rowCls || !rowCls->find_method(OBF("get_GuidePoint"), 0)) return false;
-        int guidePoint = (int) row->invoke_method<unsigned int>(OBF("get_GuidePoint"));
-        if (guidePoint <= 0) return false;
-        unsigned int zoneId = 0;
-        unsigned int guideTextId = 0;
-        unsigned int placeTextId = 0;
-        unsigned int zoneTextId = 0;
-        if (rowCls->find_method(OBF("get_AutoCatchZoneId"), 0)) zoneId = row->invoke_method<unsigned int>(OBF("get_AutoCatchZoneId"));
-        if (rowCls->find_method(OBF("get_GuideText"), 0)) guideTextId = row->invoke_method<unsigned int>(OBF("get_GuideText"));
-        if (rowCls->find_method(OBF("get_AutoCatchPlaceText"), 0)) placeTextId = row->invoke_method<unsigned int>(OBF("get_AutoCatchPlaceText"));
-        if (rowCls->find_method(OBF("get_AutoCatchZoneText"), 0)) zoneTextId = row->invoke_method<unsigned int>(OBF("get_AutoCatchZoneText"));
-        std::string name = resolveMessage(guideTextId);
-        if (name.empty()) name = resolveMessage(placeTextId);
-        if (name.empty()) name = resolveMessage(zoneTextId);
-        if (name.empty()) {
-            char buf[32];
-            snprintf(buf, sizeof(buf), OBF("Guide %d"), guidePoint);
-            name = buf;
-        }
+    if (impl) {
+        forEachDictValues(impl, kMaxGuides, [&](Object *row) -> bool {
+            if (snap.guideCount >= kMaxGuides) return false;
+            Class *rowCls = row->get_class();
+            if (!rowCls || !rowCls->find_method(OBF("get_GuidePoint"), 0)) return false;
+            int guidePoint = (int) row->invoke_method<unsigned int>(OBF("get_GuidePoint"));
+            if (guidePoint <= 0) return false;
+            unsigned int zoneId = 0;
+            unsigned int guideTextId = 0;
+            unsigned int placeTextId = 0;
+            unsigned int zoneTextId = 0;
+            if (rowCls->find_method(OBF("get_AutoCatchZoneId"), 0)) zoneId = row->invoke_method<unsigned int>(OBF("get_AutoCatchZoneId"));
+            if (rowCls->find_method(OBF("get_GuideText"), 0)) guideTextId = row->invoke_method<unsigned int>(OBF("get_GuideText"));
+            if (rowCls->find_method(OBF("get_AutoCatchPlaceText"), 0)) placeTextId = row->invoke_method<unsigned int>(OBF("get_AutoCatchPlaceText"));
+            if (rowCls->find_method(OBF("get_AutoCatchZoneText"), 0)) zoneTextId = row->invoke_method<unsigned int>(OBF("get_AutoCatchZoneText"));
+            std::string name = resolveMessage(guideTextId);
+            if (name.empty()) name = resolveMessage(placeTextId);
+            if (name.empty()) name = resolveMessage(zoneTextId);
+            if (name.empty()) {
+                char buf[32];
+                snprintf(buf, sizeof(buf), OBF("Guide %d"), guidePoint);
+                name = buf;
+            }
+            GuideEntry &e = snap.guides[snap.guideCount];
+            e.guidePointId = guidePoint;
+            e.zoneId = zoneId;
+            e.isActive = (activeGuidePoint > 0 && guidePoint == activeGuidePoint);
+            e.onCurrentMap = mapGpCount > 0 && mapGuideIdListed(mapGpIds, mapGpCount, guidePoint);
+            copyLabelFmt(e.label, kLabelLen, OBF("%s%s (ID %d)"), name.c_str(), e.isActive ? OBF(" [đang bật]") : "", guidePoint);
+            snap.guideCount++;
+            return true;
+        });
+    }
+    for (int i = 0; i < mapGpCount && snap.guideCount < kMaxGuides; i++) {
+        int gpId = mapGpIds[i];
+        if (guideCatalogHasId(snap, gpId)) continue;
         GuideEntry &e = snap.guides[snap.guideCount];
-        e.guidePointId = guidePoint;
-        e.zoneId = zoneId;
-        e.isActive = (activeGuidePoint > 0 && guidePoint == activeGuidePoint);
-        copyLabelFmt(e.label, kLabelLen, OBF("%s%s (ID %d)"), name.c_str(), e.isActive ? OBF(" [đang bật]") : "", guidePoint);
+        e.guidePointId = gpId;
+        e.zoneId = 0;
+        e.isActive = (activeGuidePoint > 0 && gpId == activeGuidePoint);
+        e.onCurrentMap = true;
+        copyLabelFmt(e.label, kLabelLen, OBF("GP %d%s"), gpId, e.isActive ? OBF(" [đang bật]") : "");
         snap.guideCount++;
-        return true;
-    });
+    }
+    if (snap.guideCount > 1) sortGuides(snap.guides, snap.guideCount);
 }
 
 void buildFish(Snapshot &snap) {
     snap.fishCount = 0;
     Object *impl = getTableImpl(eTableType::Fishlist);
     if (!impl) return;
-    constexpr int kNormalFish = 1;
     forEachDictValues(impl, kMaxFish, [&](Object *row) -> bool {
         if (snap.fishCount >= kMaxFish) return false;
         Class *rowCls = row->get_class();
@@ -261,7 +356,7 @@ void buildFish(Snapshot &snap) {
         unsigned int itemId = row->invoke_method<unsigned int>(OBF("get_ItemId"));
         if (itemId == 0) return false;
         int fishType = (int) row->invoke_method<unsigned int>(OBF("get_FishType"));
-        if (fishType != kNormalFish) return false;
+        if (fishType <= (int) Fish_Type::None || fishType >= (int) Fish_Type::End) return false;
         if (!resolveItemIsFish(itemId)) return false;
         int grade = resolveItemGrade(itemId);
         bool codex = resolveInCodex(itemId);
@@ -271,7 +366,7 @@ void buildFish(Snapshot &snap) {
         e.grade = grade;
         e.fishType = fishType;
         e.inCodex = codex;
-        copyLabelFmt(e.label, kLabelLen, OBF("%s (%u) %s%s"), name.c_str(), itemId, GradeTag(grade), codex ? OBF("") : OBF(" [thiếu codex]"));
+        copyLabelFmt(e.label, kLabelLen, OBF("%s (%u) %s %s%s"), name.c_str(), itemId, GradeTag(grade), FishTypeTag(fishType), codex ? OBF("") : OBF(" [thiếu codex]"));
         snap.fishCount++;
         return true;
     });
@@ -358,9 +453,14 @@ const char *GradeTag(int grade) {
 
 const char *FishTypeTag(int fishType) {
     switch (fishType) {
-        case 1: return OBF("Thường");
-        case 2: return OBF("Vua");
-        case 3: return OBF("Rác");
+        case (int) Fish_Type::NormalFish: return OBF("Thường");
+        case (int) Fish_Type::KingFish: return OBF("Vua");
+        case (int) Fish_Type::Junk: return OBF("Rác");
+        case (int) Fish_Type::Costume: return OBF("Trang phục");
+        case (int) Fish_Type::Vehicle: return OBF("Phương tiện");
+        case (int) Fish_Type::MyHome: return OBF("Nhà");
+        case (int) Fish_Type::Season: return OBF("Mùa");
+        case (int) Fish_Type::Currency: return OBF("Tiền tệ");
         default: return OBF("?");
     }
 }

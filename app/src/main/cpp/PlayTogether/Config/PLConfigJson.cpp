@@ -69,6 +69,7 @@ void to_json(nlohmann::json& j, const PLConfig::FishingConfig& cfg) {
         {"autoDailyMissionReward", cfg.autoDailyMissionReward},
         {"missionClaimIntervalMs", cfg.missionClaimIntervalMs},
         {"targetFishItemId", cfg.targetFishItemId},
+        {"fishPickerTypeMask", cfg.fishPickerTypeMask},
         {"adaptivePacing", cfg.adaptivePacing},
         {"stunOrchestrator", cfg.stunOrchestrator},
         {"stunHitIntervalMs", cfg.stunHitIntervalMs},
@@ -129,6 +130,7 @@ void from_json(const nlohmann::json& j, PLConfig::FishingConfig& cfg) {
     if (j.contains("autoDailyMissionReward")) j["autoDailyMissionReward"].get_to(cfg.autoDailyMissionReward);
     if (j.contains("missionClaimIntervalMs")) j["missionClaimIntervalMs"].get_to(cfg.missionClaimIntervalMs);
     if (j.contains("targetFishItemId")) j["targetFishItemId"].get_to(cfg.targetFishItemId);
+    if (j.contains("fishPickerTypeMask")) j["fishPickerTypeMask"].get_to(cfg.fishPickerTypeMask);
     if (j.contains("adaptivePacing")) j["adaptivePacing"].get_to(cfg.adaptivePacing);
     if (j.contains("stunOrchestrator")) j["stunOrchestrator"].get_to(cfg.stunOrchestrator);
     if (j.contains("stunHitIntervalMs")) j["stunHitIntervalMs"].get_to(cfg.stunHitIntervalMs);

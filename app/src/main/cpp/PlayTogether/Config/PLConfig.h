@@ -54,6 +54,7 @@ struct PLConfig {
         bool autoDailyMissionReward = false;
         int missionClaimIntervalMs = 3500;
         int targetFishItemId = 0;
+        unsigned int fishPickerTypeMask = (1u << 1);
         bool adaptivePacing = true;
         bool stunOrchestrator = true;
         int stunHitIntervalMs = 220;

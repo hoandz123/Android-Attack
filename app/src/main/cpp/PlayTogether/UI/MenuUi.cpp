@@ -34,6 +34,39 @@ static bool MatchSearch(const char *label, const char *search) {
     return false;
 }
 
+static bool FishPickerTypeVisible(int fishType, unsigned int mask) {
+    if (fishType <= 0 || fishType >= 9) return false;
+    if (fishType >= 4) return (mask & ((1u << 4) | (1u << 5) | (1u << 6) | (1u << 7) | (1u << 8))) != 0;
+    return (mask & (1u << (unsigned int) fishType)) != 0;
+}
+
+static bool DrawFishTypeFilter() {
+    unsigned int &mask = gPLConfig.fishing.fishPickerTypeMask;
+    bool showNormal = (mask & (1u << 1)) != 0;
+    bool showKing = (mask & (1u << 2)) != 0;
+    bool showJunk = (mask & (1u << 3)) != 0;
+    bool showOther = (mask & ((1u << 4) | (1u << 5) | (1u << 6) | (1u << 7) | (1u << 8))) != 0;
+    bool changed = false;
+    ImGui::TextUnformatted(OBF("Loại cá hiển thị:"));
+    if (ImGui::Checkbox(OBF("Thường##fish_type_normal"), &showNormal)) changed = true;
+    ImGui::SameLine();
+    if (ImGui::Checkbox(OBF("Vua##fish_type_king"), &showKing)) changed = true;
+    ImGui::SameLine();
+    if (ImGui::Checkbox(OBF("Rác##fish_type_junk"), &showJunk)) changed = true;
+    ImGui::SameLine();
+    if (ImGui::Checkbox(OBF("Khác##fish_type_other"), &showOther)) changed = true;
+    if (changed) {
+        mask = 0;
+        if (showNormal) mask |= (1u << 1);
+        if (showKing) mask |= (1u << 2);
+        if (showJunk) mask |= (1u << 3);
+        if (showOther) mask |= ((1u << 4) | (1u << 5) | (1u << 6) | (1u << 7) | (1u << 8));
+        if (mask == 0) mask = (1u << 1);
+        SaveConfig();
+    }
+    return changed;
+}
+
 static const char *FindBaitLabel(const FishingCatalog::Snapshot &cat, int baitItemId) {
     for (int i = 0; i < cat.baitCount; i++) {
         if ((int) cat.baits[i].itemId == baitItemId) return cat.baits[i].label;
@@ -159,12 +192,22 @@ static bool DrawGuidePicker(const char *id, int *guidePointId) {
     if (ImGui::BeginCombo(OBF("Điểm guide##guide_combo"), preview)) {
         FishingCatalog::NotifyPickerOpen();
         if (!cat.ready) ImGui::TextUnformatted(OBF("Đang tải danh sách…"));
-        else if (cat.guideCount <= 0) ImGui::TextUnformatted(OBF("Chưa có guide (AutoCatchArea)"));
+        else if (cat.guideCount <= 0) ImGui::TextUnformatted(OBF("Chưa có guide (AutoCatchArea / map)"));
+        bool wroteOtherHeader = false;
         for (int i = 0; i < cat.guideCount; i++) {
             const auto &e = cat.guides[i];
+            if (i == 0 && e.onCurrentMap) ImGui::TextUnformatted(OBF("— Map hiện tại —"));
+            if (!e.onCurrentMap && !wroteOtherHeader) {
+                if (i > 0) ImGui::Separator();
+                ImGui::TextUnformatted(OBF("— Khác —"));
+                wroteOtherHeader = true;
+            }
+            char display[FishingCatalog::kLabelLen + 8];
+            if (e.onCurrentMap) snprintf(display, sizeof(display), OBF("• %s"), e.label);
+            else snprintf(display, sizeof(display), "%s", e.label);
             ImGui::PushID(i);
             bool selected = (e.guidePointId == *guidePointId);
-            if (ImGui::Selectable(e.label, selected)) {
+            if (ImGui::Selectable(display, selected)) {
                 *guidePointId = e.guidePointId;
                 changed = true;
             }
@@ -196,6 +239,7 @@ static bool DrawFishPicker(const char *id, int *fishItemId) {
     ImGui::PushID(id);
     if (ImGui::BeginCombo(OBF("Cá mục tiêu##fish_combo"), preview)) {
         FishingCatalog::NotifyPickerOpen();
+        DrawFishTypeFilter();
         ImGui::SetNextItemWidth(-1);
         ImGui::InputTextWithHint(OBF("##fish_search"), OBF("Tìm tên/ID…"), s_fishSearch, sizeof(s_fishSearch));
         ImGui::SliderInt(OBF("Grade tối thiểu##fish_grade_min"), &s_minGrade, 0, 5);
@@ -206,8 +250,10 @@ static bool DrawFishPicker(const char *id, int *fishItemId) {
             changed = true;
         }
         ImGui::BeginChild(OBF("fish_list##child"), ImVec2(0, 180), true);
+        unsigned int typeMask = gPLConfig.fishing.fishPickerTypeMask;
         for (int i = 0; i < cat.fishCount; i++) {
             const auto &e = cat.fish[i];
+            if (!FishPickerTypeVisible(e.fishType, typeMask)) continue;
             if (s_minGrade > 0 && e.grade < s_minGrade) continue;
             if (!MatchSearch(e.label, s_fishSearch)) {
                 char idBuf[16];

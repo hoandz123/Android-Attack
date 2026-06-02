@@ -32,6 +32,7 @@ struct GuideEntry {
     int guidePointId = 0;
     unsigned int zoneId = 0;
     bool isActive = false;
+    bool onCurrentMap = false;
     char label[kLabelLen]{};
 };
 
