@@ -490,17 +490,50 @@ void buildLevels(Snapshot &snap) {
     Object *impl = getTableImpl(eTableType::FishingDifficulty);
     int dictCount = readTableDictCount(impl);
     int visited = 0;
+    int skippedNoRow = 0;
     if (!impl) {
         logCatalogBuild(OBF("FishingDifficulty"), impl, dictCount, visited, snap.levelCount);
         return;
     }
-    forEachDictValues(impl, kMaxLevels, [&](Object *row) -> bool {
+    Class *implCls = impl->get_class();
+    if (!implCls || !implCls->find_method(OBF("get_Container"), 0)) {
+        logCatalogBuild(OBF("FishingDifficulty"), impl, dictCount, visited, snap.levelCount);
+        return;
+    }
+    Object *rawDict = impl->invoke_method<Object *>(OBF("get_Container"));
+    if (!rawDict) {
+        logCatalogBuild(OBF("FishingDifficulty"), impl, dictCount, visited, snap.levelCount);
+        return;
+    }
+    auto *dict = (Dictionary<uint32_t, Object *> *)rawDict;
+    int count = dict->get_Count();
+    if (count <= 0) {
+        logCatalogBuild(OBF("FishingDifficulty"), impl, dictCount, visited, snap.levelCount);
+        return;
+    }
+    if (count > kMaxLevels * 4) count = kMaxLevels * 4;
+    uint32_t *keys = dict->CollectKeys();
+    if (!keys) {
+        logCatalogBuild(OBF("FishingDifficulty"), impl, dictCount, visited, snap.levelCount);
+        return;
+    }
+    bool hasGetTableData = implCls->find_method(OBF("GetTableData"), 1) != nullptr;
+    for (int i = 0; i < count && snap.levelCount < kMaxLevels; i++) {
         visited++;
-        if (snap.levelCount >= kMaxLevels) return false;
+        unsigned int sid = keys[i];
+        if (sid == 0) continue;
+        Object *row = hasGetTableData ? impl->invoke_method<Object *>(OBF("GetTableData"), sid) : dict->get_Item(sid);
+        if (!row) {
+            skippedNoRow++;
+            continue;
+        }
         Class *rowCls = row->get_class();
-        if (!rowCls || !rowCls->find_method(OBF("get_FishingDifficultyId"), 0)) return false;
-        unsigned int sid = row->invoke_method<unsigned int>(OBF("get_FishingDifficultyId"));
-        if (sid == 0) return false;
+        if (!rowCls) continue;
+        unsigned int levelId = sid;
+        if (rowCls->find_method(OBF("get_FishingDifficultyId"), 0)) {
+            unsigned int rowId = row->invoke_method<unsigned int>(OBF("get_FishingDifficultyId"));
+            if (rowId != 0) levelId = rowId;
+        }
         int shadowIdx = 0;
         if (rowCls->find_method(OBF("get_AssetName"), 0)) {
             String *asset = row->invoke_method<String *>(OBF("get_AssetName"));
@@ -514,20 +547,26 @@ void buildLevels(Snapshot &snap) {
         unsigned int titleId = 0;
         if (rowCls->find_method(OBF("get_FishMinigameTitle"), 0)) titleId = row->invoke_method<unsigned int>(OBF("get_FishMinigameTitle"));
         LevelEntry &e = snap.levels[snap.levelCount];
-        e.levelId = sid;
+        e.levelId = levelId;
         e.shadowIndex = shadowIdx;
         e.bigFish = bigFish;
         e.minigameHp = minigameHp;
         std::string label = resolveMessage(titleId);
         if (label.empty()) {
-            copyLabelFmt(e.label, kLabelLen, OBF("Lv %u | Bóng %s"), sid, FishingGameplay::ShadowLabelFromIndex(shadowIdx));
+            copyLabelFmt(e.label, kLabelLen, OBF("Lv %u | Bóng %s"), levelId, FishingGameplay::ShadowLabelFromIndex(shadowIdx));
         } else {
             copyLabelFmt(e.label, kLabelLen, OBF("%s"), label.c_str());
         }
         attachLearnedFishNames(e);
         snap.levelCount++;
-        return true;
-    });
+    }
+    delete[] keys;
+    static long long s_lastLevelDetailLogMs = 0;
+    long long now = Tools::getSystemMilliseconds();
+    if (now - s_lastLevelDetailLogMs >= 7000) {
+        s_lastLevelDetailLogMs = now;
+        LOGI(OBF("FishingCatalog FishingDifficulty: skippedNoRow=%d"), skippedNoRow);
+    }
     if (snap.levelCount > 1) sortLevels(snap.levels, snap.levelCount);
     logCatalogBuild(OBF("FishingDifficulty"), impl, dictCount, visited, snap.levelCount);
 }
