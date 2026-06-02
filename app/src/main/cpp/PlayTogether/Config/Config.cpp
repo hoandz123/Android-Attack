@@ -22,8 +22,6 @@ void to_json(nlohmann::json &j, const PLConfig::FishingConfig &cfg) {
     j = nlohmann::json{
         {"enabled", cfg.enabled},
         {"autoCloseReward", cfg.autoCloseReward},
-        {"autoSellTrash", cfg.autoSellTrash},
-        {"maxSellGrade", cfg.maxSellGrade},
         {"stopWhenCountOver", cfg.stopWhenCountOver},
         {"autoEquipBait", cfg.autoEquipBait},
         {"baitItemId", cfg.baitItemId},
@@ -33,15 +31,17 @@ void to_json(nlohmann::json &j, const PLConfig::FishingConfig &cfg) {
         {"filterByShadow", cfg.filterByShadow},
         {"keepShadow", std::vector<bool>(cfg.keepShadow, cfg.keepShadow + 7)},
         {"filterByLevel", cfg.filterByLevel},
-        {"keepLevels", cfg.keepLevels}
+        {"keepLevels", cfg.keepLevels},
+        {"sellByShadow", cfg.sellByShadow},
+        {"sellShadow", std::vector<bool>(cfg.sellShadow, cfg.sellShadow + 7)},
+        {"sellByGrade", cfg.sellByGrade},
+        {"sellGrade", std::vector<bool>(cfg.sellGrade, cfg.sellGrade + 5)}
     };
 }
 
 void from_json(const nlohmann::json &j, PLConfig::FishingConfig &cfg) {
     if (j.contains("enabled")) j["enabled"].get_to(cfg.enabled);
     if (j.contains("autoCloseReward")) j["autoCloseReward"].get_to(cfg.autoCloseReward);
-    if (j.contains("autoSellTrash")) j["autoSellTrash"].get_to(cfg.autoSellTrash);
-    if (j.contains("maxSellGrade")) j["maxSellGrade"].get_to(cfg.maxSellGrade);
     if (j.contains("stopWhenCountOver")) j["stopWhenCountOver"].get_to(cfg.stopWhenCountOver);
     if (j.contains("autoEquipBait")) j["autoEquipBait"].get_to(cfg.autoEquipBait);
     if (j.contains("baitItemId")) j["baitItemId"].get_to(cfg.baitItemId);
@@ -55,6 +55,24 @@ void from_json(const nlohmann::json &j, PLConfig::FishingConfig &cfg) {
     }
     if (j.contains("filterByLevel")) j["filterByLevel"].get_to(cfg.filterByLevel);
     if (j.contains("keepLevels")) j["keepLevels"].get_to(cfg.keepLevels);
+    if (j.contains("sellByShadow")) j["sellByShadow"].get_to(cfg.sellByShadow);
+    if (j.contains("sellShadow") && j["sellShadow"].is_array()) {
+        auto arr = j["sellShadow"];
+        for (size_t i = 0; i < arr.size() && i < 7; i++) cfg.sellShadow[i] = arr[i].get<bool>();
+    }
+    if (j.contains("sellByGrade")) j["sellByGrade"].get_to(cfg.sellByGrade);
+    if (j.contains("sellGrade") && j["sellGrade"].is_array()) {
+        auto arr = j["sellGrade"];
+        for (size_t i = 0; i < arr.size() && i < 5; i++) cfg.sellGrade[i] = arr[i].get<bool>();
+    }
+    if (!j.contains("sellByGrade") && j.contains("autoSellTrash") && j["autoSellTrash"].get<bool>()) {
+        cfg.sellByGrade = true;
+        int maxG = 2;
+        if (j.contains("maxSellGrade")) maxG = j["maxSellGrade"].get<int>();
+        if (maxG < 1) maxG = 1;
+        if (maxG > 5) maxG = 5;
+        for (int i = 0; i < maxG; i++) cfg.sellGrade[i] = true;
+    }
     if (cfg.keepLevels.empty() && j.contains("keepLevelIds") && j["keepLevelIds"].is_array()) {
         std::string migrated;
         for (const auto &v : j["keepLevelIds"]) {

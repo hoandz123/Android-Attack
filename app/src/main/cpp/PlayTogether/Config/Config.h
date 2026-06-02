@@ -8,8 +8,6 @@ struct PLConfig {
     struct FishingConfig {
         bool enabled = false;
         bool autoCloseReward = true;
-        bool autoSellTrash = false;
-        int maxSellGrade = 2;
         bool stopWhenCountOver = true;
         bool autoEquipBait = false;
         int baitItemId = 0;
@@ -20,6 +18,10 @@ struct PLConfig {
         bool keepShadow[7] = {true, true, true, true, true, true, true};
         bool filterByLevel = false;
         std::string keepLevels;
+        bool sellByShadow = false;
+        bool sellShadow[7] = {};
+        bool sellByGrade = false;
+        bool sellGrade[5] = {};
     } fishing;
 
     void Load(const std::string &content);
