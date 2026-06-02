@@ -164,15 +164,15 @@ static void DrawFishingPage() {
             ImGui::TextUnformatted(OBF("Lọc theo level"));
             UiCheckbox(OBF("Bật lọc level"), &gPLConfig.fishing.filterByLevel);
             if (gPLConfig.fishing.filterByLevel) {
-                static char keepLevelsBuf[128] = {};
+                static char keepLevelsBuf[256] = {};
                 static std::string keepLevelsSynced;
                 if (keepLevelsSynced != gPLConfig.fishing.keepLevels) {
                     std::strncpy(keepLevelsBuf, gPLConfig.fishing.keepLevels.c_str(), sizeof(keepLevelsBuf) - 1);
                     keepLevelsBuf[sizeof(keepLevelsBuf) - 1] = '\0';
                     keepLevelsSynced = gPLConfig.fishing.keepLevels;
                 }
-                ImGui::SetNextItemWidth(-1);
-                ImGui::InputTextWithHint(OBF("##keep_levels"), OBF("VD: 1,2,3,4"), keepLevelsBuf, sizeof(keepLevelsBuf));
+                ImGui::TextUnformatted(OBF("Mỗi dòng hoặc dấu phẩy: 1,2,3…"));
+                ImGui::InputTextMultiline(OBF("##keep_levels"), keepLevelsBuf, sizeof(keepLevelsBuf), ImVec2(-1, 72));
                 if (ImGui::IsItemDeactivatedAfterEdit()) {
                     gPLConfig.fishing.keepLevels = keepLevelsBuf;
                     keepLevelsSynced = gPLConfig.fishing.keepLevels;
