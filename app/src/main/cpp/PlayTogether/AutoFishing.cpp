@@ -3,6 +3,7 @@
 #include "SDK/ActorControl.h"
 #include "SDK/SystemHelper.h"
 #include "SDK/enum/eFishingState.h"
+#include "SDK/enum/eFishingFailType.h"
 #include <API/Il2CppApi.h>
 #include <Tools/Tools.h>
 #include <Includes/obfuscate.h>
@@ -22,6 +23,8 @@ struct ResolvedMethods {
     bool hasCatchItemId = false;
     bool hasFloatPos = false;
     bool hasCatchFishId = false;
+    bool hasFailTypeField = false;
+    bool hasBigFishHp = false;
 };
 
 ResolvedMethods g_methods;
@@ -44,6 +47,11 @@ bool g_hasFloatPoint = false;
 unsigned int g_castingZoneId = 0;
 unsigned int g_catchZoneId = 0;
 long long g_baitUid = 0;
+int g_lastFailType = 0;
+bool g_fishingCountOver = false;
+int g_bigFishHp = 0;
+int g_bigFishHpMax = 0;
+int g_castFailStreak = 0;
 
 bool isBigFishState(eFishingState state) {
     return (int) state >= (int) eFishingState::BigFish_RaidEnter;
@@ -97,6 +105,8 @@ bool resolveMethods() {
     g_methods.hasCatchItemId = fishSysCls && fishSysCls->find_method(OBF("get_CatchItemID"), 0);
     g_methods.hasFloatPos = baseCls->find_method(OBF("get_FishingFloatPos"), 0);
     g_methods.hasCatchFishId = baseCls->find_method(OBF("get_CatchFishID"), 0);
+    g_methods.hasFailTypeField = playerCls != nullptr;
+    g_methods.hasBigFishHp = fishSysCls && fishSysCls->find_method(OBF("get_BigFishHP"), 0) && fishSysCls->find_method(OBF("get_BigFishHP_Org"), 0);
     g_methods.ok = hasBase && hasPlayer;
     if (!g_methods.ok) LOGE(OBF("resolveMethods: thiếu method câu cá"));
     return g_methods.ok;
@@ -186,8 +196,16 @@ void tryHandleRewardDialog(Object *fishingSys) {
     dlg->invoke_method<void>(OBF("OnClick_ButtonClose"));
 }
 
+int readFailType(Object *player) {
+    if (!player || !g_methods.hasFailTypeField) return 0;
+    return (int) player->get_field_value<int>(OBF("_fishingFailType"));
+}
+
 void refreshTelemetry(Object *player, Object *fishingSys, eFishingState state) {
     g_hasFloatPoint = false;
+    g_bigFishHp = 0;
+    g_bigFishHpMax = 0;
+    g_fishingCountOver = false;
     if (player && g_methods.hasFloatPos && readIsFishing(player)) {
         g_floatPoint = player->invoke_method<Vector3>(OBF("get_FishingFloatPos"));
         g_hasFloatPoint = true;
@@ -196,6 +214,11 @@ void refreshTelemetry(Object *player, Object *fishingSys, eFishingState state) {
         g_castingZoneId = fishingSys->get_field_value<unsigned int>(OBF("CastingFishingZoneID"));
         if (g_methods.hasCatchGrade) g_catchZoneId = fishingSys->invoke_method<unsigned int>(OBF("get_CatchFishingZone"));
         g_baitUid = fishingSys->invoke_method<long long>(OBF("get_FishingBaitUID"));
+        g_fishingCountOver = fishingSys->invoke_method<bool>(OBF("get_IsFishingCountOver"));
+        if (gPLConfig.fishing.handleBigFish && g_methods.hasBigFishHp && isBigFishState(state)) {
+            g_bigFishHp = fishingSys->invoke_method<int>(OBF("get_BigFishHP"));
+            g_bigFishHpMax = fishingSys->invoke_method<int>(OBF("get_BigFishHP_Org"));
+        }
     }
 }
 
@@ -205,6 +228,11 @@ void tryStartFishing(Object *player, Object *fishingSys) {
     long long now = Tools::getSystemMilliseconds();
     int delay = gPLConfig.fishing.restartDelayMs;
     if (delay < 800) delay = 800;
+    if (gPLConfig.fishing.adaptiveCastBackoff && g_castFailStreak > 0) {
+        int extra = g_castFailStreak * 450;
+        if (extra > 4500) extra = 4500;
+        delay += extra;
+    }
     if (g_lastCastAttemptMs > 0 && now - g_lastCastAttemptMs < delay) return;
     if (!readHasPole(player)) return;
     if (readIsFishing(player)) return;
@@ -244,6 +272,13 @@ void tryStunHit(Object *player) {
 
 void trackStateChange(eFishingState state, Object *player, Object *fishingSys) {
     if (state == g_lastState) return;
+    if (state == eFishingState::CastingFail) {
+        g_castFailStreak++;
+        g_lastFailType = readFailType(player);
+    }
+    if (state == eFishingState::Search || state == eFishingState::Hit || state == eFishingState::Fighting) {
+        g_castFailStreak = 0;
+    }
     if (g_lastState == eFishingState::Fighting && state == eFishingState::Catch) {
         g_fishCaught++;
         recordCatchStats(player, fishingSys);
@@ -391,6 +426,52 @@ unsigned int GetCatchZoneId() {
 
 long long GetFishingBaitUid() {
     return g_baitUid;
+}
+
+int GetLastFailType() {
+    return g_lastFailType;
+}
+
+bool IsFishingCountOver() {
+    return g_fishingCountOver;
+}
+
+int GetBigFishHp() {
+    return g_bigFishHp;
+}
+
+int GetBigFishHpMax() {
+    return g_bigFishHpMax;
+}
+
+int GetCastFailStreak() {
+    return g_castFailStreak;
+}
+
+int GetCatchesPerHour() {
+    unsigned int sec = GetSessionElapsedSec();
+    if (sec < 30) return 0;
+    return (int) ((long long) g_fishCaught * 3600 / (long long) sec);
+}
+
+int GetSuccessRatePercent() {
+    int total = g_fishCaught + g_failCount + g_missCount;
+    if (total <= 0) return 0;
+    return (int) ((long long) g_fishCaught * 100 / (long long) total);
+}
+
+void ResetSessionStats() {
+    g_fishCaught = 0;
+    g_failCount = 0;
+    g_missCount = 0;
+    for (int i = 0; i < 6; i++) g_catchByGrade[i] = 0;
+    g_lastCatchItemId = 0;
+    g_lastCatchGrade = 0;
+    g_lastFailType = 0;
+    g_castFailStreak = 0;
+    g_pausedByRare = false;
+    g_rareAlert = false;
+    g_sessionStartMs = Tools::getSystemMilliseconds();
 }
 
 }

@@ -1,0 +1,25 @@
+#pragma once
+
+enum class eFishingFailType : int {
+    None = 0,
+    Obstacle = 1,
+    NotWater = 2,
+    WaterLow = 3,
+    WaterInside = 4,
+    LineBreak = 5,
+    PoleBroken = 6,
+    TimingLate = 7,
+    TimingFast = 8,
+    NoFishingZone = 9,
+    CountOver = 10,
+    InventoryOver = 11,
+    InvalidCasting = 12,
+    OnlyHomeRegion = 13,
+    RegionLimit = 14,
+    RegionTotalLimit = 15,
+    InvalidKey = 16,
+    InvalidStep = 17,
+    RaidTimeOver = 18,
+    RaidMaxUser = 19,
+    Unknown = 20,
+};

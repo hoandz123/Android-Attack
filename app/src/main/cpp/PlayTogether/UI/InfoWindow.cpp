@@ -33,7 +33,20 @@ void ShowInfoWindow() {
                     ImGui::Text(OBF("Phiên: %um — hụt %d / trượt %d"), snap.sessionSec / 60, snap.failCount, snap.missCount);
                     ImGui::Text(OBF("Theo grade: %d/%d/%d/%d/%d"), snap.catchGrade1, snap.catchGrade2, snap.catchGrade3, snap.catchGrade4, snap.catchGrade5);
                 }
-                if (snap.hasFloatPoint) ImGui::Text(OBF("Phao: %.1fm (Δx %.1f)"), snap.floatDistance, snap.floatOffsetX);
+                if (gPLConfig.fishing.showEfficiency && snap.sessionSec >= 30) {
+                    ImGui::Text(OBF("~%d/giờ | OK %d%%"), snap.catchesPerHour, snap.successRatePct);
+                }
+                if (gPLConfig.fishing.showFailHint && snap.lastFailType > 0) {
+                    ImGui::Text(OBF("Lỗi: %s"), OverlaySnapshot::FailTypeLabel(snap.lastFailType));
+                }
+                if (snap.fishingCountOver) {
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));
+                    ImGui::TextUnformatted(OBF("Hết lượt câu"));
+                    ImGui::PopStyleColor();
+                }
+                if (snap.hasFloatPoint) {
+                    ImGui::Text(OBF("Phao: %.1fm hướng %.0f°"), snap.floatDistance, snap.floatBearingDeg);
+                }
             }
         }
     }

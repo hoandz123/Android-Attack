@@ -29,11 +29,20 @@ struct View {
     float floatOffsetX = 0.f;
     float floatOffsetZ = 0.f;
     float floatDistance = 0.f;
+    float floatBearingDeg = 0.f;
+    int lastFailType = 0;
+    bool fishingCountOver = false;
+    int bigFishHp = 0;
+    int bigFishHpMax = 0;
+    int castFailStreak = 0;
+    int catchesPerHour = 0;
+    int successRatePct = 0;
 };
 
 void UpdateFromGameThread();
 void Read(View &out);
 const char *FishingStateLabel(int fishingState);
+const char *FailTypeLabel(int failType);
 const char *GradeLabel(int grade);
 
 }

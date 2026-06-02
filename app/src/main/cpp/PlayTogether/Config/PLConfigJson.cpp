@@ -33,6 +33,10 @@ void to_json(nlohmann::json& j, const PLConfig::FishingConfig& cfg) {
         {"showSessionStats", cfg.showSessionStats},
         {"showFloatMarker", cfg.showFloatMarker},
         {"showZoneInfo", cfg.showZoneInfo},
+        {"showFailHint", cfg.showFailHint},
+        {"showEfficiency", cfg.showEfficiency},
+        {"showBigFishHp", cfg.showBigFishHp},
+        {"adaptiveCastBackoff", cfg.adaptiveCastBackoff},
         {"stopWhenCountOver", cfg.stopWhenCountOver},
         {"skipBoastDelay", cfg.skipBoastDelay},
         {"boastSkipMs", cfg.boastSkipMs}
@@ -56,6 +60,10 @@ void from_json(const nlohmann::json& j, PLConfig::FishingConfig& cfg) {
     if (j.contains("showSessionStats")) j["showSessionStats"].get_to(cfg.showSessionStats);
     if (j.contains("showFloatMarker")) j["showFloatMarker"].get_to(cfg.showFloatMarker);
     if (j.contains("showZoneInfo")) j["showZoneInfo"].get_to(cfg.showZoneInfo);
+    if (j.contains("showFailHint")) j["showFailHint"].get_to(cfg.showFailHint);
+    if (j.contains("showEfficiency")) j["showEfficiency"].get_to(cfg.showEfficiency);
+    if (j.contains("showBigFishHp")) j["showBigFishHp"].get_to(cfg.showBigFishHp);
+    if (j.contains("adaptiveCastBackoff")) j["adaptiveCastBackoff"].get_to(cfg.adaptiveCastBackoff);
     if (j.contains("stopWhenCountOver")) j["stopWhenCountOver"].get_to(cfg.stopWhenCountOver);
     if (j.contains("skipBoastDelay")) j["skipBoastDelay"].get_to(cfg.skipBoastDelay);
     if (j.contains("boastSkipMs")) j["boastSkipMs"].get_to(cfg.boastSkipMs);

@@ -25,6 +25,10 @@ struct PLConfig {
         bool showSessionStats = true;
         bool showFloatMarker = false;
         bool showZoneInfo = true;
+        bool showFailHint = true;
+        bool showEfficiency = true;
+        bool showBigFishHp = true;
+        bool adaptiveCastBackoff = true;
         bool stopWhenCountOver = true;
         bool skipBoastDelay = false;
         int boastSkipMs = 400;

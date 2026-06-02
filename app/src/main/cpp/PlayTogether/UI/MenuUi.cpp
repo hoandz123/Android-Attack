@@ -28,6 +28,26 @@ static void DrawFishingLiveStats(const OverlaySnapshot::View &snap) {
         ImGui::Text(OBF("Hụt: %d | Trượt: %d"), snap.failCount, snap.missCount);
         ImGui::Text(OBF("C/B/A/S/SS: %d/%d/%d/%d/%d"), snap.catchGrade1, snap.catchGrade2, snap.catchGrade3, snap.catchGrade4, snap.catchGrade5);
     }
+    if (gPLConfig.fishing.showEfficiency && snap.sessionSec >= 30) {
+        ImGui::Text(OBF("Hiệu suất: ~%d con/giờ | thành công %d%%"), snap.catchesPerHour, snap.successRatePct);
+    }
+    if (gPLConfig.fishing.showFailHint && snap.lastFailType > 0) {
+        ImGui::Text(OBF("Lỗi cast gần nhất: %s"), OverlaySnapshot::FailTypeLabel(snap.lastFailType));
+    }
+    if (snap.castFailStreak > 1 && gPLConfig.fishing.adaptiveCastBackoff) {
+        ImGui::Text(OBF("Backoff cast: chuỗi lỗi %d"), snap.castFailStreak);
+    }
+    if (snap.fishingCountOver) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.35f, 0.35f, 1.f));
+        ImGui::TextUnformatted(OBF("Đã hết lượt câu hôm nay"));
+        ImGui::PopStyleColor();
+    }
+    if (gPLConfig.fishing.showBigFishHp && gPLConfig.fishing.handleBigFish && snap.bigFishHpMax > 0) {
+        float frac = (float) snap.bigFishHp / (float) snap.bigFishHpMax;
+        if (frac < 0.f) frac = 0.f;
+        if (frac > 1.f) frac = 1.f;
+        ImGui::ProgressBar(frac, ImVec2(-1, 0), OBF("HP cá lớn"));
+    }
     if (snap.lastCatchItemId > 0) ImGui::Text(OBF("Cá vừa: ID %u (%s)"), snap.lastCatchItemId, OverlaySnapshot::GradeLabel(snap.lastCatchGrade));
     if (gPLConfig.fishing.showZoneInfo && snap.castingZoneId > 0) ImGui::Text(OBF("Vùng cast: %u | bắt: %u"), snap.castingZoneId, snap.catchZoneId);
     if (snap.baitUid != 0) ImGui::Text(OBF("Mồi UID: %lld"), (long long) snap.baitUid);
@@ -72,7 +92,10 @@ static void DrawTabFishing() {
     UiCheckbox(OBF("Hiện trạng thái"), &gPLConfig.fishing.showStatus);
     UiCheckbox(OBF("Thống kê phiên"), &gPLConfig.fishing.showSessionStats);
     UiCheckbox(OBF("Hiện vùng / mồi"), &gPLConfig.fishing.showZoneInfo);
+    UiCheckbox(OBF("Gợi ý lỗi cast"), &gPLConfig.fishing.showFailHint);
+    UiCheckbox(OBF("Hiệu suất phiên"), &gPLConfig.fishing.showEfficiency);
     UiCheckbox(OBF("Hướng phao (2D)"), &gPLConfig.fishing.showFloatMarker);
+    UiCheckbox(OBF("Backoff cast thông minh"), &gPLConfig.fishing.adaptiveCastBackoff);
     ImGui::SliderInt(OBF("Nhịp tick (ms)##fish_tick"), &gPLConfig.fishing.tickIntervalMs, 250, 1200);
     if (ImGui::IsItemDeactivatedAfterEdit()) SaveConfig();
     ImGui::SliderInt(OBF("Nhịp thao tác (ms)##fish_act"), &gPLConfig.fishing.actionIntervalMs, 300, 2000);
@@ -95,8 +118,12 @@ static void DrawTabFishing() {
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.45f, 0.2f, 1.f));
         ImGui::TextUnformatted(OBF("Cảnh báo: dễ lệch server, mặc định tắt"));
         ImGui::PopStyleColor();
+        UiCheckbox(OBF("Thanh HP cá lớn"), &gPLConfig.fishing.showBigFishHp);
     }
     ImGui::Separator();
+    if (ImGui::Button(OBF("Reset thống kê phiên##fish_reset_stats"), ImVec2(-1, 0))) {
+        AutoFishing::ResetSessionStats();
+    }
     OverlaySnapshot::View snap{};
     OverlaySnapshot::Read(snap);
     if (snap.ready) DrawFishingLiveStats(snap);

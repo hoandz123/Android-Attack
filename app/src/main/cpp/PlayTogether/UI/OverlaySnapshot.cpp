@@ -4,6 +4,7 @@
 #include "../SDK/ActorControl.h"
 #include "../SDK/CacheUser.h"
 #include "../SDK/enum/eFishingState.h"
+#include "../SDK/enum/eFishingFailType.h"
 #include <API/Il2CppApi.h>
 #include <atomic>
 #include <cmath>
@@ -39,6 +40,14 @@ std::atomic<bool> g_hasFloat{false};
 std::atomic<float> g_floatOffX{0.f};
 std::atomic<float> g_floatOffZ{0.f};
 std::atomic<float> g_floatDist{0.f};
+std::atomic<float> g_floatBearing{0.f};
+std::atomic<int> g_lastFailType{0};
+std::atomic<bool> g_countOver{false};
+std::atomic<int> g_bigHp{0};
+std::atomic<int> g_bigHpMax{0};
+std::atomic<int> g_castStreak{0};
+std::atomic<int> g_cph{0};
+std::atomic<int> g_successPct{0};
 
 }
 
@@ -71,6 +80,30 @@ const char *FishingStateLabel(int fishingState) {
         case eFishingState::BigFish_Stun: return OBF("Choáng giật");
         case eFishingState::BigFish_StunRecovery: return OBF("Hồi choáng");
         default: return OBF("?");
+    }
+}
+
+const char *FailTypeLabel(int failType) {
+    switch ((eFishingFailType) failType) {
+        case eFishingFailType::None: return OBF("—");
+        case eFishingFailType::Obstacle: return OBF("Vật cản");
+        case eFishingFailType::NotWater: return OBF("Không phải nước");
+        case eFishingFailType::WaterLow: return OBF("Nước quá nông");
+        case eFishingFailType::WaterInside: return OBF("Trong nhà / hồ bơi");
+        case eFishingFailType::LineBreak: return OBF("Dây đứt");
+        case eFishingFailType::PoleBroken: return OBF("Cần gãy");
+        case eFishingFailType::TimingLate: return OBF("Giật trễ");
+        case eFishingFailType::TimingFast: return OBF("Giật sớm");
+        case eFishingFailType::NoFishingZone: return OBF("Không có vùng câu");
+        case eFishingFailType::CountOver: return OBF("Hết lượt câu");
+        case eFishingFailType::InventoryOver: return OBF("Túi đầy");
+        case eFishingFailType::InvalidCasting: return OBF("Quăng không hợp lệ");
+        case eFishingFailType::OnlyHomeRegion: return OBF("Chỉ khu nhà");
+        case eFishingFailType::RegionLimit: return OBF("Giới hạn khu");
+        case eFishingFailType::RegionTotalLimit: return OBF("Hết quota khu");
+        case eFishingFailType::RaidTimeOver: return OBF("Hết giờ raid");
+        case eFishingFailType::RaidMaxUser: return OBF("Raid đầy người");
+        default: return OBF("Lỗi khác");
     }
 }
 
@@ -124,8 +157,18 @@ void UpdateFromGameThread() {
         float dz = fp.z - pos.z;
         g_floatOffX.store(dx, std::memory_order_relaxed);
         g_floatOffZ.store(dz, std::memory_order_relaxed);
-        g_floatDist.store(std::sqrt(dx * dx + dz * dz), std::memory_order_relaxed);
+        float dist = std::sqrt(dx * dx + dz * dz);
+        g_floatDist.store(dist, std::memory_order_relaxed);
+        float bearing = std::atan2(dx, dz) * (180.f / 3.14159265f);
+        g_floatBearing.store(bearing, std::memory_order_relaxed);
     }
+    g_lastFailType.store(AutoFishing::GetLastFailType(), std::memory_order_relaxed);
+    g_countOver.store(AutoFishing::IsFishingCountOver(), std::memory_order_relaxed);
+    g_bigHp.store(AutoFishing::GetBigFishHp(), std::memory_order_relaxed);
+    g_bigHpMax.store(AutoFishing::GetBigFishHpMax(), std::memory_order_relaxed);
+    g_castStreak.store(AutoFishing::GetCastFailStreak(), std::memory_order_relaxed);
+    g_cph.store(AutoFishing::GetCatchesPerHour(), std::memory_order_relaxed);
+    g_successPct.store(AutoFishing::GetSuccessRatePercent(), std::memory_order_relaxed);
     g_ready.store(true, std::memory_order_release);
 }
 
@@ -157,6 +200,14 @@ void Read(View &out) {
     out.floatOffsetX = g_floatOffX.load(std::memory_order_relaxed);
     out.floatOffsetZ = g_floatOffZ.load(std::memory_order_relaxed);
     out.floatDistance = g_floatDist.load(std::memory_order_relaxed);
+    out.floatBearingDeg = g_floatBearing.load(std::memory_order_relaxed);
+    out.lastFailType = g_lastFailType.load(std::memory_order_relaxed);
+    out.fishingCountOver = g_countOver.load(std::memory_order_relaxed);
+    out.bigFishHp = g_bigHp.load(std::memory_order_relaxed);
+    out.bigFishHpMax = g_bigHpMax.load(std::memory_order_relaxed);
+    out.castFailStreak = g_castStreak.load(std::memory_order_relaxed);
+    out.catchesPerHour = g_cph.load(std::memory_order_relaxed);
+    out.successRatePct = g_successPct.load(std::memory_order_relaxed);
 }
 
 }

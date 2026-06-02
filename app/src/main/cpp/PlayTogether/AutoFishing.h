@@ -23,4 +23,12 @@ namespace AutoFishing {
     unsigned int GetCastingZoneId();
     unsigned int GetCatchZoneId();
     long long GetFishingBaitUid();
+    int GetLastFailType();
+    bool IsFishingCountOver();
+    int GetBigFishHp();
+    int GetBigFishHpMax();
+    int GetCastFailStreak();
+    int GetCatchesPerHour();
+    int GetSuccessRatePercent();
+    void ResetSessionStats();
 }
