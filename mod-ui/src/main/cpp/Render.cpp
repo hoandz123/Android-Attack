@@ -46,6 +46,7 @@ void BeginFrame() {
     ImGui_ImplAndroid_NewFrame();
     ApplyPendingTouch();
     ImGui::NewFrame();
+    RunOverlayDraws();
     DrawMenuShell(GetAppUi());
     ApplyPendingKeyboard();
 }

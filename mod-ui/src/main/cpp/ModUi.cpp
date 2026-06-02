@@ -15,6 +15,23 @@ static bool g_ctx = false;
 static bool g_natives = false;
 static bool g_visible = true;
 static bool g_expanded = true;
+static OverlayDrawFn g_overlay_draws[16]{};
+static int g_overlay_count = 0;
+
+bool RegisterOverlayDraw(OverlayDrawFn draw) {
+    if (!draw || g_overlay_count >= 16) return false;
+    for (int i = 0; i < g_overlay_count; ++i) {
+        if (g_overlay_draws[i] == draw) return true;
+    }
+    g_overlay_draws[g_overlay_count++] = draw;
+    return true;
+}
+
+void RunOverlayDraws() {
+    for (int i = 0; i < g_overlay_count; ++i) {
+        if (g_overlay_draws[i]) g_overlay_draws[i]();
+    }
+}
 
 bool Init() {
     if (!g_ctx) {

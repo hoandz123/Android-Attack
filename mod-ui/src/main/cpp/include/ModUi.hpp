@@ -3,6 +3,7 @@
 namespace modui {
 
 using DrawTabFn = void (*)();
+using OverlayDrawFn = void (*)();
 
 struct MenuTab {
     const char *id = nullptr;
@@ -32,6 +33,7 @@ struct AppUi {
 };
 
 bool Init();
+bool RegisterOverlayDraw(OverlayDrawFn draw);
 void SetAppUi(const AppUi &ui);
 const AppUi &GetAppUi();
 void SetMenuVisible(bool visible);

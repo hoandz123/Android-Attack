@@ -16,6 +16,7 @@ bool SetSurface(ANativeWindow *window);
 bool HasSurface();
 void BeginFrame();
 void EndFrame();
+void RunOverlayDraws();
 
 void SetMenuVisible(bool visible);
 bool MenuVisible();
