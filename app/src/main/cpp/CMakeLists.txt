@@ -13,7 +13,11 @@ add_library(attack SHARED
     PlayTogether/HOOK_PLAY/HOOK_PLAY.cpp
     PlayTogether/HOOK_PLAY/AntiCheat.cpp
     PlayTogether/SDK/FrameWork.cpp
-    PlayTogether/SDK/SystemHelper.cpp)
+    PlayTogether/SDK/SystemHelper.cpp
+    PlayTogether/SDK/CacheSystem.cpp
+    PlayTogether/SDK/CacheUser.cpp
+    PlayTogether/SDK/ActorControl.cpp
+    PlayTogether/SDK/KinematicCharacterMotor.cpp)
 if(EMBEDDED_DEX_DIR)
     target_include_directories(attack PRIVATE "${EMBEDDED_DEX_DIR}")
     set(_embed_hpp "${EMBEDDED_DEX_DIR}/embedded_dex.hpp")

@@ -4,7 +4,19 @@ namespace SystemHelper {
     Class *get_class() {
         return FindClass("SystemHelper");
     }
-    Object *GetFrameWorkInstance() {
-        return get_class()->find_method("GetFrameWorkInstance", 0)->static_invoke<Object *>();
-    }
+    Object *get_Dialog() { return get_class()->find_method("get_Dialog", 0)->static_invoke<Object *>(); }
+    Object *get_Layer() { return get_class()->find_method("get_Layer", 0)->static_invoke<Object *>(); }
+    Object *get_Table() { return get_class()->find_method("get_Table", 0)->static_invoke<Object *>(); }
+    Object *get_Map() { return get_class()->find_method("get_Map", 0)->static_invoke<Object *>(); }
+    Object *get_Actor() { return get_class()->find_method("get_Actor", 0)->static_invoke<Object *>(); }
+    Object *get_Cache() { return get_class()->find_method("get_Cache", 0)->static_invoke<Object *>(); }
+    Object *get_Hud() { return get_class()->find_method("get_Hud", 0)->static_invoke<Object *>(); }
+    Object *get_Mission() { return get_class()->find_method("get_Mission", 0)->static_invoke<Object *>(); }
+    Object *get_Fishing() { return get_class()->find_method("get_Fishing", 0)->static_invoke<Object *>(); }
+    Object *get_Ability() { return get_class()->find_method("get_Ability", 0)->static_invoke<Object *>(); }
+    Object *get_Escape() { return get_class()->find_method("get_Escape", 0)->static_invoke<Object *>(); }
+    Object *get_Equip() { return get_class()->find_method("get_Equip", 0)->static_invoke<Object *>(); }
+    Object *get_Insect() { return get_class()->find_method("get_Insect", 0)->static_invoke<Object *>(); }
+    Object *get_Collect() { return get_class()->find_method("get_Collect", 0)->static_invoke<Object *>(); }
+    Object *GetFrameWorkInstance() { return get_class()->find_method("GetFrameWorkInstance", 0)->static_invoke<Object *>(); }
 }

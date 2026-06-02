@@ -1,6 +1,8 @@
 #include "HOOK_PLAY.h"
 #include "AntiCheat.h"
 #include "../SDK/FrameWork.h"
+#include "../SDK/ActorControl.h"
+#include "../SDK/KinematicCharacterMotor.h"
 #include <API/Il2CppApi.h>
 #include <Includes/obfuscate.h>
 #define LOG_TAG OBF("AttackPlugin")
@@ -29,8 +31,8 @@ void init() {
             }
         }
     }).detach();
-    // TODO G2: Tools::Hook(ActorControl::get_Kunit, ...)
-    // TODO G2: Tools::Hook(KinematicCharacterMotor::UpdatePhase1, ...)
+    Tools::Hook(ActorControl::get_class()->find_method(OBF("get_Kunit"), 0)->methodPointer, (void *) ActorControl::get_Kunit, (void **) &ActorControl::old_get_Kunit);
+    Tools::Hook(KinematicCharacterMotor::get_class()->find_method(OBF("UpdatePhase1"), 1)->methodPointer, (void *) KinematicCharacterMotor::UpdatePhase1, (void **) &KinematicCharacterMotor::old_UpdatePhase1);
     // TODO G3: DialogUnit, DialogFishingGetItem, EquipmentSystem hooks
     // TODO G3: MapGuideArrow, HeadUpSelectButton, ActorCatchUp* hooks
     // TODO G3: DialogShopInGame, Treasure, ActorTreasureHuntPlayer hooks
