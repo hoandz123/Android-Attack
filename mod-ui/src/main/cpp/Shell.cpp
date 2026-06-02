@@ -262,11 +262,9 @@ void DrawMenuShell(const AppUi &ui) {
     const ImVec2 side_size(side_w, avail.y);
     const ImVec2 content_size(std::max(32.f, avail.x - side_w - gap), avail.y);
 
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(gap, 0.f));
     DrawSidebar(ui, s_selected, side_size);
     ImGui::SameLine(0.f, gap);
     DrawContentPanel(ui, s_selected, content_size);
-    ImGui::PopStyleVar();
 
     ImGui::End();
 }

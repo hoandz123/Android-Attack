@@ -32,7 +32,7 @@ void ApplyVkEngineMoonlightMetrics(ImGuiStyle &s) {
     s.FrameBorderSize = 1.f;
     s.SeparatorTextBorderSize = 1.f;
     s.FramePadding = ImVec2(6.f, 6.f);
-    s.ItemSpacing = ImVec2(8.f, 10.f);
+    s.ItemSpacing = ImVec2(8.f, 8.f);
     s.ItemInnerSpacing = ImVec2(8.f, 6.f);
     s.CellPadding = ImVec2(6.f, 4.f);
     s.IndentSpacing = 20.f;
