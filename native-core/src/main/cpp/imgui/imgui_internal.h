@@ -2112,6 +2112,9 @@ struct ImGuiContext
     float                   WheelingWindowReleaseTimer;
     ImVec2                  WheelingWindowWheelRemainder;
     ImVec2                  WheelingAxisAvg;
+    ImGuiWindow*            DragScrollWindow;                 // Target window for drag scroll.
+    ImVec2                  DragScrollOldValue;               // Scroll value before drag scroll starts.
+    ImVec2                  DragScrollVelocity;
 
     // Item/widgets state and tracking information
     ImGuiID                 DebugDrawIdConflicts;               // Set when we detect multiple items with the same identifier
@@ -2143,6 +2146,7 @@ struct ImGuiContext
     ImGuiDataTypeStorage    ActiveIdValueOnActivation;          // Backup of initial value at the time of activation. ONLY SET BY SPECIFIC WIDGETS: DragXXX and SliderXXX.
     ImGuiID                 LastActiveId;                       // Store the last non-zero ActiveId, useful for animation.
     float                   LastActiveIdTimer;                  // Store the last non-zero ActiveId timer since the beginning of activation, useful for animation.
+    bool                    DragAction;                         // True when a widget handles drag-like mouse interaction.
 
     // Key/Input Ownership + Shortcut Routing system
     // - The idea is that instead of "eating" a given key, we can link to an owner.
@@ -3225,6 +3229,10 @@ namespace ImGui
     IMGUI_API void          TeleportMousePos(const ImVec2& pos);
     IMGUI_API void          SetActiveIdUsingAllKeyboardKeys();
     inline bool             IsActiveIdUsingNavDir(ImGuiDir dir)                         { ImGuiContext& g = *GImGui; return (g.ActiveIdUsingNavDirMask & (1 << dir)) != 0; }
+
+    inline void             SetDragAction(bool state = true)                            { ImGuiContext& g = *GImGui; g.DragAction = state; }
+    inline bool             IsDragAction()                                              { ImGuiContext& g = *GImGui; return g.DragAction; }
+    IMGUI_API void          HandleDragScroll();
 
     // [EXPERIMENTAL] Low-Level: Key/Input Ownership
     // - The idea is that instead of "eating" a given input, we can link to an owner id.

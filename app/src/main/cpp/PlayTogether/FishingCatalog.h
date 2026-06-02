@@ -7,7 +7,6 @@ namespace FishingCatalog {
 
 constexpr int kMaxBaits = 64;
 constexpr int kMaxZones = 128;
-constexpr int kMaxGuides = 128;
 constexpr int kMaxFish = 300;
 constexpr int kMaxLevels = 64;
 constexpr int kMaxLearnedFishPerLevel = 16;
@@ -27,14 +26,6 @@ struct ZoneEntry {
     unsigned int zoneId = 0;
     unsigned int actionId = 0;
     bool isCurrent = false;
-    char label[kLabelLen]{};
-};
-
-struct GuideEntry {
-    int guidePointId = 0;
-    unsigned int zoneId = 0;
-    bool isActive = false;
-    bool onCurrentMap = false;
     char label[kLabelLen]{};
 };
 
@@ -63,8 +54,6 @@ struct Snapshot {
     BaitEntry baits[kMaxBaits]{};
     int zoneCount = 0;
     ZoneEntry zones[kMaxZones]{};
-    int guideCount = 0;
-    GuideEntry guides[kMaxGuides]{};
     int fishCount = 0;
     FishEntry fish[kMaxFish]{};
     int levelCount = 0;

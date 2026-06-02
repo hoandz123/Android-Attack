@@ -1,14 +1,12 @@
 #include "../Games.hpp"
 #include "HOOK_PLAY/HOOK_PLAY.h"
 #include "UI/MenuUi.h"
+#include "PlayLog.h"
 #include <API/Il2CppApi.h>
 #include <Includes/obfuscate.h>
 #include <ModUi.hpp>
-#include <Includes/Logger.h>
 #include <thread>
 #include <atomic>
-
-#define LOG_TAG OBF("ATTACK_PlayTogether")
 
 namespace playtogether {
 

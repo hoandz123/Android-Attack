@@ -15,7 +15,7 @@
 #include "And64Hook/And64Hook.hpp"
 #endif
 #include "xdl/xdl.h"
-#include "Dobby/dobby.h"
+#include "dobby/dobby.h"
 
 
 void Tools::Hook(void *target, void *replacement, void **original) {

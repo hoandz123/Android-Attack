@@ -2,9 +2,7 @@
 #include "AntiCheat.h"
 #include "../Config/Config.h"
 #include <DrawRender.hpp>
-#include <GameUI/EspGUI.h>
 #include "../UI/InfoWindow.h"
-#include "../UI/OverlaySnapshot.h"
 #include "../SDK/FrameWork.h"
 #include "../SDK/ActorControl.h"
 #include <API/Il2CppApi.h>
@@ -14,7 +12,6 @@
 
 #include <Includes/Logger.h>
 #include <Tools/Tools.h>
-#include <imgui.h>
 #include <thread>
 #include <atomic>
 
@@ -24,80 +21,10 @@ namespace {
 
 std::atomic<bool> s_initOnce{false};
 
-void DrawFloatMarker(const OverlaySnapshot::View &snap) {
-    if (!gPLConfig.fishing.showFloatMarker || !snap.hasFloatPoint) return;
-    ImDrawList *dl = ImGui::GetForegroundDrawList();
-    if (!dl) return;
-    ImVec2 center(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.55f);
-    float scale = 28.f;
-    float maxDist = 25.f;
-    float dist = snap.floatDistance;
-    if (dist > maxDist) dist = maxDist;
-    float factor = dist / maxDist;
-    float ox = snap.floatOffsetX * scale * 0.08f;
-    float oz = snap.floatOffsetZ * scale * 0.08f;
-    ImVec2 tip(center.x + ox, center.y - oz);
-    ImU32 col = IM_COL32(80, 200, 255, 200);
-    dl->AddLine(center, tip, col, 2.f);
-    dl->AddCircleFilled(tip, 5.f + (1.f - factor) * 3.f, IM_COL32(120, 220, 255, 230));
-    char distBuf[48];
-    snprintf(distBuf, sizeof(distBuf), OBF("%.1fm %.0f°"), snap.floatDistance, snap.floatBearingDeg);
-    dl->AddText(ImVec2(tip.x + 8.f, tip.y - 8.f), IM_COL32(220, 240, 255, 255), distBuf);
-}
-
-void DrawBigFishHpBar(const OverlaySnapshot::View &snap) {
-    if (!gPLConfig.fishing.handleBigFish || !gPLConfig.fishing.showBigFishHp) return;
-    if (snap.bigFishHpMax <= 0) return;
-    ImDrawList *dl = ImGui::GetForegroundDrawList();
-    if (!dl) return;
-    float frac = (float) snap.bigFishHp / (float) snap.bigFishHpMax;
-    if (frac < 0.f) frac = 0.f;
-    if (frac > 1.f) frac = 1.f;
-    ImVec2 disp = ImGui::GetIO().DisplaySize;
-    float w = 180.f;
-    float h = 8.f;
-    ImVec2 p0(disp.x * 0.5f - w * 0.5f, 72.f);
-    ImVec2 p1(p0.x + w, p0.y + h);
-    dl->AddRectFilled(p0, p1, IM_COL32(30, 30, 40, 200), 3.f);
-    ImVec2 pFill(p1.x, p1.y);
-    pFill.x = p0.x + w * frac;
-    dl->AddRectFilled(p0, pFill, IM_COL32(220, 80, 60, 230), 3.f);
-    char hpBuf[32];
-    snprintf(hpBuf, sizeof(hpBuf), OBF("Cá lớn %d/%d"), snap.bigFishHp, snap.bigFishHpMax);
-    dl->AddText(ImVec2(p0.x, p0.y - 16.f), IM_COL32(255, 220, 200, 255), hpBuf);
-}
-
 }
 
 void DRAW_RENDER() {
     ShowInfoWindow();
-    if (!gPLConfig.fishing.enabled || !gPLConfig.fishing.showStatus) return;
-    OverlaySnapshot::View snap{};
-    OverlaySnapshot::Read(snap);
-    if (!snap.ready) return;
-    if (!gPLConfig.general.isInfo) {
-        char buf[128];
-        snprintf(buf, sizeof(buf), OBF("Câu: %s | #%d"), OverlaySnapshot::FishingStateLabel(snap.fishingState), snap.fishCaught);
-        if (snap.pausedByRare) snprintf(buf, sizeof(buf), OBF("Câu: TẠM DỪNG (hiếm) | #%d"), snap.fishCaught);
-        else if (snap.fishingCountOver) snprintf(buf, sizeof(buf), OBF("Câu: HẾT LƯỢT | #%d"), snap.fishCaught);
-        else if (gPLConfig.fishing.showEfficiency && snap.sessionSec >= 30) {
-            snprintf(buf, sizeof(buf), OBF("Câu: %s | #%d ~%d/h"), OverlaySnapshot::FishingStateLabel(snap.fishingState), snap.fishCaught, snap.catchesPerHour);
-        }
-        if (snap.currentFishLevel > 0) {
-            char fishBuf[160];
-            snprintf(fishBuf, sizeof(fishBuf), OBF("%s | bóng %s lv%u"), buf, OverlaySnapshot::ShadowLabel(snap.currentShadowIndex), snap.currentFishLevel);
-            snprintf(buf, sizeof(buf), "%s", fishBuf);
-        }
-        if (snap.statusHint) {
-            char hintBuf[160];
-            snprintf(hintBuf, sizeof(hintBuf), OBF("%s | %s"), buf, snap.statusHint);
-            EspGUI::DrawTooltip(ImVec2(12.f, 48.f), hintBuf);
-        } else {
-            EspGUI::DrawTooltip(ImVec2(12.f, 48.f), buf);
-        }
-    }
-    DrawFloatMarker(snap);
-    DrawBigFishHpBar(snap);
 }
 
 void init() {

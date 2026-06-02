@@ -14,10 +14,10 @@ namespace {
 
 constexpr float kSidebarMaxWidthFrac = 0.50f;
 constexpr float kSidebarMinDp = 96.f;
-constexpr float kTabRowDp = 48.f;
+constexpr float kTabRowDp = 52.f;
 constexpr float kTabGapDp = 5.f;
 constexpr float kTabRoundDp = 10.f;
-constexpr float kTabPadXDp = 12.f;
+constexpr float kTabPadXDp = 18.f;
 constexpr float kRibbonWidthDp = 4.f;
 constexpr float kRibbonInsetVDp = 6.f;
 constexpr float kPanelGapDp = 6.f;
@@ -71,7 +71,7 @@ float SidebarWidth(const AppUi &ui, float content_w) {
         const char *label = ui.tabs[i].label ? ui.tabs[i].label : "";
         max_text = std::max(max_text, ImGui::CalcTextSize(label).x);
     }
-    const float inner = max_text + pad_x + ribbon_w;
+    const float inner = max_text + pad_x * 2.f + ribbon_w;
     const float w = inner + gap * 2.f + border * 2.f;
     return std::clamp(w, min_w, std::max(min_w, max_w));
 }

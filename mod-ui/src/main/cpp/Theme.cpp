@@ -36,7 +36,7 @@ void ApplyVkEngineMoonlightMetrics(ImGuiStyle &s) {
     s.ItemInnerSpacing = ImVec2(8.f, 6.f);
     s.CellPadding = ImVec2(6.f, 4.f);
     s.IndentSpacing = 20.f;
-    s.ScrollbarSize = 20.f;
+    s.ScrollbarSize = 5.f;
     s.GrabMinSize = 14.f;
 }
 

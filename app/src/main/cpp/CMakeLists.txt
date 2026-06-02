@@ -78,7 +78,7 @@ target_link_libraries(attack PRIVATE
 )
 
 link_prefab_static(attack ${MOD_UI_PREFAB} modui)
-link_prefab_static(attack ${NATIVE_CORE_PREFAB} imgui jnihelper dexloader activitytracker httpclient filemanager tools xdl gameapi base64 sharedprefs gameui)
+link_prefab_static(attack ${NATIVE_CORE_PREFAB} kitty lgl imgui jnihelper dexloader activitytracker httpclient filemanager tools xdl gameapi base64 sharedprefs gameui)
 link_native_core_prebuilts(attack ${NATIVE_CORE_CPP})
 
 target_compile_features(attack PRIVATE cxx_std_20)

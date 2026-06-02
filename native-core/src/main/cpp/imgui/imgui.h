@@ -2290,6 +2290,12 @@ struct ImGuiIO
     float       KeyRepeatDelay;                 // = 0.275f         // When holding a key/button, time before it starts repeating, in seconds (for buttons in Repeat mode, etc.).
     float       KeyRepeatRate;                  // = 0.050f         // When holding a key/button, rate at which it repeats, in seconds.
 
+    // Drag scrolling behavior.
+    bool        ConfigDragScroll;               // = false          // Dragging with a mouse button will scroll the content.
+    ImGuiMouseButton DragScrollButton;          // = Left           // Mouse button used for drag scrolling.
+    float       DragScrollDecel;                // = 5000.0f        // Kinetic scroll deceleration, pixels per second squared.
+    float       DragScrollMinSpeed;             // = 300.0f         // Minimum kinetic scroll speed before stopping, pixels per second.
+
     //------------------------------------------------------------------
     // Debug options
     //------------------------------------------------------------------

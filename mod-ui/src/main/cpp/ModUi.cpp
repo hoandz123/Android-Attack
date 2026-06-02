@@ -40,6 +40,9 @@ bool Init() {
         ImGuiIO &io = ImGui::GetIO();
         io.IniFilename = nullptr;
         io.ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
+        io.ConfigDragScroll = true;
+        io.ConfigWindowsMoveFromTitleBarOnly = true;
+        io.DragScrollButton = ImGuiMouseButton_Left;
         SetupTheme();
         SetupUiFonts();
         g_ctx = true;

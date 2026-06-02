@@ -1046,6 +1046,8 @@ bool ImGui::ScrollbarEx(const ImRect& bb_frame, ImGuiID id, ImGuiAxis axis, ImS6
         // Update distance to grab now that we have seek'ed and saturated
         //if (seek_absolute)
         //    g.ScrollbarClickDeltaToGrabCenter = clicked_v_norm - grab_v_norm - grab_h_norm * 0.5f;
+
+        SetDragAction();
     }
 
     // Render
@@ -2469,6 +2471,7 @@ bool ImGui::DragBehaviorT(ImGuiDataType data_type, TYPE* v, float v_speed, const
             adjust_delta *= 1.0f / 100.0f;
         if (g.IO.KeyShift && !(flags & ImGuiSliderFlags_NoSpeedTweaks))
             adjust_delta *= 10.0f;
+        SetDragAction();
     }
     else if (g.ActiveIdSource == ImGuiInputSource_Keyboard || g.ActiveIdSource == ImGuiInputSource_Gamepad)
     {
@@ -3066,6 +3069,7 @@ bool ImGui::SliderBehaviorT(const ImRect& bb, ImGuiID id, ImGuiDataType data_typ
                 if (axis == ImGuiAxis_Y)
                     clicked_t = 1.0f - clicked_t;
                 set_new_value = true;
+                SetDragAction();
             }
         }
         else if (g.ActiveIdSource == ImGuiInputSource_Keyboard || g.ActiveIdSource == ImGuiInputSource_Gamepad)
@@ -4776,6 +4780,7 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
             stb_textedit_drag(state, state->Stb, mouse_x, mouse_y);
             state->CursorAnimReset();
             state->CursorFollow = true;
+            SetDragAction();
         }
         if (state->SelectedAllMouseLock && !io.MouseDown[0])
             state->SelectedAllMouseLock = false;
@@ -6141,6 +6146,9 @@ bool ImGui::ColorPicker4(const char* label, float col[4], ImGuiColorEditFlags fl
         g.ColorEditCurrentID = 0;
     PopID();
 
+    if (value_changed)
+        SetDragAction();
+
     return value_changed;
 }
 
@@ -6685,7 +6693,7 @@ bool ImGui::TreeNodeBehavior(ImGuiID id, ImGuiTreeNodeFlags flags, const char* l
     // It is rather standard that arrow click react on Down rather than Up.
     // We set ImGuiButtonFlags_PressedOnClickRelease on OpenOnDoubleClick because we want the item to be active on the initial MouseDown in order for drag and drop to work.
     if (is_mouse_x_over_arrow)
-        button_flags |= ImGuiButtonFlags_PressedOnClick;
+        button_flags |= g.IO.ConfigDragScroll ? ImGuiButtonFlags_PressedOnClickRelease : ImGuiButtonFlags_PressedOnClick;
     else if (flags & ImGuiTreeNodeFlags_OpenOnDoubleClick)
         button_flags |= ImGuiButtonFlags_PressedOnClickRelease | ImGuiButtonFlags_PressedOnDoubleClick;
     else
@@ -7372,6 +7380,7 @@ static void BoxSelectPreStartDrag(ImGuiID id, ImGuiSelectionUserData clicked_ite
     bs->KeyMods = g.IO.KeyMods;
     bs->StartPosRel = bs->EndPosRel = ImGui::WindowPosAbsToRel(g.CurrentWindow, g.IO.MousePos);
     bs->ScrollAccum = ImVec2(0.0f, 0.0f);
+    ImGui::SetDragAction();
 }
 
 static void BoxSelectActivateDrag(ImGuiBoxSelectState* bs, ImGuiWindow* window)
@@ -8903,7 +8912,9 @@ bool ImGui::BeginMenuEx(const char* label, const char* icon, bool enabled)
     bool pressed;
 
     // We use ImGuiSelectableFlags_NoSetKeyOwner to allow down on one menu item, move, up on another.
-    const ImGuiSelectableFlags selectable_flags = ImGuiSelectableFlags_NoHoldingActiveID | ImGuiSelectableFlags_NoSetKeyOwner | ImGuiSelectableFlags_SelectOnClick | ImGuiSelectableFlags_NoAutoClosePopups;
+    ImGuiSelectableFlags selectable_flags = ImGuiSelectableFlags_NoHoldingActiveID | ImGuiSelectableFlags_NoSetKeyOwner | ImGuiSelectableFlags_NoAutoClosePopups;
+    if (!g.IO.ConfigDragScroll)
+        selectable_flags |= ImGuiSelectableFlags_SelectOnClick;
     if (window->DC.LayoutType == ImGuiLayoutType_Horizontal)
     {
         // Menu inside a horizontal menu bar
@@ -9111,7 +9122,9 @@ bool ImGui::MenuItemEx(const char* label, const char* icon, const char* shortcut
         BeginDisabled();
 
     // We use ImGuiSelectableFlags_NoSetKeyOwner to allow down on one menu item, move, up on another.
-    const ImGuiSelectableFlags selectable_flags = ImGuiSelectableFlags_SelectOnRelease | ImGuiSelectableFlags_NoSetKeyOwner | ImGuiSelectableFlags_SetNavIdOnHover;
+    ImGuiSelectableFlags selectable_flags = ImGuiSelectableFlags_NoHoldingActiveID | ImGuiSelectableFlags_NoSetKeyOwner | ImGuiSelectableFlags_SetNavIdOnHover;
+    if (!g.IO.ConfigDragScroll)
+        selectable_flags |= ImGuiSelectableFlags_SelectOnRelease;
     const ImGuiMenuColumns* offsets = &window->DC.MenuColumns;
     if (window->DC.LayoutType == ImGuiLayoutType_Horizontal)
     {
