@@ -61,19 +61,19 @@ static void ShowFishingHistory() {
     static std::vector<std::string> dates;
     static std::vector<FishingEntry> logs = PLConfig::FishingConfig::gFishLogger.LoadHistory(dates);
     static int dateSel = 0;
-    if (ImGui::Button(OBF("Lam Moi"))) {
+    if (ImGui::Button(OBF("Làm mới"))) {
         logs = PLConfig::FishingConfig::gFishLogger.LoadHistory(dates);
         dateSel = 0;
     }
     ImGui::SameLine();
-    if (ImGui::Button(OBF("Xoa Lich Su"))) {
+    if (ImGui::Button(OBF("Xóa LS"))) {
         PLConfig::FishingConfig::gFishLogger.Delete();
         logs = PLConfig::FishingConfig::gFishLogger.LoadHistory(dates);
         dateSel = 0;
         SaveConfig();
     }
     ImGui::SameLine();
-    ImGui::TextUnformatted(OBF("Chon Ngay"));
+    ImGui::TextUnformatted(OBF("Chọn ngày"));
     ImGui::SameLine();
     if (ImGui::Combo(OBF("##ChonNgay"), &dateSel, [](void *vec, int idx, const char **out) -> bool {
         auto *v = (std::vector<std::string> *) vec;
@@ -85,11 +85,11 @@ static void ShowFishingHistory() {
         auto drawTable = [&](const char *id, const char *tabName, bool wantSuccess) {
             if (!ImGui::BeginTabItem(tabName)) return;
             if (ImGui::BeginTable(id, 5, ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable)) {
-                ImGui::TableSetupColumn(OBF("Ten"));
+                ImGui::TableSetupColumn(OBF("Tên"));
                 ImGui::TableSetupColumn(OBF("ID"));
-                ImGui::TableSetupColumn(OBF("Vung Cau"));
-                ImGui::TableSetupColumn(OBF("Bong"));
-                ImGui::TableSetupColumn(OBF("Thoi Gian"));
+                ImGui::TableSetupColumn(OBF("Vùng"));
+                ImGui::TableSetupColumn(OBF("Bóng"));
+                ImGui::TableSetupColumn(OBF("Thời gian"));
                 ImGui::TableHeadersRow();
                 for (auto it = logs.rbegin(); it != logs.rend(); ++it) {
                     const FishingEntry &e = *it;
@@ -112,8 +112,8 @@ static void ShowFishingHistory() {
             }
             ImGui::EndTabItem();
         };
-        drawTable(OBF("HistSuccess"), OBF("Da Cau"), true);
-        drawTable(OBF("HistFailure"), OBF("Dut Day"), false);
+        drawTable(OBF("HistSuccess"), OBF("Đã câu"), true);
+        drawTable(OBF("HistFailure"), OBF("Đứt dây"), false);
         ImGui::EndTabBar();
     }
 }
@@ -121,45 +121,45 @@ static void ShowFishingHistory() {
 static void DrawTabChung() {
     ImVec2 avail = ImGui::GetContentRegionAvail();
     ImGui::BeginChild(OBF("ChungL"), ImVec2(avail.x * 0.5f, 0), true);
-    UiCheckbox(OBF("Tu Dong Toi (chi duong)"), &gPLConfig.general.isTeleNpc);
+    UiCheckbox(OBF("Tự đến NPC"), &gPLConfig.general.isTeleNpc);
     ImGui::Separator();
-    UiCheckbox(OBF("Sua Dung Cu"), &gPLConfig.general.isRepair);
+    UiCheckbox(OBF("Sửa đồ"), &gPLConfig.general.isRepair);
     ImGui::Separator();
-    if (UiCheckbox(OBF("Bao Quan"), &gPLConfig.general.isBaoQuan) && gPLConfig.general.isBaoQuan) gPLConfig.general.isBanGoi = false;
+    if (UiCheckbox(OBF("Bảo quản"), &gPLConfig.general.isBaoQuan) && gPLConfig.general.isBaoQuan) gPLConfig.general.isBanGoi = false;
     ImGui::Separator();
-    if (UiCheckbox(OBF("Mo Hop Qua/Goi The"), &gPLConfig.general.isMoHopQua) && gPLConfig.general.isMoHopQua) gPLConfig.general.isMoHopQua2 = false;
+    if (UiCheckbox(OBF("Mở hộp/gói"), &gPLConfig.general.isMoHopQua) && gPLConfig.general.isMoHopQua) gPLConfig.general.isMoHopQua2 = false;
     ImGui::EndChild();
     ImGui::SameLine();
     ImGui::BeginChild(OBF("ChungR"), ImVec2(0, 0), true);
-    if (ImGui::CollapsingHeader(OBF("Ban Nhanh"))) {
-        if (UiCheckbox(OBF("Ban Nhanh"), &gPLConfig.general.isBanGoi) && gPLConfig.general.isBanGoi) gPLConfig.general.isBaoQuan = false;
+    if (ImGui::CollapsingHeader(OBF("Bán nhanh"))) {
+        if (UiCheckbox(OBF("Bán nhanh"), &gPLConfig.general.isBanGoi) && gPLConfig.general.isBanGoi) gPLConfig.general.isBaoQuan = false;
         ImGui::Separator();
-        if (UiCheckbox(OBF("Giu Nen Tim,VVIP"), &gPLConfig.general.isDuNenVip) && gPLConfig.general.isDuNenVip) gPLConfig.general.isDuB67 = false;
+        if (UiCheckbox(OBF("Giữ Tím+VVIP"), &gPLConfig.general.isDuNenVip) && gPLConfig.general.isDuNenVip) gPLConfig.general.isDuB67 = false;
         ImGui::Separator();
-        if (UiCheckbox(OBF("Giu Bong 6,7"), &gPLConfig.general.isDuB67) && gPLConfig.general.isDuB67) gPLConfig.general.isDuNenVip = false;
+        if (UiCheckbox(OBF("Giữ bóng 6–7"), &gPLConfig.general.isDuB67) && gPLConfig.general.isDuB67) gPLConfig.general.isDuNenVip = false;
     }
     ImGui::Separator();
-    UiCheckbox(OBF("Hien Bang Thong Tin"), &gPLConfig.general.isInfo);
+    UiCheckbox(OBF("Bảng thông tin"), &gPLConfig.general.isInfo);
     ImGui::Separator();
-    UiCheckbox(OBF("Khoi Phuc Trang Thai"), &gPLConfig.general.isResetTrangThai);
+    UiCheckbox(OBF("Khôi phục TT"), &gPLConfig.general.isResetTrangThai);
     ImGui::Separator();
-    UiCheckbox(OBF("Nhan Thanh Tich"), &gPLConfig.general.isNhanThanhTich);
+    UiCheckbox(OBF("Nhận thành tích"), &gPLConfig.general.isNhanThanhTich);
     ImGui::EndChild();
 }
 
 static void DrawTabCauCa() {
     auto &fishing = gPLConfig.fishing;
     if (ImGui::BeginTabBar(OBF("##FishingTabs"))) {
-        if (ImGui::BeginTabItem(OBF("Cau Loc"))) {
+        if (ImGui::BeginTabItem(OBF("Lọc câu"))) {
             ImVec2 avail = ImGui::GetContentRegionAvail();
             ImGui::BeginChild(OBF("FishL"), ImVec2(avail.x * 0.5f, avail.y), true);
-            UiCheckbox(OBF("Cau Ca"), &fishing.isCauCa);
+            UiCheckbox(OBF("Câu cá"), &fishing.isCauCa);
             ImGui::Separator();
-            UiCheckbox(OBF("Kich Hoat Loc ID"), &fishing.isLocID);
+            UiCheckbox(OBF("Lọc ID"), &fishing.isLocID);
             static char addIdBuf[128] = {};
             ImGui::InputText(OBF("##AddFishId"), addIdBuf, sizeof(addIdBuf));
             ImGui::SameLine();
-            if (ImGui::Button(OBF("Them ID"))) {
+            if (ImGui::Button(OBF("Thêm ID"))) {
                 std::istringstream ss(addIdBuf);
                 std::string token;
                 while (std::getline(ss, token, ',')) {
@@ -175,7 +175,7 @@ static void DrawTabCauCa() {
                 std::string label = std::string(OBF("ID ")) + std::to_string(it->first);
                 UiCheckbox(label.c_str(), &it->second);
                 ImGui::SameLine();
-                std::string del = OBF("Xoa##") + std::to_string(it->first);
+                std::string del = OBF("Xóa##") + std::to_string(it->first);
                 if (ImGui::Button(del.c_str())) {
                     it = fishing.IDLocCa.erase(it);
                     SaveConfig();
@@ -188,14 +188,14 @@ static void DrawTabCauCa() {
             ImGui::BeginChild(OBF("FishR"), ImVec2(0, avail.y), true);
             bool isOff = true;
             for (int i = 0; i < 7; i++) if (fishing.locBong[i]) isOff = false;
-            if (UiCheckbox(OBF("Tat loc bong"), &isOff) && isOff) for (int i = 0; i < 7; i++) fishing.locBong[i] = false;
+            if (UiCheckbox(OBF("Tắt lọc bóng"), &isOff) && isOff) for (int i = 0; i < 7; i++) fishing.locBong[i] = false;
             for (int i = 0; i < 7; i++) {
-                std::string lbl = OBF("Bong ") + std::to_string(i + 1);
+                std::string lbl = OBF("Bóng ") + std::to_string(i + 1);
                 UiCheckbox(lbl.c_str(), &fishing.locBong[i]);
             }
             ImGui::Separator();
-            const char *grades[] = {OBF("Tat"), OBF("F"), OBF("D"), OBF("C"), OBF("B"), OBF("A"), OBF("S")};
-            ImGui::TextUnformatted(OBF("Roll Dong Can"));
+            const char *grades[] = {OBF("Tắt"), OBF("F"), OBF("D"), OBF("C"), OBF("B"), OBF("A"), OBF("S")};
+            ImGui::TextUnformatted(OBF("Roll cần"));
             if (ImGui::BeginCombo(OBF("##gradeCombo"), grades[fishing.RollCapDo])) {
                 for (int n = 0; n < 7; n++) {
                     bool selected = fishing.RollCapDo == n;
@@ -210,13 +210,13 @@ static void DrawTabCauCa() {
             ImGui::EndChild();
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem(OBF("Bo Tro"))) {
+        if (ImGui::BeginTabItem(OBF("Bổ trợ"))) {
             auto &magicWater = fishing.magicWater;
-            UiCheckbox(OBF("Tu Dong Dung Nuoc Phep"), &magicWater.isEnable);
-            ImGui::TextUnformatted(OBF("Phan Bo Nuoc Phep (Toi da 5)"));
+            UiCheckbox(OBF("Tự dùng nước phép"), &magicWater.isEnable);
+            ImGui::TextUnformatted(OBF("Nước phép (tối đa 5)"));
             int totalUses = magicWater.levelUses[0] + magicWater.levelUses[1] + magicWater.levelUses[2];
-            ImGui::Text(OBF("Tong: %d / 5"), totalUses);
-            const char *levels[] = {OBF("Cap 1"), OBF("Cap 2"), OBF("Cap 3")};
+            ImGui::Text(OBF("Tổng: %d/5"), totalUses);
+            const char *levels[] = {OBF("Cấp 1"), OBF("Cấp 2"), OBF("Cấp 3")};
             for (int i = 0; i < 3; i++) {
                 ImGui::Separator();
                 ImGui::TextUnformatted(levels[i]);
@@ -233,19 +233,19 @@ static void DrawTabCauCa() {
                     SaveConfig();
                 }
                 ImGui::SameLine();
-                ImGui::Text(OBF("So luong: %d"), magicWater.levelUses[i]);
+                ImGui::Text(OBF("SL: %d"), magicWater.levelUses[i]);
             }
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem(OBF("Fake Zone [Rui Ro]"))) {
-            ImGui::TextColored(ImVec4(1.f, 0.3f, 0.2f, 1.f), "%s", OBF("CANH BAO: Fake zone co the gay ban/crash. Tu chiu trach nhiem."));
-            if (UiCheckbox(OBF("Fake Rong (zone 503)"), &fishing.isFakeVR) && fishing.isFakeVR) fishing.isFishZone = false;
-            UiSliderInt(OBF("ID Vung Cau"), &fishing.fishZone, 0, 9999);
-            UiCheckbox(OBF("Kich Hoat Fake Zone"), &fishing.isFishZone);
-            if (fishing.isFishZone && !fishing.isFakeVR && fishing.fishZone <= 0) ImGui::TextColored(ImVec4(1.f, 0.6f, 0.1f, 1.f), "%s", OBF("Can nhap ID vung cau > 0"));
+        if (ImGui::BeginTabItem(OBF("Fake zone [⚠]"))) {
+            ImGui::TextColored(ImVec4(1.f, 0.3f, 0.2f, 1.f), "%s", OBF("Cảnh báo: fake zone có thể ban/crash. Tự chịu trách nhiệm."));
+            if (UiCheckbox(OBF("Fake rồng (503)"), &fishing.isFakeVR) && fishing.isFakeVR) fishing.isFishZone = false;
+            UiSliderInt(OBF("ID vùng"), &fishing.fishZone, 0, 9999);
+            UiCheckbox(OBF("Bật fake zone"), &fishing.isFishZone);
+            if (fishing.isFishZone && !fishing.isFakeVR && fishing.fishZone <= 0) ImGui::TextColored(ImVec4(1.f, 0.6f, 0.1f, 1.f), "%s", OBF("Cần ID vùng > 0"));
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem(OBF("Lich Su"))) {
+        if (ImGui::BeginTabItem(OBF("Lịch sử"))) {
             ShowFishingHistory();
             ImGui::EndTabItem();
         }
@@ -257,21 +257,21 @@ static void DrawTabCollect() {
     InitCollectDefaults();
     auto &collect = gPLConfig.collect;
     if (ImGui::BeginTabBar(OBF("##CollectTabs"))) {
-        if (ImGui::BeginTabItem(OBF("Dap Da"))) {
+        if (ImGui::BeginTabItem(OBF("Đập đá"))) {
             ImVec2 avail = ImGui::GetContentRegionAvail();
             ImGui::BeginChild(OBF("ColL"), ImVec2(avail.x * 0.5f, avail.y), true);
-            if (UiCheckbox(OBF("Tu Dong Dap Da"), &collect.isAutoDapDa) && collect.isAutoDapDa) {
+            if (UiCheckbox(OBF("Tự đập đá"), &collect.isAutoDapDa) && collect.isAutoDapDa) {
                 collect.esp.isEnable = false;
                 gPLConfig.insect.isAutoBatBo = false;
                 gPLConfig.insect.esp.isEnable = false;
                 gPLConfig.fishing.isCauCa = false;
                 SaveConfig();
             }
-            UiCheckbox(OBF("Nhat The"), &collect.isAutoNhatThe);
-            UiCheckbox(OBF("Nhat Nguyen Lieu"), &collect.isAutoNguyenLieu);
-            UiCheckbox(OBF("Tu Dong Doi Map"), &collect.isTeleMapCollect);
+            UiCheckbox(OBF("Nhặt thẻ"), &collect.isAutoNhatThe);
+            UiCheckbox(OBF("Nhặt NL"), &collect.isAutoNguyenLieu);
+            UiCheckbox(OBF("Tự đổi map"), &collect.isTeleMapCollect);
             ImGui::Separator();
-            ImGui::TextUnformatted(OBF("Chon Loai:"));
+            ImGui::TextUnformatted(OBF("Loại:"));
             for (int i = 0; i <= (int) CollectSys::SpawnType::DragonVillageMonster; ++i) {
                 CollectSys::SpawnType type = (CollectSys::SpawnType) i;
                 auto it = collect.DSTypeDa.find(type);
@@ -282,10 +282,10 @@ static void DrawTabCollect() {
             ImGui::EndChild();
             ImGui::SameLine();
             ImGui::BeginChild(OBF("ColR"), ImVec2(0, avail.y), true);
-            UiSliderInt(OBF("Toc Do Doi Map (ms)"), &collect.delayNextMap, 10000, 30000);
-            UiSliderInt(OBF("Toc Do Dap Da (ms)"), &collect.delayDapDa, 500, 2000);
+            UiSliderInt(OBF("Đổi map (ms)"), &collect.delayNextMap, 10000, 30000);
+            UiSliderInt(OBF("Đập đá (ms)"), &collect.delayDapDa, 500, 2000);
             ImGui::Separator();
-            ImGui::TextUnformatted(OBF("Chon Map:"));
+            ImGui::TextUnformatted(OBF("Map:"));
             for (const PLConfig::MapInfo &info : PLConfig::GetMapInfoList()) {
                 auto it = collect.DSMapDa.find(info.id);
                 if (it == collect.DSMapDa.end()) continue;
@@ -295,38 +295,38 @@ static void DrawTabCollect() {
             ImGui::EndChild();
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem(OBF("ESP Collect"))) {
+        if (ImGui::BeginTabItem(OBF("ESP thu thập"))) {
             auto &esp = collect.esp;
             ImVec2 avail = ImGui::GetContentRegionAvail();
             ImGui::BeginChild(OBF("EspColL"), ImVec2(avail.x * 0.5f, avail.y), true);
-            if (UiCheckbox(OBF("Kich Hoat ESP"), &esp.isEnable) && esp.isEnable) {
+            if (UiCheckbox(OBF("Bật ESP"), &esp.isEnable) && esp.isEnable) {
                 collect.isAutoDapDa = false;
                 gPLConfig.insect.isAutoBatBo = false;
                 gPLConfig.insect.esp.isEnable = false;
                 SaveConfig();
             }
             if (esp.isEnable) {
-                UiCheckbox(OBF("Hien Ten"), &esp.isShowName);
-                UiCheckbox(OBF("Nut Teleport"), &esp.isTeleportButton);
-                UiCheckbox(OBF("Mo quang"), &esp.isVein);
-                UiCheckbox(OBF("Thuc vat"), &esp.isPlants);
-                UiCheckbox(OBF("Hoa thach"), &esp.isFossil);
+                UiCheckbox(OBF("Tên"), &esp.isShowName);
+                UiCheckbox(OBF("Nút tele"), &esp.isTeleportButton);
+                UiCheckbox(OBF("Mạch"), &esp.isVein);
+                UiCheckbox(OBF("Thực vật"), &esp.isPlants);
+                UiCheckbox(OBF("Hóa thạch"), &esp.isFossil);
                 UiCheckbox(OBF("Slime"), &esp.isSlime);
-                UiCheckbox(OBF("Nguoi tuyet"), &esp.isSnowman);
+                UiCheckbox(OBF("Người tuyết"), &esp.isSnowman);
             }
             ImGui::EndChild();
             ImGui::SameLine();
             ImGui::BeginChild(OBF("EspColR"), ImVec2(0, avail.y), true);
             if (esp.isEnable) {
-                UiCheckbox(OBF("Quang"), &esp.isOre);
-                UiCheckbox(OBF("Nguyen lieu"), &esp.isIng);
-                UiCheckbox(OBF("Vung cau ca"), &esp.isFishingZone);
-                UiCheckbox(OBF("Khu thu thap"), &esp.isGathering);
-                UiCheckbox(OBF("Thu the"), &esp.isCardCollect);
+                UiCheckbox(OBF("Quặng"), &esp.isOre);
+                UiCheckbox(OBF("Nguyên liệu"), &esp.isIng);
+                UiCheckbox(OBF("Khu câu"), &esp.isFishingZone);
+                UiCheckbox(OBF("Thu thập"), &esp.isGathering);
+                UiCheckbox(OBF("Thẻ"), &esp.isCardCollect);
                 UiCheckbox(OBF("Xu"), &esp.isCoin);
-                UiCheckbox(OBF("The ten"), &esp.isNameTag);
-                UiCheckbox(OBF("Shop Banh Ca"), &esp.isFishBreadShop);
-                UiCheckbox(OBF("Quai Rong"), &esp.isDragonVillageMonster);
+                UiCheckbox(OBF("Thẻ tên"), &esp.isNameTag);
+                UiCheckbox(OBF("Tiệm bánh"), &esp.isFishBreadShop);
+                UiCheckbox(OBF("Quái rồng"), &esp.isDragonVillageMonster);
             }
             ImGui::EndChild();
             ImGui::EndTabItem();
@@ -339,26 +339,26 @@ static void DrawTabInsect() {
     InitInsectMapDefaults();
     auto &insect = gPLConfig.insect;
     if (ImGui::BeginTabBar(OBF("##InsectTabs"))) {
-        if (ImGui::BeginTabItem(OBF("Con Trung"))) {
+        if (ImGui::BeginTabItem(OBF("Bắt bò"))) {
             ImVec2 avail = ImGui::GetContentRegionAvail();
             ImGui::BeginChild(OBF("InsL"), ImVec2(avail.x * 0.5f, avail.y), true);
-            if (UiCheckbox(OBF("Tu Dong Bat Con Trung"), &insect.isAutoBatBo) && insect.isAutoBatBo) {
+            if (UiCheckbox(OBF("Tự bắt bò"), &insect.isAutoBatBo) && insect.isAutoBatBo) {
                 insect.esp.isEnable = false;
                 gPLConfig.collect.isAutoDapDa = false;
                 gPLConfig.fishing.isCauCa = false;
                 SaveConfig();
             }
-            UiCheckbox(OBF("Dong Bang Con Trung [Rui Ro]"), &insect.isFreezeCT);
-            UiCheckbox(OBF("Tu Dong Doi Map"), &insect.isTeleMapBo);
-            UiCheckbox(OBF("Tu Dong Ban Con Trung"), &insect.isBanBo);
-            UiCheckbox(OBF("Bat Con Trung Tren Troi"), &insect.isBatBoTrenTroi);
-            UiCheckbox(OBF("Giu >= Tim khi ban"), &insect.isDuTimTroLen);
-            if (insect.isAutoBatBo) UiCheckbox(OBF("Nhat The"), &insect.isNhatThe);
+            UiCheckbox(OBF("Đóng băng [⚠]"), &insect.isFreezeCT);
+            UiCheckbox(OBF("Tự đổi map"), &insect.isTeleMapBo);
+            UiCheckbox(OBF("Tự bán bò"), &insect.isBanBo);
+            UiCheckbox(OBF("Bắt trên trời"), &insect.isBatBoTrenTroi);
+            UiCheckbox(OBF("Giữ Tím+"), &insect.isDuTimTroLen);
+            if (insect.isAutoBatBo) UiCheckbox(OBF("Nhặt thẻ"), &insect.isNhatThe);
             const int gradeValues[] = {-1, 0, 1, 2, 3, 4};
-            const char *gradeLabels[] = {OBF("Khong loc"), OBF("Trang +"), OBF("Xanh La +"), OBF("Xanh Duong +"), OBF("Tim +"), OBF("VVIP")};
+            const char *gradeLabels[] = {OBF("Không lọc"), OBF("Trắng+"), OBF("X.lá+"), OBF("X.dương+"), OBF("Tím+"), OBF("VVIP")};
             int currentIdx = 0;
             for (int i = 0; i < 6; ++i) if (insect.minInsectGrade == gradeValues[i]) currentIdx = i;
-            if (ImGui::BeginCombo(OBF("Loc cap con trung"), gradeLabels[currentIdx])) {
+            if (ImGui::BeginCombo(OBF("Lọc cấp"), gradeLabels[currentIdx])) {
                 for (int i = 0; i < 6; ++i) {
                     if (ImGui::Selectable(gradeLabels[i], insect.minInsectGrade == gradeValues[i])) {
                         insect.minInsectGrade = gradeValues[i];
@@ -370,14 +370,14 @@ static void DrawTabInsect() {
             ImGui::EndChild();
             ImGui::SameLine();
             ImGui::BeginChild(OBF("InsR"), ImVec2(0, avail.y), true);
-            UiSliderInt(OBF("Toc Do Bat (ms)"), &insect.delayBatCT, 5000, 30000);
-            UiSliderInt(OBF("Toc Do Doi Map (ms)"), &insect.delayTeleMap, 10000, 60000);
-            UiSliderInt(OBF("So Luong Ban"), &insect.MaxInsectSell, 10, 250);
-            UiSliderInt(OBF("Do Cao Con Trung"), &insect.conTrungCachMatDat, 1, 100);
+            UiSliderInt(OBF("Bắt (ms)"), &insect.delayBatCT, 5000, 30000);
+            UiSliderInt(OBF("Đổi map (ms)"), &insect.delayTeleMap, 10000, 60000);
+            UiSliderInt(OBF("SL bán"), &insect.MaxInsectSell, 10, 250);
+            UiSliderInt(OBF("Độ cao"), &insect.conTrungCachMatDat, 1, 100);
             ImGui::EndChild();
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem(OBF("Chon Map"))) {
+        if (ImGui::BeginTabItem(OBF("Chọn map"))) {
             for (const PLConfig::MapInfo &info : PLConfig::GetMapInfoList()) {
                 auto it = insect.DSMapBo.find(info.id);
                 if (it == insect.DSMapBo.end()) continue;
@@ -387,17 +387,17 @@ static void DrawTabInsect() {
             }
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem(OBF("ESP Insect"))) {
+        if (ImGui::BeginTabItem(OBF("ESP bò"))) {
             auto &esp = insect.esp;
-            if (UiCheckbox(OBF("Kich Hoat ESP"), &esp.isEnable) && esp.isEnable) {
+            if (UiCheckbox(OBF("Bật ESP"), &esp.isEnable) && esp.isEnable) {
                 insect.isAutoBatBo = false;
                 gPLConfig.collect.isAutoDapDa = false;
                 SaveConfig();
             }
             if (esp.isEnable) {
-                UiCheckbox(OBF("Hien Ten"), &esp.isShowName);
-                UiCheckbox(OBF("Nut Teleport"), &esp.isTeleportButton);
-                const char *labels[] = {OBF("Trang"), OBF("Xanh La"), OBF("Xanh Duong"), OBF("Tim"), OBF("VVIP")};
+                UiCheckbox(OBF("Tên"), &esp.isShowName);
+                UiCheckbox(OBF("Nút tele"), &esp.isTeleportButton);
+                const char *labels[] = {OBF("Trắng"), OBF("X.lá"), OBF("X.dương"), OBF("Tím"), OBF("VVIP")};
                 for (int i = 0; i < 5; i++) UiCheckbox(labels[i], &esp.isShowGrade[i]);
             }
             ImGui::EndTabItem();
@@ -409,18 +409,18 @@ static void DrawTabInsect() {
 static void DrawTabEvent() {
     InitMonsterDefaults();
     if (ImGui::BeginTabBar(OBF("##EventTabs"))) {
-        if (ImGui::BeginTabItem(OBF("Quai Vat"))) {
+        if (ImGui::BeginTabItem(OBF("Quái vật"))) {
             auto &monster = gPLConfig.monster;
             ImVec2 avail = ImGui::GetContentRegionAvail();
             ImGui::BeginChild(OBF("MonL"), ImVec2(avail.x * 0.5f, avail.y), true);
-            UiCheckbox(OBF("Kich Hoat"), &monster.isEnable);
+            UiCheckbox(OBF("Bật"), &monster.isEnable);
             if (monster.isEnable) {
-                UiCheckbox(OBF("Auto Ban Quai"), &monster.isAutoMonster);
-                UiCheckbox(OBF("Nhat Phan Thuong"), &monster.isCollectReward);
-                UiCheckbox(OBF("Tu Doi Map"), &monster.isTeleMapMonster);
-                UiSliderInt(OBF("Toc Do Doi Map (ms)"), &monster.delayNextMap, 10000, 30000);
-                UiSliderInt(OBF("Toc Do Ban (ms)"), &monster.tocDoBanQuaiVat, 500, 1000);
-                UiSliderInt(OBF("HP Duoi"), &monster.banQuaiVatHpDuoi, 1000, 350000);
+                UiCheckbox(OBF("Tự bán"), &monster.isAutoMonster);
+                UiCheckbox(OBF("Nhặt thưởng"), &monster.isCollectReward);
+                UiCheckbox(OBF("Đổi map"), &monster.isTeleMapMonster);
+                UiSliderInt(OBF("Đổi map (ms)"), &monster.delayNextMap, 10000, 30000);
+                UiSliderInt(OBF("Bán (ms)"), &monster.tocDoBanQuaiVat, 500, 1000);
+                UiSliderInt(OBF("HP dưới"), &monster.banQuaiVatHpDuoi, 1000, 350000);
                 ImGui::Separator();
                 for (const PLConfig::MapInfo &info : PLConfig::GetMapInfoList()) {
                     auto it = monster.DSMapMonster.find(info.id);
@@ -433,31 +433,31 @@ static void DrawTabEvent() {
             ImGui::SameLine();
             ImGui::BeginChild(OBF("MonR"), ImVec2(0, avail.y), true);
             auto &esp = monster.esp;
-            UiCheckbox(OBF("ESP Quai"), &esp.isEnable);
+            UiCheckbox(OBF("ESP quái"), &esp.isEnable);
             if (esp.isEnable) {
-                UiCheckbox(OBF("Hien Ten"), &esp.isShowName);
-                UiCheckbox(OBF("Nut Teleport"), &esp.isTeleportButton);
+                UiCheckbox(OBF("Tên"), &esp.isShowName);
+                UiCheckbox(OBF("Nút tele"), &esp.isTeleportButton);
             }
             ImGui::EndChild();
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem(OBF("Nong Trai"))) {
+        if (ImGui::BeginTabItem(OBF("Nông trại"))) {
             auto &farm = gPLConfig.farm;
             ImVec2 avail = ImGui::GetContentRegionAvail();
             ImGui::BeginChild(OBF("FarmL"), ImVec2(avail.x * 0.5f, avail.y), true);
-            UiCheckbox(OBF("Tu Dong Click Thu"), &farm.isAutoClickCollect);
+            UiCheckbox(OBF("Tự click thu"), &farm.isAutoClickCollect);
             ImGui::Separator();
-            UiCheckbox(OBF("Tu Dong Trong"), &farm.isAutoPlant);
+            UiCheckbox(OBF("Tự trồng"), &farm.isAutoPlant);
             if (farm.isAutoPlant) {
                 int seedId = (int) farm.selectedSeedId;
-                if (UiSliderInt(OBF("Seed ID"), &seedId, 0, 999999)) farm.selectedSeedId = (uint32_t) seedId;
-                UiSliderInt(OBF("Delay Trong (ms)"), &farm.delayPlant, 500, 5000);
-                ImGui::TextUnformatted(OBF("Chon O Dat (trong = tat ca):"));
+                if (UiSliderInt(OBF("ID hạt"), &seedId, 0, 999999)) farm.selectedSeedId = (uint32_t) seedId;
+                UiSliderInt(OBF("Trồng (ms)"), &farm.delayPlant, 500, 5000);
+                ImGui::TextUnformatted(OBF("Ô đất (trống=tất cả):"));
                 for (int i = 0; i < 50; i++) {
                     bool checked = false;
                     auto plotIt = farm.selectedPlotPositions.find(i);
                     if (plotIt != farm.selectedPlotPositions.end()) checked = plotIt->second;
-                    std::string plotLbl = OBF("O ") + std::to_string(i) + OBF("##plot") + std::to_string(i);
+                    std::string plotLbl = OBF("Ô ") + std::to_string(i) + OBF("##plot") + std::to_string(i);
                     if (ImGui::Checkbox(plotLbl.c_str(), &checked)) {
                         if (checked) farm.selectedPlotPositions[i] = true;
                         else farm.selectedPlotPositions.erase(i);
@@ -466,14 +466,14 @@ static void DrawTabEvent() {
                 }
             }
             ImGui::Separator();
-            UiCheckbox(OBF("Tu Dong Thu Hoach"), &farm.isAutoReap);
+            UiCheckbox(OBF("Tự thu hoạch"), &farm.isAutoReap);
             if (farm.isAutoReap) {
-                UiSliderInt(OBF("Delay Thu (ms)"), &farm.delayReap, 500, 5000);
-                ImGui::TextUnformatted(OBF("Chon Loai Cay (trong = tat ca):"));
+                UiSliderInt(OBF("Thu (ms)"), &farm.delayReap, 500, 5000);
+                ImGui::TextUnformatted(OBF("Loại cây:"));
                 static char addCropBuf[64] = {};
                 ImGui::InputText(OBF("##AddCropId"), addCropBuf, sizeof(addCropBuf));
                 ImGui::SameLine();
-                if (ImGui::Button(OBF("Them ID Cay"))) {
+                if (ImGui::Button(OBF("Thêm cây"))) {
                     try {
                         uint32_t cropId = (uint32_t) std::stoul(addCropBuf);
                         farm.selectedCropTypes[cropId] = true;
@@ -482,10 +482,10 @@ static void DrawTabEvent() {
                     } catch (...) {}
                 }
                 for (auto it = farm.selectedCropTypes.begin(); it != farm.selectedCropTypes.end();) {
-                    std::string cropLbl = OBF("Cay ") + std::to_string(it->first);
+                    std::string cropLbl = OBF("Cây ") + std::to_string(it->first);
                     UiCheckbox(cropLbl.c_str(), &it->second);
                     ImGui::SameLine();
-                    std::string delCrop = OBF("Xoa##crop") + std::to_string(it->first);
+                    std::string delCrop = OBF("Xóa##crop") + std::to_string(it->first);
                     if (ImGui::Button(delCrop.c_str())) {
                         it = farm.selectedCropTypes.erase(it);
                         SaveConfig();
@@ -493,12 +493,12 @@ static void DrawTabEvent() {
                     }
                     ++it;
                 }
-                ImGui::TextUnformatted(OBF("Chon O Thu Hoach (trong = tat ca):"));
+                ImGui::TextUnformatted(OBF("Ô thu:"));
                 for (int i = 0; i < 50; i++) {
                     bool checked = false;
                     auto reapIt = farm.selectedReapPositions.find(i);
                     if (reapIt != farm.selectedReapPositions.end()) checked = reapIt->second;
-                    std::string reapLbl = OBF("O ") + std::to_string(i) + OBF("##reap") + std::to_string(i);
+                    std::string reapLbl = OBF("Ô ") + std::to_string(i) + OBF("##reap") + std::to_string(i);
                     if (ImGui::Checkbox(reapLbl.c_str(), &checked)) {
                         if (checked) farm.selectedReapPositions[i] = true;
                         else farm.selectedReapPositions.erase(i);
@@ -510,11 +510,11 @@ static void DrawTabEvent() {
             ImGui::SameLine();
             ImGui::BeginChild(OBF("FarmR"), ImVec2(0, avail.y), true);
             auto &esp = farm.esp;
-            UiCheckbox(OBF("ESP Farm"), &esp.isEnable);
+            UiCheckbox(OBF("ESP farm"), &esp.isEnable);
             if (esp.isEnable) {
-                UiCheckbox(OBF("Hien Ten"), &esp.isShowName);
-                UiCheckbox(OBF("Hien Loai"), &esp.isShowType);
-                UiCheckbox(OBF("Nut Teleport"), &esp.isTeleportButton);
+                UiCheckbox(OBF("Tên"), &esp.isShowName);
+                UiCheckbox(OBF("Loại"), &esp.isShowType);
+                UiCheckbox(OBF("Nút tele"), &esp.isTeleportButton);
             }
             ImGui::EndChild();
             ImGui::EndTabItem();
@@ -525,11 +525,11 @@ static void DrawTabEvent() {
 
 static void DrawTabMap() {
     if (ImGui::BeginTabBar(OBF("##MapTabs"))) {
-        if (ImGui::BeginTabItem(OBF("MAP"))) {
+        if (ImGui::BeginTabItem(OBF("Bản đồ"))) {
             ImGui::BeginChild(OBF("MapList"), ImVec2(ImGui::GetContentRegionAvail().x * 0.48f, 0), true);
             for (const PLConfig::MapInfo &map : PLConfig::GetMapInfoList()) {
                 std::string label = map.name;
-                if (PLConfig::GetPlayerMapID() == map.id) label += OBF(" [Hien Tai]");
+                if (PLConfig::GetPlayerMapID() == map.id) label += OBF(" [đây]");
                 if (ImGui::Button(label.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0))) PLConfig::NextMapPos(map.id, Vector3());
             }
             ImGui::EndChild();
@@ -541,18 +541,18 @@ static void DrawTabMap() {
                     if (ImGui::Button(btn.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0))) PLConfig::NextMapPos(0, p.second.pos);
                 }
             } else {
-                ImGui::TextUnformatted(OBF("Chua co du lieu NPC"));
+                ImGui::TextUnformatted(OBF("Chưa có NPC"));
             }
             ImGui::EndChild();
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem(OBF("Dich Chuyen"))) {
+        if (ImGui::BeginTabItem(OBF("Dịch chuyển"))) {
             ImGui::BeginChild(OBF("TeleList1"), ImVec2(ImGui::GetContentRegionAvail().x * 0.48f, 0), true);
             struct TelePos { const char *name; int mapID; Vector3 pos; bool random; };
             TelePos presets[] = {
-                {OBF("Xa Khoi 1"), 1301, {323.48f, -0.28f, 499.77f}, true},
-                {OBF("Ban Ca"), 1001, {43.20f, -0.82f, -45.26f}, false},
-                {OBF("Ban Con Trung"), 1201, {-1.85f, 0.001f, -17.60f}, false},
+                {OBF("Xa khối 1"), 1301, {323.48f, -0.28f, 499.77f}, true},
+                {OBF("Bán cá"), 1001, {43.20f, -0.82f, -45.26f}, false},
+                {OBF("Bán bò"), 1201, {-1.85f, 0.001f, -17.60f}, false},
             };
             for (int i = 0; i < 3; ++i) {
                 TelePos &item = presets[i];
@@ -567,8 +567,8 @@ static void DrawTabMap() {
             static char saveNameBuf[64] = {};
             ImGui::InputText(OBF("##SavePosName"), saveNameBuf, sizeof(saveNameBuf));
             ImGui::SameLine();
-            if (ImGui::Button(OBF("Luu Vi Tri"))) {
-                std::string key = saveNameBuf[0] ? saveNameBuf : OBF("Vi Tri");
+            if (ImGui::Button(OBF("Lưu vị trí"))) {
+                std::string key = saveNameBuf[0] ? saveNameBuf : OBF("Vị trí");
                 key += std::to_string(gPLConfig.viTriCoSan.size());
                 gPLConfig.viTriCoSan[key] = {saveNameBuf, PLConfig::GetPlayerMapID(), PLConfig::GetPlayerPosition()};
                 saveNameBuf[0] = '\0';
@@ -577,7 +577,7 @@ static void DrawTabMap() {
             for (auto it = gPLConfig.viTriCoSan.begin(); it != gPLConfig.viTriCoSan.end();) {
                 if (ImGui::Button(it->second.name.c_str(), ImVec2(ImGui::GetContentRegionAvail().x - 80.f, 0))) PLConfig::NextMapPos(it->second.mapID, it->second.pos);
                 ImGui::SameLine();
-                std::string del = OBF("Xoa##") + it->first;
+                std::string del = OBF("Xóa##") + it->first;
                 if (ImGui::Button(del.c_str(), ImVec2(70.f, 0))) {
                     it = gPLConfig.viTriCoSan.erase(it);
                     SaveConfig();
@@ -596,37 +596,37 @@ static void DrawTabMiniGame() {
     if (ImGui::BeginTabBar(OBF("##MiniGameTabs"))) {
         if (ImGui::BeginTabItem(OBF("Zombie"))) {
             auto &z = gPLConfig.miniGame.zombie;
-            UiCheckbox(OBF("Kich Hoat"), &z.isEnable);
+            UiCheckbox(OBF("Bật"), &z.isEnable);
             if (z.isEnable) {
-                UiCheckbox(OBF("Chem Xa"), &z.isChemXa);
+                UiCheckbox(OBF("Chém xa"), &z.isChemXa);
                 UiCheckbox(OBF("ESP"), &z.isEsp);
             }
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem(OBF("Kho Bau"))) {
+        if (ImGui::BeginTabItem(OBF("Kho báu"))) {
             auto &d = gPLConfig.miniGame.digging;
             ImVec2 avail = ImGui::GetContentRegionAvail();
             ImGui::BeginChild(OBF("DigL"), ImVec2(avail.x * 0.5f, avail.y), true);
-            UiCheckbox(OBF("Kich Hoat"), &d.isEnable);
+            UiCheckbox(OBF("Bật"), &d.isEnable);
             if (d.isEnable) {
-                UiCheckbox(OBF("Tu Dong Dao Ruong"), &d.isAutoDigTreasure);
+                UiCheckbox(OBF("Tự đào"), &d.isAutoDigTreasure);
                 if (d.isAutoDigTreasure) {
-                    UiSliderInt(OBF("Cap Do An Toan"), &d.capDoAnToan, 1, 10);
-                    UiSliderFloat(OBF("Goc Lech"), &d.gocLechToiDa, 0.f, 70.f, "%.0f");
-                    UiSliderFloat(OBF("Chu Ky S"), &d.chuKyChuS, 0.f, 30.f, "%.0f");
-                    UiSliderFloat(OBF("Do Cong S"), &d.doCongChuS, 0.f, 10.f, "%.1f");
-                    UiSliderFloat(OBF("Khoang Cach Cham"), &d.khoangCachBatDauCham, 3.f, 50.f, "%.0f");
-                    UiSliderFloat(OBF("Ban Kinh Tim"), &d.radiusTim, 10.f, 300.f, "%.0f");
-                    UiSliderFloat(OBF("Khoang Cach Max"), &d.maxKhoangCach, 20.f, 500.f, "%.0f");
-                    UiCheckbox(OBF("Di Ngau Nhien Het Ruong"), &d.autoMoveKhiHetRuong);
+                    UiSliderInt(OBF("Cấp an toàn"), &d.capDoAnToan, 1, 10);
+                    UiSliderFloat(OBF("Góc lệch"), &d.gocLechToiDa, 0.f, 70.f, "%.0f");
+                    UiSliderFloat(OBF("Chu kỳ S"), &d.chuKyChuS, 0.f, 30.f, "%.0f");
+                    UiSliderFloat(OBF("Độ cong S"), &d.doCongChuS, 0.f, 10.f, "%.1f");
+                    UiSliderFloat(OBF("KC chạm"), &d.khoangCachBatDauCham, 3.f, 50.f, "%.0f");
+                    UiSliderFloat(OBF("Bán kính"), &d.radiusTim, 10.f, 300.f, "%.0f");
+                    UiSliderFloat(OBF("KC max"), &d.maxKhoangCach, 20.f, 500.f, "%.0f");
+                    UiCheckbox(OBF("Đi random hết"), &d.autoMoveKhiHetRuong);
                 }
-                UiCheckbox(OBF("Tu Mua Xeng"), &d.isAutoBuyXeng);
+                UiCheckbox(OBF("Tự mua xẻng"), &d.isAutoBuyXeng);
                 ImGui::Separator();
-                ImGui::TextUnformatted(OBF("Loc Loai Ruong (trong = tat ca):"));
+                ImGui::TextUnformatted(OBF("Lọc rương:"));
                 static char addBoxTypeBuf[64] = {};
                 ImGui::InputText(OBF("##AddBoxType"), addBoxTypeBuf, sizeof(addBoxTypeBuf));
                 ImGui::SameLine();
-                if (ImGui::Button(OBF("Them Loai"))) {
+                if (ImGui::Button(OBF("Thêm loại"))) {
                     try {
                         int boxType = std::stoi(addBoxTypeBuf);
                         d.filterLoaiRuong[boxType] = true;
@@ -635,10 +635,10 @@ static void DrawTabMiniGame() {
                     } catch (...) {}
                 }
                 for (auto it = d.filterLoaiRuong.begin(); it != d.filterLoaiRuong.end();) {
-                    std::string boxLbl = OBF("Loai ") + std::to_string(it->first);
+                    std::string boxLbl = OBF("Loại ") + std::to_string(it->first);
                     UiCheckbox(boxLbl.c_str(), &it->second);
                     ImGui::SameLine();
-                    std::string delBox = OBF("Xoa##box") + std::to_string(it->first);
+                    std::string delBox = OBF("Xóa##box") + std::to_string(it->first);
                     if (ImGui::Button(delBox.c_str())) {
                         it = d.filterLoaiRuong.erase(it);
                         SaveConfig();
@@ -650,32 +650,32 @@ static void DrawTabMiniGame() {
             ImGui::EndChild();
             ImGui::SameLine();
             ImGui::BeginChild(OBF("DigR"), ImVec2(0, avail.y), true);
-            if (d.isEnable) UiCheckbox(OBF("ESP Kho Bau"), &d.esp.isEnable);
+            if (d.isEnable) UiCheckbox(OBF("ESP kho"), &d.esp.isEnable);
             ImGui::EndChild();
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem(OBF("Leo Thap"))) {
+        if (ImGui::BeginTabItem(OBF("Leo tháp"))) {
             auto &t = gPLConfig.miniGame.towerClimb;
-            UiCheckbox(OBF("Kich Hoat"), &t.isEnable);
-            if (t.isEnable) UiSliderInt(OBF("Delay Step (ms)"), &t.delayNextPoint, 8000, 30000);
+            UiCheckbox(OBF("Bật"), &t.isEnable);
+            if (t.isEnable) UiSliderInt(OBF("Bước (ms)"), &t.delayNextPoint, 8000, 30000);
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem(OBF("Obby"))) {
             auto &o = gPLConfig.miniGame.obby;
-            UiCheckbox(OBF("Kich Hoat"), &o.isEnable);
-            if (o.isEnable) UiSliderInt(OBF("Delay Step (ms)"), &o.delayNextPoint, 5000, 30000);
+            UiCheckbox(OBF("Bật"), &o.isEnable);
+            if (o.isEnable) UiSliderInt(OBF("Bước (ms)"), &o.delayNextPoint, 5000, 30000);
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem(OBF("Sky High"))) {
+        if (ImGui::BeginTabItem(OBF("Tháp gà"))) {
             auto &s = gPLConfig.miniGame.ThapGa;
-            UiCheckbox(OBF("Kich Hoat"), &s.isEnable);
-            if (s.isEnable) UiSliderInt(OBF("Delay Step (ms)"), &s.delayNextPoint, 5000, 30000);
+            UiCheckbox(OBF("Bật"), &s.isEnable);
+            if (s.isEnable) UiSliderInt(OBF("Bước (ms)"), &s.delayNextPoint, 5000, 30000);
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem(OBF("Party"))) {
             auto &party = gPLConfig.miniGame.Party;
-            UiCheckbox(OBF("Kich Hoat"), &party.isEnable);
-            if (party.isEnable) UiSliderInt(OBF("Delay Step (ms)"), &party.delayNextPoint, 5000, 30000);
+            UiCheckbox(OBF("Bật"), &party.isEnable);
+            if (party.isEnable) UiSliderInt(OBF("Bước (ms)"), &party.delayNextPoint, 5000, 30000);
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
@@ -683,12 +683,12 @@ static void DrawTabMiniGame() {
 }
 
 static void DrawTabSettings() {
-    if (ImGui::Button(OBF("Luu Cau Hinh"), ImVec2(-1, 0))) SaveConfig();
-    if (ImGui::Button(OBF("Tai Cau Hinh"), ImVec2(-1, 0))) LoadConfig();
+    if (ImGui::Button(OBF("Lưu"), ImVec2(-1, 0))) SaveConfig();
+    if (ImGui::Button(OBF("Tải"), ImVec2(-1, 0))) LoadConfig();
     ImGui::Separator();
-    ImGui::Text(OBF("Map hien tai: %d"), PLConfig::GetPlayerMapID());
+    ImGui::Text(OBF("Map: %d"), PLConfig::GetPlayerMapID());
     Vector3 pos = PLConfig::GetPlayerPosition();
-    ImGui::Text(OBF("Vi tri: %.1f, %.1f, %.1f"), pos.x, pos.y, pos.z);
+    ImGui::Text(OBF("Tọa độ: %.1f, %.1f, %.1f"), pos.x, pos.y, pos.z);
 }
 
 }
@@ -697,13 +697,13 @@ void SetupMenuUi() {
     modui::AppUi ui{};
     ui.set_window_title(OBF("Play Together##modui_shell"));
     ui.add_tab(OBF("chung"), OBF("Chung"), DrawTabChung);
-    ui.add_tab(OBF("cauca"), OBF("Cau Ca"), DrawTabCauCa);
-    ui.add_tab(OBF("collect"), OBF("Collect"), DrawTabCollect);
-    ui.add_tab(OBF("insect"), OBF("Con Trung"), DrawTabInsect);
-    ui.add_tab(OBF("event"), OBF("Su Kien"), DrawTabEvent);
-    ui.add_tab(OBF("map"), OBF("Map"), DrawTabMap);
-    ui.add_tab(OBF("minigame"), OBF("MiniGame"), DrawTabMiniGame);
-    ui.add_tab(OBF("settings"), OBF("Cai Dat"), DrawTabSettings);
+    ui.add_tab(OBF("cauca"), OBF("Câu Cá"), DrawTabCauCa);
+    ui.add_tab(OBF("collect"), OBF("Thu Thập"), DrawTabCollect);
+    ui.add_tab(OBF("insect"), OBF("Côn Trùng"), DrawTabInsect);
+    ui.add_tab(OBF("event"), OBF("Sự Kiện"), DrawTabEvent);
+    ui.add_tab(OBF("map"), OBF("Bản Đồ"), DrawTabMap);
+    ui.add_tab(OBF("minigame"), OBF("Mini Game"), DrawTabMiniGame);
+    ui.add_tab(OBF("settings"), OBF("Cài Đặt"), DrawTabSettings);
     modui::SetAppUi(ui);
 }
 
