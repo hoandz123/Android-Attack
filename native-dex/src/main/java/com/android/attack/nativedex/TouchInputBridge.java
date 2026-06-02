@@ -24,6 +24,9 @@ public final class TouchInputBridge {
     private static volatile Activity attachedActivity;
     private static Window.Callback previousCallback;
     private static Object proxyCallback;
+    private static int touchDispatchCount;
+    private static int touchFedCount;
+    private static long lastTouchLogMs;
 
     private TouchInputBridge() {}
 
@@ -31,6 +34,7 @@ public final class TouchInputBridge {
         if (activity == null) return;
         try {
             if (attachedActivity == activity && proxyCallback != null) {
+                ensureCallback(activity);
                 refreshInsets(activity);
                 return;
             }
@@ -55,6 +59,7 @@ public final class TouchInputBridge {
             InvocationHandler handler = (proxy, method, args) -> {
                 if ("dispatchTouchEvent".equals(method.getName()) && args != null && args.length == 1
                         && args[0] instanceof MotionEvent) {
+                    logTouchDispatch(activity);
                     feedTouch((MotionEvent) args[0]);
                 } else if ("dispatchKeyEvent".equals(method.getName()) && args != null && args.length == 1
                         && args[0] instanceof KeyEvent) {
@@ -66,7 +71,8 @@ public final class TouchInputBridge {
                     base.getClass().getClassLoader(), new Class<?>[] {Window.Callback.class}, handler);
             w.setCallback((Window.Callback) proxyCallback);
             refreshInsets(activity);
-            Log.i(TAG, "install ok");
+            Log.i(TAG, "install ok " + activity.getClass().getSimpleName()
+                    + " delegate=" + delegate.getClass().getSimpleName());
         } catch (Throwable t) {
             Log.e(TAG, "install", t);
             uninstall(activity);
@@ -91,6 +97,30 @@ public final class TouchInputBridge {
         proxyCallback = null;
     }
 
+    /** Gắn lại proxy nếu engine/app đã ghi đè Window.Callback sau install. */
+    private static void ensureCallback(Activity activity) {
+        if (activity == null || proxyCallback == null) return;
+        try {
+            Window w = activity.getWindow();
+            if (w != null && w.getCallback() != proxyCallback) {
+                Log.w(TAG, "callback replaced, re-set " + activity.getClass().getSimpleName());
+                w.setCallback((Window.Callback) proxyCallback);
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "ensureCallback", t);
+        }
+    }
+
+    private static void logTouchDispatch(Activity activity) {
+        touchDispatchCount++;
+        long now = System.currentTimeMillis();
+        if (touchDispatchCount == 1 || now - lastTouchLogMs >= 3000L) {
+            lastTouchLogMs = now;
+            Log.d(TAG, "dispatchTouch #" + touchDispatchCount + " fed=" + touchFedCount
+                    + " " + (activity != null ? activity.getClass().getSimpleName() : "?"));
+        }
+    }
+
     private static View touchCoordView() {
         SurfaceView ov = EglOverlay.overlayView();
         if (ov != null && ov.getParent() != null) return ov;
@@ -101,7 +131,12 @@ public final class TouchInputBridge {
 
     private static void feedTouch(MotionEvent event) {
         View ref = touchCoordView();
-        if (ref == null) return;
+        if (ref == null) {
+            if (touchDispatchCount <= 3 || touchDispatchCount % 50 == 0) {
+                Log.w(TAG, "feedTouch skip: no coord view (dispatch #" + touchDispatchCount + ")");
+            }
+            return;
+        }
         int masked = event.getActionMasked();
         int action;
         switch (masked) {
@@ -120,8 +155,12 @@ public final class TouchInputBridge {
                 action = 3;
                 break;
             default:
+                if (touchDispatchCount <= 3) {
+                    Log.d(TAG, "feedTouch skip: action=" + masked);
+                }
                 return;
         }
+        touchFedCount++;
         int ptr = masked == MotionEvent.ACTION_MOVE ? 0 : event.getActionIndex();
         int[] loc = new int[2];
         ref.getLocationOnScreen(loc);

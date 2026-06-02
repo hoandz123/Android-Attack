@@ -52,7 +52,8 @@ public final class EglOverlay {
             detach();
             attachedActivity = activity;
             overlay = new SurfaceView(activity);
-            overlay.setZOrderOnTop(true);
+            // Không setZOrderOnTop: surface ở lớp cửa sổ riêng, chạm có thể không qua
+            // Window.Callback (TouchInputBridge) cho tới khi Activity tái cấu hình.
             overlay.setClickable(false);
             overlay.setFocusable(false);
             overlay.setFocusableInTouchMode(false);
@@ -62,9 +63,12 @@ public final class EglOverlay {
             ViewGroup root = (ViewGroup) activity.getWindow().getDecorView();
             root.addView(overlay, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.TOP));
+            overlay.bringToFront();
             overlay.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
                 @Override
                 public void onViewAttachedToWindow(View v) {
+                    Log.i(TAG, "overlay attached zOrderOnTop=false");
+                    TouchInputBridge.install(activity);
                     TouchInputBridge.refreshInsets(activity);
                     v.post(() -> TouchInputBridge.refreshInsets(activity));
                 }
@@ -80,7 +84,7 @@ public final class EglOverlay {
             });
             TouchInputBridge.refreshInsets(activity);
             decor.post(() -> TouchInputBridge.refreshInsets(activity));
-            Log.i(TAG, "attached " + activity.getClass().getSimpleName());
+            Log.i(TAG, "attached " + activity.getClass().getSimpleName() + " zOrderOnTop=false");
         } catch (Throwable t) {
             Log.e(TAG, "attach", t);
             detach();
@@ -134,6 +138,7 @@ public final class EglOverlay {
 
         @Override
         public void surfaceCreated(SurfaceHolder h) {
+            Log.i(TAG, "surfaceCreated");
             synchronized (lock) {
                 holder = h;
                 surfaceReady = true;
