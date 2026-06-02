@@ -5,7 +5,7 @@
 #include <cstdio>
 #include <android/log.h>
 
-#define LOG_TAG "Loader"
+#define LOG_TAG "ATTACK_Loader"
 #define LOGI_LOCATOR(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE_LOCATOR(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 

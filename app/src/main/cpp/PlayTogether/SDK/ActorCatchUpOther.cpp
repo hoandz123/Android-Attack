@@ -11,7 +11,7 @@
 #include "Stubs/ESPManager.h"
 #include <imgui/imgui.h>
 #include <Includes/obfuscate.h>
-#define LOG_TAG OBF("AttackPlugin")
+#define LOG_TAG OBF("ATTACK_PlayTogether")
 #include <Includes/Logger.h>
 
 namespace ActorCatchUpOther {

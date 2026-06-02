@@ -14,7 +14,7 @@
 #include <vector>
 #include <string>
 
-#define LOG_TAG "Loader"
+#define LOG_TAG "ATTACK_Loader"
 #define LOGI_V23(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE_V23(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 

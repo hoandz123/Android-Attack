@@ -1,6 +1,6 @@
 #include "ActivityTracker.hpp"
 
-#define LOG_TAG OBF("ActivityTracker")
+#define LOG_TAG OBF("ATTACK_ActivityTracker")
 #include <Includes/Logger.h>
 
 #include <JNIHelper/JNIHelper.hpp>

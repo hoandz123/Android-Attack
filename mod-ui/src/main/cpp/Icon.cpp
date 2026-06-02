@@ -1,6 +1,6 @@
 #include "Icon.hpp"
 
-#define LOG_TAG OBF("AttackIcon")
+#define LOG_TAG OBF("ATTACK_Icon")
 #include <Includes/Logger.h>
 
 #include <FileManager.hpp>

@@ -1,6 +1,6 @@
 #include "Internal.hpp"
 
-#define LOG_TAG OBF("AttackSurface")
+#define LOG_TAG OBF("ATTACK_Surface")
 #include <Includes/Logger.h>
 
 #include <JNIHelper/JNIHelper.hpp>

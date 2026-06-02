@@ -18,7 +18,7 @@ enum LogType {
     oWARN  = 5
 };
 
-#define TAG OBFUSCATE("Mod_Menu")
+#define TAG OBFUSCATE("ATTACK_ModMenu")
 
 #ifndef LOG_TAG
 #define LOG_TAG TAG

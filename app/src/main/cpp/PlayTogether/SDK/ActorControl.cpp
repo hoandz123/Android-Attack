@@ -18,7 +18,7 @@
 #include "FarmSystem.h"
 #include <Tools/Tools.h>
 #include <Includes/obfuscate.h>
-#define LOG_TAG OBF("AttackPlugin")
+#define LOG_TAG OBF("ATTACK_PlayTogether")
 #include <Includes/Logger.h>
 
 namespace ActorControl {

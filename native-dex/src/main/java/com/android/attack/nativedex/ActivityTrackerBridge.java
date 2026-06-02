@@ -13,7 +13,7 @@ import java.util.Collection;
 
 public final class ActivityTrackerBridge implements Application.ActivityLifecycleCallbacks {
 
-    private static final String TAG = "ActivityTracker";
+    private static final String TAG = "ATTACK_ActivityTracker";
     private static volatile boolean installed;
     private static ActivityTrackerBridge instance;
 

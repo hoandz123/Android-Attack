@@ -20,7 +20,7 @@ import java.lang.reflect.Proxy;
 /** Window.Callback proxy: feed ImGui touch, always forward to delegate. */
 public final class TouchInputBridge {
 
-    private static final String TAG = "AttackTouch";
+    private static final String TAG = "ATTACK_Touch";
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
 
     private static volatile Activity attachedActivity;

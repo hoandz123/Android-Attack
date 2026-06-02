@@ -18,7 +18,7 @@ import android.widget.FrameLayout;
 /** IME → ImGui (composition + hardware shortcut). minSdk 26. */
 public final class KeyboardInputBridge {
 
-    private static final String TAG = "AttackKeyboard";
+    private static final String TAG = "ATTACK_Keyboard";
     private static final int INPUT_TEXT =
             InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
     private static final int META_CHORD =

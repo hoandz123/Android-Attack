@@ -5,7 +5,7 @@
 #include <FileManager.hpp>
 #include <Tools/Tools.h>
 #include <Includes/obfuscate.h>
-#define LOG_TAG OBF("AttackPlugin")
+#define LOG_TAG OBF("ATTACK_PlayTogether")
 #include <Includes/Logger.h>
 #include <API/Vector3.h>
 

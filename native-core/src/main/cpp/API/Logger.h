@@ -2,7 +2,7 @@
 
 #include <android/log.h>
 
-#define API_TAG "api_sdk"
+#define API_TAG "ATTACK_ApiSdk"
 
 #define SDKLOGI(...) __android_log_print(ANDROID_LOG_INFO,  API_TAG, __VA_ARGS__)
 #define SDKLOGW(...) __android_log_print(ANDROID_LOG_WARN,  API_TAG, __VA_ARGS__)

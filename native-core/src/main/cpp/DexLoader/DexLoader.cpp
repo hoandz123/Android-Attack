@@ -1,6 +1,6 @@
 #include "DexLoader.hpp"
 
-#define LOG_TAG OBF("DexLoader")
+#define LOG_TAG OBF("ATTACK_DexLoader")
 #include <Includes/Logger.h>
 
 #include "JniReflect.hpp"

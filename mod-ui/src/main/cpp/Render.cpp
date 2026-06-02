@@ -3,7 +3,7 @@
 #include "Layout.hpp"
 #include "Icon.hpp"
 
-#define LOG_TAG OBF("ModUi")
+#define LOG_TAG OBF("ATTACK_ModUi")
 #include <Includes/Logger.h>
 
 #include <GLES3/gl3.h>

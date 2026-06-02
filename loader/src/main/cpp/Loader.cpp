@@ -2,7 +2,7 @@
 #include <jni.h>
 #include <string>
 
-#define LOG_TAG OBF("AttackLoader")
+#define LOG_TAG OBF("ATTACK_Loader")
 #include <Includes/Logger.h>
 
 static const char *kPlugins[] = {"libattack.so"};

@@ -20,7 +20,7 @@ import android.widget.FrameLayout;
 
 public final class EglOverlay {
 
-    private static final String TAG = "AttackSurface";
+    private static final String TAG = "ATTACK_Surface";
     private static final int EGL_ES3 = 0x0040;
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
 

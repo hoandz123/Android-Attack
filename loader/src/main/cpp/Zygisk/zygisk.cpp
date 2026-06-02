@@ -20,7 +20,7 @@
 #include "zygisk.hpp"
 #include <Includes/obfuscate.h>
 
-#define LOG_TAG OBF("AttackLoaderZygisk")
+#define LOG_TAG OBF("ATTACK_LoaderZygisk")
 #include <Includes/Logger.h>
 
 #include "xdl/xdl.h"

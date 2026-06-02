@@ -7,7 +7,7 @@
 #include <Includes/Logger.h>
 #include <thread>
 
-#define LOG_TAG OBF("AttackPlugin")
+#define LOG_TAG OBF("ATTACK_PlayTogether")
 
 namespace playtogether {
 

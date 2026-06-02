@@ -1,7 +1,7 @@
 #include "AntiCheat.h"
 #include <API/Il2CppApi.h>
 #include <Includes/obfuscate.h>
-#define LOG_TAG OBF("AttackPlugin")
+#define LOG_TAG OBF("ATTACK_PlayTogether")
 #include <Includes/Logger.h>
 #include <Tools/Tools.h>
 #include "kittymemory/MemoryPatch.h"

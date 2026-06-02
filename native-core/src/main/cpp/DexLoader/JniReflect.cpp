@@ -1,6 +1,6 @@
 #include "JniReflect.hpp"
 
-#define LOG_TAG OBF("JniReflect")
+#define LOG_TAG OBF("ATTACK_JniReflect")
 #include <Includes/Logger.h>
 
 #include <cstring>
