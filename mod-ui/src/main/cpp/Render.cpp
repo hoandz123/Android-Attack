@@ -8,7 +8,6 @@
 
 #include <GLES3/gl3.h>
 #include <imgui.h>
-#include <imgui_internal.h>
 #include <imgui_impl_android.h>
 #include <imgui_impl_opengl3.h>
 
@@ -67,15 +66,7 @@ void EndFrame() {
         glClear(GL_COLOR_BUFFER_BIT);
     }
     ImGui_ImplOpenGL3_RenderDrawData(draw);
-    const bool wantText = ImGui::GetIO().WantTextInput;
-    bool wantMultiline = false;
-    if (wantText) {
-        ImGuiContext &g = *GImGui;
-        if (ImGuiInputTextState *st = ImGui::GetInputTextState(g.ActiveId)) {
-            wantMultiline = (st->Flags & ImGuiInputTextFlags_Multiline) != 0;
-        }
-    }
-    SyncSoftKeyboard(wantText, wantMultiline);
+    SyncSoftKeyboard(ImGui::GetIO().WantTextInput);
 }
 
 } // namespace modui

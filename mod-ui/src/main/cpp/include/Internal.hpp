@@ -33,7 +33,7 @@ void FeedKey(int key_code, int action, int meta, int unicode);
 void FeedTextUtf8(const char *utf8);
 void FeedReplaceTail(int delete_chars, const char *utf8);
 void ApplyPendingKeyboard();
-void SyncSoftKeyboard(bool want, bool multiline);
+void SyncSoftKeyboard(bool want);
 bool InitKeyboardJni(JNIEnv *env, jclass keyboard_bridge_class);
 
 void DrawMenuShell(const AppUi &ui);
