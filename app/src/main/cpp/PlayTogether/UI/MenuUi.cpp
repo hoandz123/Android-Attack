@@ -514,6 +514,42 @@ static void DrawTabSettings() {
     ImGui::PopID();
 }
 
+static void DrawSubTabScroll(const char *id, void (*draw)()) {
+    ImGui::PushID(id);
+    ImGui::BeginChild(OBF("##sub_scroll"), ImVec2(0, 0), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+    draw();
+    ImGui::EndChild();
+    ImGui::PopID();
+}
+
+static void DrawFishingPage() {
+    ImGui::PushID(OBF("page_fishing"));
+    if (ImGui::BeginTabBar(OBF("##pl_fishing_tabs"), ImGuiTabBarFlags_None)) {
+        if (ImGui::BeginTabItem(OBF("Câu"))) {
+            DrawSubTabScroll(OBF("sub_fish"), DrawTabFish);
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem(OBF("Lọc"))) {
+            DrawSubTabScroll(OBF("sub_filter"), DrawTabFilter);
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem(OBF("Cá & Túi"))) {
+            DrawSubTabScroll(OBF("sub_bag"), DrawTabBag);
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem(OBF("Nâng cao"))) {
+            DrawSubTabScroll(OBF("sub_adv"), DrawTabAdvanced);
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem(OBF("Cài đặt"))) {
+            DrawSubTabScroll(OBF("sub_settings"), DrawTabSettings);
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+    }
+    ImGui::PopID();
+}
+
 }
 
 void SetupMenuUi() {
@@ -521,11 +557,7 @@ void SetupMenuUi() {
     ui.menu_size = ImVec2(720.f, 520.f);
     ui.fab_icon_path = OBF("/data/user/0/") + Tools::GetPackageName() + OBF("/files/fab.png");
     ui.set_window_title(OBF("Play Together##modui_shell"));
-    ui.add_tab(OBF("fish"), OBF("Câu"), DrawTabFish);
-    ui.add_tab(OBF("filter"), OBF("Lọc"), DrawTabFilter);
-    ui.add_tab(OBF("bag"), OBF("Cá & Túi"), DrawTabBag);
-    ui.add_tab(OBF("advanced"), OBF("Nâng cao"), DrawTabAdvanced);
-    ui.add_tab(OBF("settings"), OBF("Cài đặt"), DrawTabSettings);
+    ui.add_tab(OBF("fishing"), OBF("Câu Cá"), DrawFishingPage);
     modui::SetAppUi(ui);
 }
 
