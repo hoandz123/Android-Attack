@@ -19,7 +19,6 @@ namespace ActorCatchUpOther {
         return FindClass("ActorCatchUpOther");
     }
 
-
     void (*old_OnUpdate)(Object*);
     void OnUpdate(Object* instance){
         old_OnUpdate(instance);
@@ -55,7 +54,6 @@ namespace ActorCatchUpOther {
         }
 
         Vector2 myScreenPos2D = Vector2(myWorldPosition.x, ImGui::GetIO().DisplaySize.y - myWorldPosition.y);
-
 
         ESPEntry entry;
         entry.object = instance;

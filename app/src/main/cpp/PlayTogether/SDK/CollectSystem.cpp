@@ -38,8 +38,6 @@ namespace CollectSystem {
         if (!(collect.isAutoDapDa || collect.isAutoNhatThe || collect.isAutoNguyenLieu || collect.esp.isEnable)) return;
         if (!ActorControl::my_Motor) return;
 
-
-
         if (collect.esp.isEnable) {
             List<Object*> *mapObjectInfoList = _mapObjectInfoList();
             if (!mapObjectInfoList) return;
@@ -123,7 +121,6 @@ namespace CollectSystem {
             }
         }
 
-
         if (monster.esp.isEnable) {
             List<Object*> *fieldMonsterInfoList = _fieldMonsterInfoList();
             if (!fieldMonsterInfoList) return;
@@ -174,7 +171,6 @@ namespace CollectSystem {
 
                 std::string assetStr = AssetName->to_string();
 
-
                 Vector3 pos = MonsterInfo->invoke_method<Vector3>("get_Position");
                 Vector3 screenPos = cam->WorldToScreenPoint(pos);
 
@@ -191,7 +187,6 @@ namespace CollectSystem {
         if (monster.isEnable && monster.isAutoMonster) {
             Monster::Update();
         }
-
 
         if (collect.isAutoDapDa || collect.isAutoNhatThe || collect.isAutoNguyenLieu) {
             CollectSys::Update();

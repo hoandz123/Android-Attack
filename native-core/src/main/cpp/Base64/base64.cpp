@@ -96,7 +96,6 @@ std::string base64_encode(unsigned char const* bytes_to_encode, size_t in_len, b
         pos += 3;
     }
 
-
     return ret;
 }
 

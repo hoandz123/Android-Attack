@@ -8,7 +8,6 @@
 #include <API/Il2CppApi.h>
 #include "SDK/enum/Item_Type.h"
 
-
 namespace KhoiPhucTrangThai {
     struct DataReset {
         int mapID = 0;
@@ -33,6 +32,5 @@ namespace KhoiPhucTrangThai {
     bool Load();
     void Update();
 }
-
 
 #endif //IL2CPP_PLAY_KHOIPHUCTRANGTHAI_H

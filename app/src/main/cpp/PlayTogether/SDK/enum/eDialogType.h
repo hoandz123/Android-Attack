@@ -5,7 +5,6 @@
 #ifndef PLAY_PRO_MAX_EDIALOGTYPE_H
 #define PLAY_PRO_MAX_EDIALOGTYPE_H
 
-
 enum class eDialogType : int {
     None = 0,                       // Không có gì
     BaseResolution = 1,             // Hộp thoại độ phân giải

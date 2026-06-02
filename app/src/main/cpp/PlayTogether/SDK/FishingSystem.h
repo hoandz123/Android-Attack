@@ -15,5 +15,4 @@ namespace FishingSystem {
     int GetActiveBuffCount(int itemID);
 }
 
-
 #endif //IL2CPP_PLAY_FISHINGSYSTEM_H

@@ -13,7 +13,6 @@
 #include "enum/eTableType.h"
 #include "PlayLog.h"
 
-
 namespace CollectSys {
     static inline unsigned char tolower_uc(unsigned char c) {
         return static_cast<unsigned char>(std::tolower(c));
@@ -33,7 +32,6 @@ namespace CollectSys {
         );
         return it != hay.end();
     }
-
 
     SpawnType GetSpawnType(const std::string &name) {
         if (name.empty()) return SpawnType::Unknown;
@@ -348,7 +346,6 @@ namespace CollectSys {
             Object *MapObjectInfo = objInfo->get_field_object<Object *>("MapObjectInfo");
             if (!MapObjectInfo) continue;
 
-
             int ResourceId = MapObjectInfo->invoke_method<int>("get_ResourceId");
             int SpawnPointId = MapObjectInfo->invoke_method<int>("get_SpawnPointId");
             uint8_t Step = MapObjectInfo->invoke_method<uint8_t>("get_Step");
@@ -360,7 +357,6 @@ namespace CollectSys {
                 blockSpawnPointId.end()) {
                 continue; // Bỏ qua các góc lag
             }
-
 
             Object *SpawnObjectList = _container->get_Item(ResourceId);
             if (!SpawnObjectList) continue;
@@ -421,7 +417,6 @@ namespace CollectSys {
             Object *MapObjectInfo = objInfo->get_field_object<Object *>("MapObjectInfo");
             if (!MapObjectInfo) continue;
 
-
             int ResourceId = MapObjectInfo->invoke_method<int>("get_ResourceId");
             int SpawnPointId = MapObjectInfo->invoke_method<int>("get_SpawnPointId");
             uint8_t Step = MapObjectInfo->invoke_method<uint8_t>("get_Step");
@@ -433,7 +428,6 @@ namespace CollectSys {
                 blockSpawnPointId.end()) {
                 continue; // Bỏ qua các góc lag
             }
-
 
             Object *SpawnObjectList = _container->get_Item(ResourceId);
             if (!SpawnObjectList) continue;
@@ -511,7 +505,6 @@ namespace CollectSys {
             Object *MapObjectInfo = objInfo->get_field_object<Object *>("MapObjectInfo");
             if (!MapObjectInfo) continue;
 
-
             int ResourceId = MapObjectInfo->invoke_method<int>("get_ResourceId");
             int SpawnPointId = MapObjectInfo->invoke_method<int>("get_SpawnPointId");
             uint8_t Step = MapObjectInfo->invoke_method<uint8_t>("get_Step");
@@ -523,7 +516,6 @@ namespace CollectSys {
                 blockSpawnPointId.end()) {
                 continue; // Bỏ qua các góc lag
             }
-
 
             Object *SpawnObjectList = _container->get_Item(ResourceId);
             if (!SpawnObjectList) continue;
@@ -573,7 +565,6 @@ namespace CollectSys {
             return false;
         }
 
-
         Vector3 veinPos = tf->invoke_method<Vector3>("get_position");
         Vector2 myPosXZ(myPos.x, myPos.z);
         Vector2 veinPosXZ(veinPos.x, veinPos.z);
@@ -613,7 +604,6 @@ namespace CollectSys {
             Object *MapObjectInfo = objInfo->get_field_object<Object *>("MapObjectInfo");
             if (!MapObjectInfo) continue;
 
-
             int ResourceId = MapObjectInfo->invoke_method<int>("get_ResourceId");
             int SpawnPointId = MapObjectInfo->invoke_method<int>("get_SpawnPointId");
             uint8_t Step = MapObjectInfo->invoke_method<uint8_t>("get_Step");
@@ -625,7 +615,6 @@ namespace CollectSys {
                 blockSpawnPointId.end()) {
                 continue; // Bỏ qua các góc lag
             }
-
 
             Object *SpawnObjectList = _container->get_Item(ResourceId);
             if (!SpawnObjectList) continue;
@@ -680,7 +669,6 @@ namespace CollectSys {
                         themBlock(objInfo);
                         return false;
                     }
-
 
                     return true; // Mỏ hợp lệ
                 }

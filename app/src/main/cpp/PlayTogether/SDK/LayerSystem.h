@@ -18,5 +18,4 @@ namespace LayerSystem {
     void Update();
 }
 
-
 #endif //IL2CPP_PLAY_LAYERSYSTEM_H

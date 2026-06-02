@@ -39,5 +39,4 @@ private:
     bool              active_{false};
 };
 
-
 #endif //PLAY_FISHLOGGER_H

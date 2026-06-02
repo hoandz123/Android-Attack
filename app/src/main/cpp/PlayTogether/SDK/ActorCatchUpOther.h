@@ -18,10 +18,8 @@ namespace ActorCatchUpOther {
         End = 4,
     };
 
-
     extern void (*old_OnUpdate)(Object*);
     void OnUpdate(Object* instance);
 }
-
 
 #endif //IL2CPP_PLAY_ACTORCATCHUPOTHER_H

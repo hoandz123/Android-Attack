@@ -11,7 +11,6 @@
 #include <dlfcn.h>
 #include "API/Il2CppApi.h"
 
-
 namespace InsectSys {
     extern bool isStopDiTrenKhong;
     extern bool isDebug;
@@ -40,7 +39,6 @@ namespace InsectSys {
         SellComplete,
     };
 
-
     extern std::unordered_set<void *> blacklist;
 
     void addToBlacklist(void *ptr);
@@ -54,7 +52,6 @@ namespace InsectSys {
     extern Object *currentCard;
     extern int targetMapId;
     extern Vector3 posTarget;
-
 
     void set_Position(Vector3 pos);
     bool DichChuyenBo();

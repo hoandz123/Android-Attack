@@ -26,7 +26,6 @@
 #include <vector>
 #include <random>
 
-
 namespace InsectSys {
     bool isStopDiTrenKhong = false;
     bool isDebug = true;
@@ -48,7 +47,6 @@ namespace InsectSys {
     Object *currentCard = nullptr;
     int targetMapId = 0;
     Vector3 posTarget = Vector3::zero();
-
 
     std::map<int, std::vector<Vector3>> posList = {
             {1001, // Plaza
@@ -280,7 +278,6 @@ namespace InsectSys {
                 //                        insectSystem->set_field_value("_spawnSeq", 0);
                 //                    }
 
-
                 auto itttt = insect.DSMapBo.find(1501);
                 if (itttt != insect.DSMapBo.end()) {
                     itttt->second = false;
@@ -459,7 +456,6 @@ namespace InsectSys {
                 continue;
             }
 
-
             int ResourceId = MapObjectInfo->invoke_method<int>("get_ResourceId");
             int SpawnPointId = MapObjectInfo->invoke_method<int>("get_SpawnPointId");
             uint8_t Step = MapObjectInfo->invoke_method<uint8_t>("get_Step");
@@ -473,7 +469,6 @@ namespace InsectSys {
                 blockSpawnPointId.end()) {
                 continue; // Bỏ qua các góc lag
             }
-
 
             Object *SpawnObjectList = _container->get_Item(ResourceId);
             if (!SpawnObjectList)
@@ -598,7 +593,6 @@ namespace InsectSys {
                 continue;
             }
 
-
             int ResourceId = MapObjectInfo->invoke_method<int>("get_ResourceId");
             int SpawnPointId = MapObjectInfo->invoke_method<int>("get_SpawnPointId");
             uint8_t Step = MapObjectInfo->invoke_method<uint8_t>("get_Step");
@@ -612,7 +606,6 @@ namespace InsectSys {
                 blockSpawnPointId.end()) {
                 continue; // Bỏ qua các góc lag
             }
-
 
             Object *SpawnObjectList = _container->get_Item(ResourceId);
             if (!SpawnObjectList)
@@ -719,7 +712,6 @@ namespace InsectSys {
 
             Vector3 pos = controller->invoke_method<Vector3>("get_DetectTargetPos");
 
-
             if (pos.y < 0.01f || pos.y >= cfg.conTrungCachMatDat) {
                 continue;
             }
@@ -728,7 +720,6 @@ namespace InsectSys {
         }
         return nullptr;
     }
-
 
     bool TeleportToInsect() {
         if (!currentInsect || !isValidInsect(currentInsect)) {
@@ -817,7 +808,6 @@ namespace InsectSys {
             return false;
         }
 
-
         for (int i = 0; i < n; ++i) {
             Object *info = insectList->get_item(i);
             if (!info) {
@@ -897,7 +887,6 @@ namespace InsectSys {
                 //                    continue;
                 //                }
 
-
                 if (isDebug)
                     LOGI("isValidInsect: Côn trùng hợp lệ (%s)", name.c_str());
                 return true; // Côn trùng hợp lệ
@@ -907,7 +896,6 @@ namespace InsectSys {
             LOGE("isValidInsect: Không tìm thấy côn trùng hợp lệ trong danh sách");
         return false; // Không tìm thấy côn trùng hợp lệ
     }
-
 
     void set_Position(Vector3 pos) {
         if (!currentInsect) {

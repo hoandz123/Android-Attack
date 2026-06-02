@@ -320,7 +320,6 @@ namespace AutoTreasure {
         myActor = actorInstance;
         if (!myActor) return;
 
-
         long long now = Tools::getSystemMilliseconds();
         float dt = 0.016f;
         if (lastUpdateMs > 0) {

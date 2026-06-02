@@ -6,9 +6,7 @@
 #ifndef IL2CPP_PLAY_KINEMATICCHARACTERMOTOR_H
 #define IL2CPP_PLAY_KINEMATICCHARACTERMOTOR_H
 
-
 #include <API/Il2CppApi.h>
-
 
 namespace KinematicCharacterMotor { //Dịch chuyển
     Class *get_class();
@@ -16,7 +14,6 @@ namespace KinematicCharacterMotor { //Dịch chuyển
     Object *get_transform();
     Vector3 get_TransientPosition();
     void set_TransientPosition(Vector3 position);
-
 
     extern void (*old_UpdatePhase1)(Object *instance, float deltaTime);
     void UpdatePhase1(Object *instance, float deltaTime);
