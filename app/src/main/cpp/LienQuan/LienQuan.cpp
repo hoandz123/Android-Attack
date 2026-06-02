@@ -1,0 +1,36 @@
+#include <imgui.h>
+#include <Includes/obfuscate.h>
+#include <ModUi.hpp>
+#include <Tools/Tools.h>
+
+#define LOG_TAG OBF("AttackPlugin")
+#include <Includes/Logger.h>
+
+namespace lienquan {
+
+const char* kPackage = OBF("com.garena.game.kgvn");
+
+static void DrawMainTab() {
+    if (ImGui::CollapsingHeader(OBF("Liên Quân"), ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::TextUnformatted(OBF("Menu Liên Quân — thêm tab/feature tại đây."));
+        static bool aimDemo = false;
+        ImGui::Checkbox(OBF("Aim assist (demo)"), &aimDemo);
+        static bool mapHackDemo = false;
+        ImGui::Checkbox(OBF("Map hack (demo)"), &mapHackDemo);
+    }
+}
+
+static void InitHooks() {
+    LOGI(OBF("[LienQuan] InitHooks"));
+    // HOOK_LIB(OBF("libil2cpp.so"), OBF("0x0"), hook_Foo, old_Foo);
+}
+
+void Activate() {
+    InitHooks();
+    modui::AppUi ui{};
+    ui.set_window_title(OBF("Liên Quân##modui_shell"));
+    ui.add_tab(OBF("main"), OBF("Chính"), DrawMainTab);
+    modui::SetAppUi(ui);
+}
+
+} // namespace lienquan

@@ -71,6 +71,9 @@ android {
         create("activitytracker") {
             headers = "src/main/cpp"
         }
+        create("tools") {
+            headers = "src/main/cpp/Tools"
+        }
     }
 
     externalNativeBuild {

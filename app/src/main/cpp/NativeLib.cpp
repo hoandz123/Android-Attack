@@ -1,6 +1,9 @@
 #include <curl/curl.h>
 #include <jni.h>
+#include <string>
+#include "Games.hpp"
 #include "Menu.hpp"
+#include <Tools/Tools.h>
 
 #define LOG_TAG OBF("AttackPlugin")
 #include <Includes/Logger.h>
@@ -22,7 +25,11 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
     if (!dex_loader::Init(vm, embedded_dex::data, embedded_dex::size)) return JNI_ERR;
     if (!activity_tracker::Init(vm)) return JNI_ERR;
     if (!modui::Init()) return JNI_ERR;
-    appui::RegisterMenu();
+    std::string pkg = Tools::GetPackageName();
+    LOGI(OBF("package=%s"), pkg.c_str());
+    if (pkg == lienquan::kPackage) lienquan::Activate();
+    else if (pkg == playtogether::kPackage) playtogether::Activate();
+    else appui::RegisterMenu();
     LOGI(OBF("curl %s, mod-ui ready, page=%ld"), curl_version(), (long) _SYS_PAGE_SIZE_);
     s_plugin_ready = true;
     return JNI_VERSION_1_6;

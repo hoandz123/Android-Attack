@@ -6,7 +6,7 @@ find_package(mod-ui REQUIRED CONFIG)
 
 include(${NATIVE_CORE_CPP}/cmake/PrefabStatic.cmake)
 
-add_library(attack SHARED NativeLib.cpp Menu.cpp)
+add_library(attack SHARED NativeLib.cpp Menu.cpp LienQuan/LienQuan.cpp PlayTogether/PlayTogether.cpp)
 if(EMBEDDED_DEX_DIR)
     target_include_directories(attack PRIVATE "${EMBEDDED_DEX_DIR}")
     set(_embed_hpp "${EMBEDDED_DEX_DIR}/embedded_dex.hpp")
@@ -26,6 +26,8 @@ find_library(GLESv3-lib GLESv3)
 
 target_include_directories(attack PRIVATE
     ${NATIVE_CORE_CPP}
+    ${NATIVE_CORE_CPP}/Includes
+    ${NATIVE_CORE_CPP}/Tools
     ${NATIVE_CORE_CPP}/imgui
     ${NATIVE_CORE_CPP}/imgui/backends)
 
@@ -45,7 +47,7 @@ target_link_libraries(attack PRIVATE
 )
 
 link_prefab_static(attack ${MOD_UI_PREFAB} modui)
-link_prefab_static(attack ${NATIVE_CORE_PREFAB} imgui jnihelper dexloader activitytracker httpclient filemanager)
+link_prefab_static(attack ${NATIVE_CORE_PREFAB} imgui jnihelper dexloader activitytracker httpclient filemanager tools)
 link_native_core_prebuilts(attack ${NATIVE_CORE_CPP})
 
 target_compile_features(attack PRIVATE cxx_std_20)
