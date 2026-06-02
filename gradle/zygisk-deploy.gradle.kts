@@ -108,12 +108,14 @@ tasks.register("deployZygiskDebug") {
                 logger.warn("adb push that bai: ${push.second}")
                 return@doLast
             }
-            val shellCmd =
-                "cp /data/local/tmp/libattack.so $targetPath; " +
-                    "chmod 644 $targetPath; " +
-                    "chcon u:object_r:app_data_file:s0 $targetPath"
-            val copy = runCmd("adb", "shell", "su", "-c", shellCmd)
-            if (copy.first != 0) logger.warn("su cp/chcon that bai: ${copy.second}") else logger.lifecycle("Da copy payload -> $targetPath")
+            val deploy = runCmd(
+                "adb", "shell", "su", "-c",
+                "cp /data/local/tmp/libattack.so $targetPath || exit 1; " +
+                    "chmod 644 $targetPath 2>/dev/null; " +
+                    "[ \$(getenforce) = Enforcing ] && chcon u:object_r:app_data_file:s0 $targetPath 2>/dev/null; true",
+            )
+            if (deploy.first != 0) logger.warn("su cp that bai: ${deploy.second}")
+            else logger.lifecycle("Da copy payload -> $targetPath")
             runCmd("adb", "shell", "am", "force-stop", targetPkg)
             val launch = runCmd("adb", "shell", "monkey", "-p", targetPkg, "-c", "android.intent.category.LAUNCHER", "1")
             if (launch.first != 0) logger.warn("monkey launch that bai: ${launch.second}") else logger.lifecycle("Da mo lai $targetPkg")
