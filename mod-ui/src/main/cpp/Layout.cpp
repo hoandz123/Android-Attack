@@ -30,9 +30,9 @@ bool DisplayMetricsReady() { return g_metrics_ready; }
 
 void ResetInitialLayout() { g_initial_layout_done = false; }
 
-bool ApplyInitialLayout() {
+bool ApplyInitialLayout(const ImVec2 *size_px) {
     if (!g_metrics_ready || g_initial_layout_done) return false;
-    const ImVec2 size = MenuWindowSize();
+    const ImVec2 size = size_px ? *size_px : MenuWindowSize();
     ImGui::SetNextWindowPos(MenuWindowPos(size), ImGuiCond_Always);
     ImGui::SetNextWindowSize(size, ImGuiCond_Always);
     g_initial_layout_done = true;

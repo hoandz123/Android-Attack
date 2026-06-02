@@ -1,5 +1,7 @@
 #pragma once
 
+#include <imgui.h>
+
 namespace modui {
 
 using DrawTabFn = void (*)();
@@ -18,6 +20,9 @@ struct AppUi {
 
     MenuTab tabs[kMaxTabs]{};
     int tab_count = 0;
+
+    /** Kích thước menu (dp). {0,0} = dùng mặc định shell. */
+    ImVec2 menu_size{0.f, 0.f};
 
     bool set_window_title(const char *title) {
         if (!title || !title[0]) return false;

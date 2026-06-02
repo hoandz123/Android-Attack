@@ -21,7 +21,7 @@ float GetDisplayDensity();
 float DpToPx(float dp);
 bool DisplayMetricsReady();
 void ResetInitialLayout();
-bool ApplyInitialLayout();
+bool ApplyInitialLayout(const ImVec2 *size_px = nullptr);
 void ApplyResizeConstraints();
 ImVec2 MenuWindowSize();
 ImVec2 MenuWindowPos(const ImVec2 &window_size);

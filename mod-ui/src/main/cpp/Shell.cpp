@@ -24,6 +24,8 @@ constexpr float kPanelGapDp = 6.f;
 constexpr float kFabDp = 56.f;
 constexpr float kFabMarginDp = 28.f;
 constexpr float kFabEdgePadDp = 14.f;
+constexpr float kDefaultMenuWidthDp = 624.f;
+constexpr float kDefaultMenuHeightDp = 442.f;
 constexpr int kMaxTabAnim = 16;
 constexpr float kAnimSpeed = 16.f;
 
@@ -61,6 +63,27 @@ float SidebarWidth(float content_w) {
     const float min_w = DpToPx(kSidebarMinDp);
     const float frac_w = content_w * kSidebarWidthFrac;
     return std::max(min_w, frac_w);
+}
+
+ImVec2 ResolveMenuWindowSize(const AppUi &ui) {
+    const MenuLayoutConfig &cfg = GetMenuLayout();
+    float w_dp = kDefaultMenuWidthDp;
+    float h_dp = kDefaultMenuHeightDp;
+    if (ui.menu_size.x > 0.f && ui.menu_size.y > 0.f) {
+        w_dp = ui.menu_size.x;
+        h_dp = ui.menu_size.y;
+    }
+    const ImGuiViewport *vp = ImGui::GetMainViewport();
+    const ImVec2 work = vp->WorkSize;
+    float w = DpToPx(w_dp);
+    float h = DpToPx(h_dp);
+    const float min_w = DpToPx(cfg.min_width_dp);
+    const float min_h = DpToPx(cfg.min_height_dp);
+    const float max_w = work.x * cfg.max_width_screen;
+    const float max_h = work.y * cfg.max_height_screen;
+    w = std::clamp(w, min_w, max_w);
+    h = std::clamp(h, min_h, max_h);
+    return ImVec2(w, h);
 }
 
 bool DrawSidebarTabRibbon(int index, const char *label, bool selected, float row_h,
@@ -220,8 +243,9 @@ void DrawMenuShell(const AppUi &ui) {
         return;
     }
 
+    const ImVec2 menu_sz = ResolveMenuWindowSize(ui);
     ApplyResizeConstraints();
-    ApplyInitialLayout();
+    ApplyInitialLayout(&menu_sz);
 
     static bool s_shell_open = true;
 

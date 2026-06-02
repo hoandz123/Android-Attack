@@ -27,6 +27,7 @@ static void InitHooks() {
 void Activate() {
     InitHooks();
     modui::AppUi ui{};
+    ui.menu_size = ImVec2(480.f, 340.f);
     ui.set_window_title(OBF("Liên Quân##modui_shell"));
     ui.add_tab(OBF("main"), OBF("Chính"), DrawMainTab);
     modui::SetAppUi(ui);

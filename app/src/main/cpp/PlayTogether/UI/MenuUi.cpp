@@ -695,6 +695,7 @@ static void DrawTabSettings() {
 
 void SetupMenuUi() {
     modui::AppUi ui{};
+    ui.menu_size = ImVec2(720.f, 520.f);
     ui.set_window_title(OBF("Play Together##modui_shell"));
     ui.add_tab(OBF("chung"), OBF("Chung"), DrawTabChung);
     ui.add_tab(OBF("cauca"), OBF("Câu Cá"), DrawTabCauCa);
