@@ -6,7 +6,6 @@
 #define IL2CPP_PLAY_MINIGAMETOWEROFHELL_H
 #include "API/Il2CppApi.h"
 
-
 namespace MiniGameTowerOfHell {
     Class *get_class();
     void init();
@@ -14,6 +13,5 @@ namespace MiniGameTowerOfHell {
     extern void (*old_Update)(Object *instance);
     void Update(Object *instance);
 }
-
 
 #endif //IL2CPP_PLAY_MINIGAMETOWEROFHELL_H

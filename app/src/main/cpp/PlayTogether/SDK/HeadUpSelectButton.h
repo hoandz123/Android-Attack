@@ -16,5 +16,4 @@ namespace HeadUpSelectButton {
     void UpdatePosition(Object *instance);
 }
 
-
 #endif //IL2CPP_PLAY_HEADUPSELECTBUTTON_H

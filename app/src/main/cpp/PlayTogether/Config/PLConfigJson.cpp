@@ -287,7 +287,6 @@ void from_json(const nlohmann::json& j, PLConfig::FarmConfig& cfg) {
     if (j.contains("esp")) j["esp"].get_to(cfg.esp);
 }
 
-
 void to_json(nlohmann::json& j, const PLConfig::InsectConfig::ESP& esp) {
     j = nlohmann::json{
         {"isEnable", esp.isEnable},

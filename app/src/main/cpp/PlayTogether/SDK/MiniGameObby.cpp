@@ -84,7 +84,6 @@ namespace MiniGameObby {
             if (cacheHeadup) cacheHeadup->invoke_method<void>("OnClick_BoxOpen");
         }
 
-
         static long long next_time = 0;
         if (next_time == 0) {
         } else if (Tools::getSystemMilliseconds() - next_time >= (obby.isEnable ? obby.delayNextPoint : ThapGa.delayNextPoint) + (rand() % 3 + 3) * 1000) { // wait next new point (random 3-5s)
@@ -93,10 +92,8 @@ namespace MiniGameObby {
             return;
         }
 
-
         auto manager = instance->invoke_method<Object *>("get_obbyStageManager");
         if (!manager) return;
-
 
         List<Object *> *points = manager->get_field_object<List<Object *> *>("_checkPointList"); // tổng các points trong game
         if (!points) return;

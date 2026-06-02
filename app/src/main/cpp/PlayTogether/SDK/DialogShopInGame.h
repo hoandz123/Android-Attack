@@ -15,5 +15,4 @@ namespace DialogShopInGame {
     void Update(Object *instance);
 }
 
-
 #endif //IL2CPP_PLAY_DIALOGSHOPINGAME_H

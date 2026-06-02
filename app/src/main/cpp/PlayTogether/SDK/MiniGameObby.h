@@ -14,5 +14,4 @@ namespace MiniGameObby {
     void Update(Object* instance);
 }
 
-
 #endif //IL2CPP_PLAY_MINIGAMEOBBY_H

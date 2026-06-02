@@ -23,5 +23,4 @@ namespace MissionSystem {
     void Update();
 }
 
-
 #endif //IL2CPP_PLAY_MISSIONSYSTEM_H

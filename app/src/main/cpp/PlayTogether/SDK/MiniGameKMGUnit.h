@@ -11,5 +11,4 @@ namespace MiniGameKMGUnit {
     void init();
 }
 
-
 #endif //IL2CPP_PLAY_MINIGAMEKMGUNIT_H

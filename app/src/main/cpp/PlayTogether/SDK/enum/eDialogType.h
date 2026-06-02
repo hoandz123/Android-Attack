@@ -343,5 +343,4 @@ enum class eDialogType : int {
     Max = 30301                     // Giá trị tối đa (kết thúc enum)
 };
 
-
 #endif //PLAY_PRO_MAX_EDIALOGTYPE_H

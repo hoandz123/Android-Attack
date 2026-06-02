@@ -21,7 +21,6 @@ namespace MiniGameKMGUnit {
         return FindClass("PlayTogether.MiniGame.MiniGameKMGUnit");
     }
 
-
     void (*old_Update)(...);
 
     void Update(Object *instance) {
@@ -71,7 +70,6 @@ namespace MiniGameKMGUnit {
                 //Goal_Model
                 //Finish_line
                 //Stage_Goal
-
 
                 if (KMGTableID == 120032) { //Trèo lên tòa nhà
                     RATE_LIMIT(Party.delayNextPoint);
@@ -232,7 +230,6 @@ namespace MiniGameKMGUnit {
                         break;
                 }
 
-
                 break;
             }
             case KnockOutMiniGame_Type::StealCrown: {
@@ -329,7 +326,6 @@ namespace MiniGameKMGUnit {
                 break;
         }
     }
-
 
     void init() {
         Tools::Hook(get_class()->find_method("Update")->methodPointer, (void *) Update, (void **) &old_Update);

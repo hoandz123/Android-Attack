@@ -14,5 +14,4 @@ namespace EventPickUpItemManager {
     void init();
 }
 
-
 #endif //IL2CPP_PLAY_EVENTPICKUPITEMMANAGER_H

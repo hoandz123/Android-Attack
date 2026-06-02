@@ -176,8 +176,6 @@ namespace DialogUnit {
                 LOGI("DialogShow: type=%s", FindClass("eDialogType")->get_enum_name(type).c_str());
                 break;
         }
-
-
     }
 }
 

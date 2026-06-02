@@ -16,5 +16,4 @@ namespace ActorCatchUpPlayer {
     void OnUpdate(Object* instance);
 }
 
-
 #endif //IL2CPP_PLAY_ACTORCATCHUPPLAYER_H

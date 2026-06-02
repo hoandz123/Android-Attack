@@ -18,7 +18,6 @@
 
 namespace Monster {
 
-
     eAutoMonster curState = eAutoMonster::None;
     List<Object*>*currentList = nullptr;
     Object*currentMonster = nullptr;
@@ -104,7 +103,6 @@ namespace Monster {
                     curState = eAutoMonster::None;
                     return;
                 }
-
 
                 auto& ds = gPLConfig.monster.DSMapMonster;
                 auto it = ds.upper_bound(mapID);

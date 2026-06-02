@@ -30,5 +30,4 @@ namespace Monster {
     void Update();
 }
 
-
 #endif //IL2CPP_PLAY_AUTOMONSTER_H

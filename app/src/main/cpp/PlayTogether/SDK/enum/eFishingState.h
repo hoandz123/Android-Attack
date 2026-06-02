@@ -33,5 +33,4 @@ enum class eFishingState {
     BigFish_StunRecovery = 25// Cá lớn hồi phục sau khi choáng
 };
 
-
 #endif //PLAY_PRO_MAX_EFISHINGSTATE_H

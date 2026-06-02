@@ -12,5 +12,4 @@ namespace TableFishingDifficultyImpl {
     Object* GetTableData(int sid);
 }
 
-
 #endif //IL2CPP_PLAY_TABLEFISHINGDIFFICULTYIMPL_H

@@ -185,7 +185,6 @@ std::string base64_decode(std::string_view s, bool remove_linebreaks) {
   return decode(s, remove_linebreaks);
 }
 
-
 #endif  // __cplusplus >= 201703L
 
 std::string HMG_ENCV2(const std::string& input){

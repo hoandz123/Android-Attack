@@ -41,6 +41,4 @@ namespace EventPickUpItemManager {
         Tools::Hook(get_class()->find_method("InitializeEventPickUpManager")->methodPointer, (void *) Start, (void **) &old_Start);
         Tools::Hook(get_class()->find_method("OnDisable")->methodPointer, (void *) OnDisable, (void **) &old_OnDisable);
     }
-
-
 }

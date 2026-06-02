@@ -6,7 +6,6 @@
 #ifndef PLAY_ETABLETYPE_H
 #define PLAY_ETABLETYPE_H
 
-
 enum class eTableType : int {
     ResourcePath = 0,
     Sound = 1,

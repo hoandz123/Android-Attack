@@ -19,5 +19,4 @@ enum class eNickNameHeadUpTag : uint32_t {
     All          = 4294967295u
 };
 
-
 #endif //PLAY_ENICKNAMEHEADUPTAG_H

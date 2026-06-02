@@ -50,7 +50,6 @@ namespace InsectSystem { //Bắt côn trùng
         if (!instance) return;
         auto &insect = gPLConfig.insect;
 
-
         static MemoryPatch DetectProcess = MemoryPatch::createWithHex((uintptr_t) FindClass("InsectController")->find_method("DetectProcess")->methodPointer, HEX_NOP);
         static MemoryPatch SenseCheck = MemoryPatch::createWithHex((uintptr_t) FindClass("InsectController")->find_method("SenseCheck")->methodPointer, HEX_NOP);
         if (SenseCheck.isValid() && DetectProcess.isValid()) {
@@ -70,7 +69,6 @@ namespace InsectSystem { //Bắt côn trùng
         if (!camera || !camera->isValid()) {
             return;
         }
-
 
         List<Object *> *_liveInsectList = instance->get_field_object<List<Object *> *>("_liveInsectList");
         if (!_liveInsectList) return;
@@ -100,7 +98,6 @@ namespace InsectSystem { //Bắt côn trùng
                 }
 
                 if (!control->get_field_value<bool>("IsVisible")) continue;
-
 
                 std::string name = NguiExtensions::GetNameIDText(id);
                 if (name.empty()) {
@@ -149,10 +146,7 @@ namespace InsectSystem { //Bắt côn trùng
 
             PLConfig::InsectConfig::dateResetInsect = buffer;
 
-
             InsectSys::Update(_liveInsectList);
         }
-
-
     }
 }

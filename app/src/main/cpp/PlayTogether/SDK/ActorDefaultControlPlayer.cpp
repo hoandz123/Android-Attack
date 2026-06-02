@@ -152,7 +152,6 @@ namespace ActorDefaultControlPlayer { //Bóng cá
         return 0;
     }
 
-
     void Update() {
         RATE_LIMIT(60);
         Object *instance = ActorControl::my_Player;
@@ -196,7 +195,6 @@ namespace ActorDefaultControlPlayer { //Bóng cá
                         }
                 );
 
-
                 if ((isOffShadow && gPLConfig.fishing.isLocID && !isFilterID) ||
                     (!isOffShadow && !gPLConfig.fishing.locBong[PLConfig::FishingConfig::curFishShadowLevel - 1] && !isFilterID)) {
                     DialogJoyStick::OnPress_JumpButton();
@@ -223,7 +221,5 @@ namespace ActorDefaultControlPlayer { //Bóng cá
                 break;
         }
     }
-
-
 
 }
