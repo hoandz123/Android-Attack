@@ -11,7 +11,9 @@
 #include <vector>
 #include "Tools.h"
 #include "Logger.h"
+#if defined(__aarch64__)
 #include "And64Hook/And64Hook.hpp"
+#endif
 #include "xdl/xdl.h"
 #include "Dobby/dobby.h"
 
@@ -25,8 +27,11 @@ void Tools::Hook(void *target, void *replacement, void **original) {
     unsigned long page_size = sysconf(_SC_PAGESIZE);
     unsigned long size = page_size * sizeof(uintptr_t);
     if (mprotect((void *) ((uintptr_t) target - ((uintptr_t) target % page_size) - page_size), (size_t) size, PROT_EXEC | PROT_READ | PROT_WRITE) == 0) {
-        // Sử dụng DobbyHook (đã có static lib cho cả armeabi-v7a và arm64-v8a)
+#if defined(__aarch64__)
+        A64Hook(target, replacement, original);
+#else
         DobbyHook(target, replacement, original);
+#endif
     }
 }
 uintptr_t Tools::GetBaseAddress(const char *name) {

@@ -121,14 +121,6 @@ target_include_directories(xhook PUBLIC ${D}/xhook)
 target_link_libraries(xhook PUBLIC ${log-lib})
 
 # =============================================================================
-# And64Hook — inline hook arm64 (A64HookFunction)
-# =============================================================================
-add_library(And64Hook STATIC And64Hook/And64Hook.cpp)
-target_include_directories(And64Hook PUBLIC ${D}/And64Hook)
-target_compile_features(And64Hook PUBLIC cxx_std_17)
-target_link_libraries(And64Hook PUBLIC ${log-lib})
-
-# =============================================================================
 # AntiLibPatch — chống vá .text qua ElfImg (Logger/obfuscate ở Includes/)
 # =============================================================================
 add_library(antilibpatch STATIC
@@ -171,11 +163,16 @@ target_compile_features(gameapi PUBLIC cxx_std_20)
 target_link_libraries(gameapi PUBLIC xdl lgl tools ${log-lib})
 
 # =============================================================================
-# Tools — hook/memory helpers: DobbyHook, maps base/end, pkg+apk path, sleep
+# Tools — hook/memory helpers: A64Hook (arm64) / DobbyHook (ABI khác), maps, sleep
 #   includes "Logger.h"/<obfuscate.h> (${D}/Includes), And64Hook/xdl/Dobby (${D})
 # =============================================================================
-add_library(tools STATIC Tools/Tools.cpp)
-target_include_directories(tools PUBLIC ${D}/Tools ${D} ${D}/Includes)
+if(ANDROID_ABI STREQUAL "arm64-v8a")
+    add_library(tools STATIC Tools/Tools.cpp And64Hook/And64Hook.cpp)
+    target_include_directories(tools PUBLIC ${D}/Tools ${D} ${D}/Includes ${D}/And64Hook)
+else()
+    add_library(tools STATIC Tools/Tools.cpp)
+    target_include_directories(tools PUBLIC ${D}/Tools ${D} ${D}/Includes)
+endif()
 target_compile_features(tools PUBLIC cxx_std_20)
 target_link_libraries(tools PUBLIC dobby lgl ${log-lib})
 
