@@ -4,3 +4,4 @@ plugins {
 }
 
 apply(from = "gradle/copy-build-outputs.gradle.kts")
+apply(from = "gradle/zygisk-deploy.gradle.kts")

@@ -2,12 +2,36 @@ cmake_minimum_required(VERSION 3.22.1)
 
 project("loader")
 
-add_library(loader SHARED Loader.cpp)
+file(TO_CMAKE_PATH "${NATIVE_CORE_CPP}" _nc)
+set(_dobby "${_nc}/dobby/${ANDROID_ABI}/libdobby.a")
+if(NOT EXISTS ${_dobby})
+    message(FATAL_ERROR "Missing ${_dobby}")
+endif()
+
+add_library(loader SHARED
+    Loader.cpp
+    Zygisk/zygisk.cpp
+    ${_nc}/IncludesLink.cpp
+    ${_nc}/Includes/oxorany.cpp
+    ${_nc}/dobby/DobbyLink.cpp
+    ${_nc}/xdl/xdl.c
+    ${_nc}/xdl/xdl_iterate.c
+    ${_nc}/xdl/xdl_linker.c
+    ${_nc}/xdl/xdl_lzma.c
+    ${_nc}/xdl/xdl_util.c
+)
 
 find_library(log-lib log)
 
-target_include_directories(loader PRIVATE ${NATIVE_CORE_CPP})
-target_link_libraries(loader ${log-lib} dl)
+target_include_directories(loader PRIVATE
+    ${_nc}
+    ${_nc}/Includes
+    ${_nc}/xdl
+    ${_nc}/dobby
+    ${CMAKE_CURRENT_SOURCE_DIR}/Zygisk
+)
+
+target_link_libraries(loader ${log-lib} dl ${_dobby})
 
 target_compile_features(loader PRIVATE cxx_std_20)
 
