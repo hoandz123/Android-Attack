@@ -33,6 +33,9 @@
 #include "UnityEngine/Transform.h"
 #include "Tools/Tools.h"
 #include "PlayLog.h"
+#include "UI/EspGUI.h"
+#include "UI/GameViewport.h"
+#include <imgui.h>
 
 namespace AutoTreasure {
 
@@ -610,7 +613,41 @@ namespace AutoTreasure {
     }
 
     void DrawESP() {
-        // TODO G5: ESP render AutoTreasure line/tooltip
+        if (curState == eAutoTreasure::None) return;
+        if (!currentTarget.instance) return;
+        auto &cfg = gPLConfig.miniGame.digging;
+        if (!cfg.isEnable || !cfg.isAutoDigTreasure) return;
+        UnityEngine::Camera *camera = UnityEngine::Camera::get_main();
+        if (!camera || !camera->isValid()) return;
+        Vector3 playerPos = KinematicCharacterMotor::get_TransientPosition();
+        Vector3 playerScreen = camera->WorldToScreenPoint(playerPos);
+        Vector3 targetScreen = camera->WorldToScreenPoint(currentTarget.position);
+        if (playerScreen.z <= 0 && targetScreen.z <= 0) return;
+        int glWidth = GameViewport::width();
+        int glHeight = GameViewport::height();
+        float scaleX = (float) ImGui::GetIO().DisplaySize.x / (float) glWidth;
+        float scaleY = (float) ImGui::GetIO().DisplaySize.y / (float) glHeight;
+        ImVec2 pScreen(playerScreen.x * scaleX, ImGui::GetIO().DisplaySize.y - (playerScreen.y * scaleY));
+        ImVec2 tScreen(targetScreen.x * scaleX, ImGui::GetIO().DisplaySize.y - (targetScreen.y * scaleY));
+        ImVec4 lineColor;
+        const char *stateText = "";
+        switch (curState) {
+            case eAutoTreasure::FindTreasure: lineColor = ImVec4(1.f, 1.f, 0.3f, 0.8f); stateText = OBF("Finding"); break;
+            case eAutoTreasure::MovingToTreasure: lineColor = ImVec4(0.3f, 1.f, 0.3f, 0.9f); stateText = OBF("Moving"); break;
+            case eAutoTreasure::Digging: lineColor = ImVec4(1.f, 0.5f, 0.f, 0.9f); stateText = OBF("Digging"); break;
+            case eAutoTreasure::BuyShovel: lineColor = ImVec4(0.3f, 0.7f, 1.f, 0.8f); stateText = OBF("BuyShovel"); break;
+            case eAutoTreasure::RandomWalk: lineColor = ImVec4(0.7f, 0.7f, 0.7f, 0.6f); stateText = OBF("RandomWalk"); break;
+            case eAutoTreasure::Resting: lineColor = ImVec4(0.5f, 0.5f, 1.f, 0.6f); stateText = OBF("Resting"); break;
+            case eAutoTreasure::Unstuck: lineColor = ImVec4(1.f, 0.2f, 0.2f, 0.9f); stateText = OBF("Unstuck"); break;
+            default: lineColor = ImVec4(1.f, 1.f, 1.f, 0.5f); stateText = ""; break;
+        }
+        if (targetScreen.z > 0) {
+            if (curState == eAutoTreasure::MovingToTreasure || curState == eAutoTreasure::Digging || curState == eAutoTreasure::Unstuck) EspGUI::DrawLine(pScreen, tScreen, 2.f, lineColor);
+            float dist = GetDistanceXZ(playerPos, currentTarget.position);
+            char label[64];
+            snprintf(label, sizeof(label), OBF("[%s] %.1fm"), stateText, dist);
+            EspGUI::DrawTooltip(tScreen, label);
+        }
     }
 
 }

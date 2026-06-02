@@ -11,6 +11,10 @@ set(PLAY_TOGETHER_SOURCES
     PlayTogether/HOOK_PLAY/HOOK_PLAY.cpp
     PlayTogether/HOOK_PLAY/AntiCheat.cpp
     PlayTogether/Config/Config.cpp
+    PlayTogether/Config/PLConfigJson.cpp
+    PlayTogether/UI/EspGUI.cpp
+    PlayTogether/UI/DrawRender.cpp
+    PlayTogether/UI/GameViewport.cpp
     PlayTogether/SharedPrefs/SharedPrefs.cpp
     PlayTogether/base64/base64.cpp
     PlayTogether/KhoiPhucTrangThai.cpp
@@ -87,6 +91,7 @@ target_include_directories(attack PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether
     ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether/SDK
     ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether/Config
+    ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether/UI
     ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether/Stubs
     ${NATIVE_CORE_CPP}
     ${NATIVE_CORE_CPP}/Includes

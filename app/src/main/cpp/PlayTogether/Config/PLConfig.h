@@ -18,6 +18,14 @@ struct PLConfig {
 
     inline static std::unordered_map<void *, NPCData> npcMap;
 
+    struct NameAndPos {
+        std::string name;
+        int mapID = 0;
+        Vector3 pos;
+        bool isRandom = false;
+    };
+    std::map<std::string, NameAndPos> viTriCoSan;
+
     struct GeneralConfig {
         bool isInfo = false;
         bool isTeleNpc = true;
@@ -204,6 +212,8 @@ struct PLConfig {
 
     static int GetPlayerMapID();
     static void NextMapPos(int mapID, Vector3 pos);
+    void Load(const std::string &content);
+    std::string GetConfigContent();
 };
 
 PLConfig &GetConfig();
