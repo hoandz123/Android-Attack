@@ -80,6 +80,15 @@ android {
         create("gameapi") {
             headers = "src/main/cpp"
         }
+        create("base64") {
+            headers = "src/main/cpp/Base64"
+        }
+        create("sharedprefs") {
+            headers = "src/main/cpp/SharedPrefs"
+        }
+        create("gameui") {
+            headers = "src/main/cpp/GameUI"
+        }
     }
 
     externalNativeBuild {

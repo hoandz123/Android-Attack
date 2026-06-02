@@ -33,8 +33,8 @@
 #include "UnityEngine/Transform.h"
 #include "Tools/Tools.h"
 #include "PlayLog.h"
-#include "UI/EspGUI.h"
-#include "UI/GameViewport.h"
+#include <GameUI/EspGUI.h>
+#include <GameUI/GameViewport.h>
 #include <imgui.h>
 
 namespace AutoTreasure {

@@ -15,11 +15,7 @@ set(PLAY_TOGETHER_SOURCES
     PlayTogether/Config/PLConfigJson.cpp
     PlayTogether/UI/MenuUi.cpp
     PlayTogether/UI/InfoWindow.cpp
-    PlayTogether/UI/EspGUI.cpp
-    PlayTogether/UI/DrawRender.cpp
-    PlayTogether/UI/GameViewport.cpp
-    PlayTogether/SharedPrefs/SharedPrefs.cpp
-    PlayTogether/base64/base64.cpp
+    DrawRender/DrawRender.cpp
     PlayTogether/KhoiPhucTrangThai.cpp
     PlayTogether/FishLogger.cpp
     PlayTogether/Stubs/AutoCollect.cpp
@@ -122,7 +118,7 @@ target_link_libraries(attack PRIVATE
 )
 
 link_prefab_static(attack ${MOD_UI_PREFAB} modui)
-link_prefab_static(attack ${NATIVE_CORE_PREFAB} imgui jnihelper dexloader activitytracker httpclient filemanager tools xdl gameapi)
+link_prefab_static(attack ${NATIVE_CORE_PREFAB} imgui jnihelper dexloader activitytracker httpclient filemanager tools xdl gameapi base64 sharedprefs gameui)
 link_native_core_prebuilts(attack ${NATIVE_CORE_CPP})
 
 target_compile_features(attack PRIVATE cxx_std_20)

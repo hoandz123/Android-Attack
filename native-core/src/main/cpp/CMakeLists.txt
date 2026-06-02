@@ -178,3 +178,27 @@ add_library(tools STATIC Tools/Tools.cpp)
 target_include_directories(tools PUBLIC ${D}/Tools ${D} ${D}/Includes)
 target_compile_features(tools PUBLIC cxx_std_20)
 target_link_libraries(tools PUBLIC dobby lgl ${log-lib})
+
+# =============================================================================
+# base64 — encode/decode + HMG helpers (#include <Base64/base64.h>)
+# =============================================================================
+add_library(base64 STATIC Base64/base64.cpp)
+target_include_directories(base64 PUBLIC ${D}/Base64 ${D})
+target_compile_features(base64 PUBLIC cxx_std_20)
+target_link_libraries(base64 PUBLIC lgl)
+
+# =============================================================================
+# sharedprefs — file-backed key/value store (#include <SharedPrefs/SharedPrefs.h>)
+# =============================================================================
+add_library(sharedprefs STATIC SharedPrefs/SharedPrefs.cpp)
+target_include_directories(sharedprefs PUBLIC ${D}/SharedPrefs ${D})
+target_compile_features(sharedprefs PUBLIC cxx_std_20)
+target_link_libraries(sharedprefs PUBLIC tools lgl)
+
+# =============================================================================
+# gameui — ESP draw helpers + viewport size (#include <GameUI/...>)
+# =============================================================================
+add_library(gameui STATIC GameUI/EspGUI.cpp GameUI/GameViewport.cpp)
+target_include_directories(gameui PUBLIC ${D}/GameUI ${D}/API ${D})
+target_compile_features(gameui PUBLIC cxx_std_20)
+target_link_libraries(gameui PUBLIC imgui gameapi lgl)

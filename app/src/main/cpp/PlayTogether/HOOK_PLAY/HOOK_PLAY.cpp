@@ -8,11 +8,11 @@
 
 #include "../Stubs/ESPManager.h"
 
-#include "../UI/DrawRender.h"
+#include "DrawRender/DrawRender.h"
 
-#include "../UI/EspGUI.h"
+#include <GameUI/EspGUI.h>
 
-#include "../UI/GameViewport.h"
+#include <GameUI/GameViewport.h>
 
 #include "../RollCongCu.h"
 
