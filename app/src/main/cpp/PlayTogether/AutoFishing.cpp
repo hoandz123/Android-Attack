@@ -26,6 +26,9 @@ struct ResolvedMethods {
     bool hasCatchFishId = false;
     bool hasFailTypeField = false;
     bool hasBigFishHp = false;
+    bool hasFishLevel = false;
+    bool hasFishLeave = false;
+    bool hasFishingMiss = false;
 };
 
 ResolvedMethods g_methods;
@@ -54,6 +57,13 @@ bool g_fishingCountOver = false;
 int g_bigFishHp = 0;
 int g_bigFishHpMax = 0;
 int g_castFailStreak = 0;
+unsigned int g_currentFishLevel = 0;
+int g_currentShadowIndex = 0;
+unsigned int g_currentDifficultyId = 0;
+bool g_skipFishThisCycle = false;
+unsigned int g_skipCycleLevel = 0;
+long long g_lastSkipMs = 0;
+bool g_filterTableWarned = false;
 
 bool isBigFishState(eFishingState state) {
     return (int) state >= (int) eFishingState::BigFish_RaidEnter;
@@ -109,6 +119,9 @@ bool resolveMethods() {
     g_methods.hasCatchFishId = baseCls->find_method(OBF("get_CatchFishID"), 0);
     g_methods.hasFailTypeField = playerCls != nullptr;
     g_methods.hasBigFishHp = fishSysCls && fishSysCls->find_method(OBF("get_BigFishHP"), 0) && fishSysCls->find_method(OBF("get_BigFishHP_Org"), 0);
+    g_methods.hasFishLevel = baseCls->find_method(OBF("get_FishLevel"), 0);
+    g_methods.hasFishLeave = baseCls->find_method(OBF("FishLeave"), 0);
+    g_methods.hasFishingMiss = baseCls->find_method(OBF("FishingMiss"), 0);
     g_methods.ok = hasBase && hasPlayer;
     if (!g_methods.ok) LOGE(OBF("resolveMethods: thiếu method câu cá"));
     return g_methods.ok;
@@ -217,6 +230,89 @@ int readFailType(Object *player) {
     return (int) player->get_field_value<int>(OBF("_fishingFailType"));
 }
 
+bool isFilterEnabled() {
+    return gPLConfig.fishing.filterByShadow || gPLConfig.fishing.filterByLevel;
+}
+
+void resetSkipCycle() {
+    g_skipFishThisCycle = false;
+    g_skipCycleLevel = 0;
+}
+
+bool shouldKeepLevel(unsigned int levelId) {
+    if (!gPLConfig.fishing.filterByLevel) return true;
+    if (!gPLConfig.fishing.keepLevelIds.empty()) {
+        for (unsigned int id : gPLConfig.fishing.keepLevelIds) {
+            if (id == levelId) return true;
+        }
+        return false;
+    }
+    int minL = gPLConfig.fishing.levelMin;
+    int maxL = gPLConfig.fishing.levelMax;
+    if (minL <= 0 && maxL <= 0) return true;
+    if (minL > 0 && (int) levelId < minL) return false;
+    if (maxL > 0 && (int) levelId > maxL) return false;
+    return true;
+}
+
+bool shouldKeepShadow(int shadowIndex) {
+    if (!gPLConfig.fishing.filterByShadow) return true;
+    if (shadowIndex < 1 || shadowIndex > 7) return true;
+    return gPLConfig.fishing.keepShadow[shadowIndex - 1];
+}
+
+void updateCurrentFishInfo(Object *player) {
+    g_currentFishLevel = 0;
+    g_currentShadowIndex = 0;
+    g_currentDifficultyId = 0;
+    if (!player || !g_methods.hasFishLevel) return;
+    unsigned int level = player->invoke_method<unsigned int>(OBF("get_FishLevel"));
+    if (level == 0) level = FishingGameplay::GetCachedCastDifficultyId();
+    if (level == 0) return;
+    g_currentFishLevel = level;
+    int shadowIdx = 0;
+    unsigned int diffId = 0;
+    if (!FishingGameplay::QueryFishDifficulty(level, &shadowIdx, &diffId)) {
+        if (isFilterEnabled() && !g_filterTableWarned) {
+            g_filterTableWarned = true;
+            LOGE(OBF("updateCurrentFishInfo: không resolve FishingDifficulty table"));
+        }
+        return;
+    }
+    g_currentShadowIndex = shadowIdx;
+    g_currentDifficultyId = diffId;
+}
+
+bool shouldKeepCurrentFish() {
+    if (!isFilterEnabled()) return true;
+    if (g_currentFishLevel == 0) return true;
+    if (!shouldKeepLevel(g_currentFishLevel)) return false;
+    if (!shouldKeepShadow(g_currentShadowIndex)) return false;
+    return true;
+}
+
+bool isShadowFilterBlocking() {
+    return isFilterEnabled() && g_skipFishThisCycle && !shouldKeepCurrentFish();
+}
+
+void trySkipUnwantedFish(Object *player, eFishingState state) {
+    if (!isFilterEnabled() || !player) return;
+    if (g_pausedByRare || g_pausedByTarget) return;
+    if (state != eFishingState::Idle && state != eFishingState::Search && state != eFishingState::Hit) return;
+    updateCurrentFishInfo(player);
+    if (shouldKeepCurrentFish()) return;
+    if (g_skipFishThisCycle && g_skipCycleLevel == g_currentFishLevel) return;
+    long long now = Tools::getSystemMilliseconds();
+    if (g_lastSkipMs > 0 && now - g_lastSkipMs < 800) return;
+    if (!canActNow()) return;
+    g_lastSkipMs = now;
+    g_skipFishThisCycle = true;
+    g_skipCycleLevel = g_currentFishLevel;
+    if (state == eFishingState::Hit && g_methods.hasFishingMiss) player->invoke_method<void>(OBF("FishingMiss"));
+    else if (g_methods.hasFishLeave) player->invoke_method<void>(OBF("FishLeave"));
+    LOGD(OBF("Bỏ cá: lv=%u bóng=%s"), g_currentFishLevel, FishingGameplay::ShadowLabelFromIndex(g_currentShadowIndex));
+}
+
 void refreshTelemetry(Object *player, Object *fishingSys, eFishingState state) {
     g_hasFloatPoint = false;
     g_bigFishHp = 0;
@@ -236,6 +332,7 @@ void refreshTelemetry(Object *player, Object *fishingSys, eFishingState state) {
             g_bigFishHpMax = fishingSys->invoke_method<int>(OBF("get_BigFishHP_Org"));
         }
     }
+    if (player && readIsFishing(player) && (state == eFishingState::Idle || state == eFishingState::Search || state == eFishingState::Hit)) updateCurrentFishInfo(player);
 }
 
 void tryStartFishing(Object *player, Object *fishingSys) {
@@ -270,6 +367,7 @@ void tryStartFishing(Object *player, Object *fishingSys) {
 
 void tryFishingHit(Object *player) {
     if (!player || g_pausedByRare || g_pausedByTarget) return;
+    if (isShadowFilterBlocking()) return;
     if (!FishingGameplay::CanPaceAct()) return;
     if (!stateDelayElapsed(gPLConfig.fishing.hitDelayMs)) return;
     if (!canActNow()) return;
@@ -293,6 +391,14 @@ void tryStunHit(Object *player) {
 
 void trackStateChange(eFishingState state, Object *player, Object *fishingSys) {
     if (state == g_lastState) return;
+    if (state == eFishingState::None || state == eFishingState::Casting || state == eFishingState::Fail || state == eFishingState::Miss || state == eFishingState::Catch || state == eFishingState::Finish || state == eFishingState::Boast || state == eFishingState::CastingFail) {
+        resetSkipCycle();
+        if (state == eFishingState::None || state == eFishingState::Casting) {
+            g_currentFishLevel = 0;
+            g_currentShadowIndex = 0;
+            g_currentDifficultyId = 0;
+        }
+    }
     if (state == eFishingState::CastingFail) {
         g_castFailStreak++;
         g_lastFailType = readFailType(player);
@@ -342,13 +448,17 @@ void tickState(Object *player, Object *fishingSys, eFishingState state) {
         case eFishingState::Casting:
         case eFishingState::SearchResult:
         case eFishingState::Idle:
+            trySkipUnwantedFish(player, state);
+            break;
         case eFishingState::Catch:
             break;
         case eFishingState::Search:
-            FishingGameplay::TryFastBite(player, (int) state);
+            trySkipUnwantedFish(player, state);
+            if (!isShadowFilterBlocking()) FishingGameplay::TryFastBite(player, (int) state);
             break;
         case eFishingState::Hit:
-            tryFishingHit(player);
+            trySkipUnwantedFish(player, state);
+            if (!isShadowFilterBlocking()) tryFishingHit(player);
             break;
         case eFishingState::Fighting:
             FishingGameplay::TickPerfectTug(player, fishingSys, (int) state);
@@ -504,7 +614,23 @@ void ResetSessionStats() {
     g_pausedByRare = false;
     g_pausedByTarget = false;
     g_rareAlert = false;
+    g_currentFishLevel = 0;
+    g_currentShadowIndex = 0;
+    g_currentDifficultyId = 0;
+    resetSkipCycle();
     g_sessionStartMs = Tools::getSystemMilliseconds();
+}
+
+unsigned int GetCurrentFishLevel() {
+    return g_currentFishLevel;
+}
+
+int GetCurrentShadowIndex() {
+    return g_currentShadowIndex;
+}
+
+unsigned int GetCurrentDifficultyId() {
+    return g_currentDifficultyId;
 }
 
 }

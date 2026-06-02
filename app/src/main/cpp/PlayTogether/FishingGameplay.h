@@ -19,4 +19,7 @@ namespace FishingGameplay {
     void ClearEarlyCatchDecision();
     bool HasPendingRaid();
     unsigned int GetPendingRaidIdx();
+    unsigned int GetCachedCastDifficultyId();
+    bool QueryFishDifficulty(unsigned int sid, int *outShadowIndex, unsigned int *outDifficultyId);
+    const char *ShadowLabelFromIndex(int index);
 }

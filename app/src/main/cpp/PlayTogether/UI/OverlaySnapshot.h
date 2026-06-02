@@ -38,6 +38,10 @@ struct View {
     int catchesPerHour = 0;
     int successRatePct = 0;
     const char *statusHint = nullptr;
+    unsigned int currentFishLevel = 0;
+    int currentShadowIndex = 0;
+    unsigned int currentDifficultyId = 0;
+    bool shadowFilterActive = false;
 };
 
 void UpdateFromGameThread();
@@ -45,5 +49,6 @@ void Read(View &out);
 const char *FishingStateLabel(int fishingState);
 const char *FailTypeLabel(int failType);
 const char *GradeLabel(int grade);
+const char *ShadowLabel(int shadowIndex);
 
 }

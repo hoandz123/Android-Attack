@@ -49,6 +49,10 @@ std::atomic<int> g_bigHpMax{0};
 std::atomic<int> g_castStreak{0};
 std::atomic<int> g_cph{0};
 std::atomic<int> g_successPct{0};
+std::atomic<unsigned int> g_fishLevel{0};
+std::atomic<int> g_shadowIdx{0};
+std::atomic<unsigned int> g_diffId{0};
+std::atomic<bool> g_shadowFilter{false};
 
 }
 
@@ -119,6 +123,10 @@ const char *GradeLabel(int grade) {
     }
 }
 
+const char *ShadowLabel(int shadowIndex) {
+    return FishingGameplay::ShadowLabelFromIndex(shadowIndex);
+}
+
 void UpdateFromGameThread() {
     if (!il2cpp_loaded.load() || isGameLoading) {
         g_ready.store(false, std::memory_order_release);
@@ -170,6 +178,10 @@ void UpdateFromGameThread() {
     g_castStreak.store(AutoFishing::GetCastFailStreak(), std::memory_order_relaxed);
     g_cph.store(AutoFishing::GetCatchesPerHour(), std::memory_order_relaxed);
     g_successPct.store(AutoFishing::GetSuccessRatePercent(), std::memory_order_relaxed);
+    g_fishLevel.store(AutoFishing::GetCurrentFishLevel(), std::memory_order_relaxed);
+    g_shadowIdx.store(AutoFishing::GetCurrentShadowIndex(), std::memory_order_relaxed);
+    g_diffId.store(AutoFishing::GetCurrentDifficultyId(), std::memory_order_relaxed);
+    g_shadowFilter.store(gPLConfig.fishing.filterByShadow || gPLConfig.fishing.filterByLevel, std::memory_order_relaxed);
     g_ready.store(true, std::memory_order_release);
 }
 
@@ -209,6 +221,10 @@ void Read(View &out) {
     out.castFailStreak = g_castStreak.load(std::memory_order_relaxed);
     out.catchesPerHour = g_cph.load(std::memory_order_relaxed);
     out.successRatePct = g_successPct.load(std::memory_order_relaxed);
+    out.currentFishLevel = g_fishLevel.load(std::memory_order_relaxed);
+    out.currentShadowIndex = g_shadowIdx.load(std::memory_order_relaxed);
+    out.currentDifficultyId = g_diffId.load(std::memory_order_relaxed);
+    out.shadowFilterActive = g_shadowFilter.load(std::memory_order_relaxed);
     out.statusHint = FishingGameplay::GetStatusHint();
 }
 

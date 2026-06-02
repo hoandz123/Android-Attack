@@ -31,4 +31,7 @@ namespace AutoFishing {
     int GetCatchesPerHour();
     int GetSuccessRatePercent();
     void ResetSessionStats();
+    unsigned int GetCurrentFishLevel();
+    int GetCurrentShadowIndex();
+    unsigned int GetCurrentDifficultyId();
 }

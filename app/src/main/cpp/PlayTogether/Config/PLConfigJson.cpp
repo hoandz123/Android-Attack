@@ -75,7 +75,13 @@ void to_json(nlohmann::json& j, const PLConfig::FishingConfig& cfg) {
         {"maxStunHitsPerPhase", cfg.maxStunHitsPerPhase},
         {"minSellValue", cfg.minSellValue},
         {"keepCodexFish", cfg.keepCodexFish},
-        {"autoRaidEnter", cfg.autoRaidEnter}
+        {"autoRaidEnter", cfg.autoRaidEnter},
+        {"filterByShadow", cfg.filterByShadow},
+        {"keepShadow", std::vector<bool>(cfg.keepShadow, cfg.keepShadow + 7)},
+        {"filterByLevel", cfg.filterByLevel},
+        {"levelMin", cfg.levelMin},
+        {"levelMax", cfg.levelMax},
+        {"keepLevelIds", cfg.keepLevelIds}
     };
 }
 
@@ -130,6 +136,15 @@ void from_json(const nlohmann::json& j, PLConfig::FishingConfig& cfg) {
     if (j.contains("minSellValue")) j["minSellValue"].get_to(cfg.minSellValue);
     if (j.contains("keepCodexFish")) j["keepCodexFish"].get_to(cfg.keepCodexFish);
     if (j.contains("autoRaidEnter")) j["autoRaidEnter"].get_to(cfg.autoRaidEnter);
+    if (j.contains("filterByShadow")) j["filterByShadow"].get_to(cfg.filterByShadow);
+    if (j.contains("keepShadow") && j["keepShadow"].is_array()) {
+        auto arr = j["keepShadow"];
+        for (size_t i = 0; i < arr.size() && i < 7; i++) cfg.keepShadow[i] = arr[i].get<bool>();
+    }
+    if (j.contains("filterByLevel")) j["filterByLevel"].get_to(cfg.filterByLevel);
+    if (j.contains("levelMin")) j["levelMin"].get_to(cfg.levelMin);
+    if (j.contains("levelMax")) j["levelMax"].get_to(cfg.levelMax);
+    if (j.contains("keepLevelIds")) j["keepLevelIds"].get_to(cfg.keepLevelIds);
 }
 
 void to_json(nlohmann::json& j, const PLConfig& cfg) {

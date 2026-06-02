@@ -14,6 +14,7 @@ extern bool isGameLoading;
 #include <API/Il2CppApi.h>
 #include <Tools/Tools.h>
 #include <atomic>
+#include <cstring>
 #include <Includes/obfuscate.h>
 #define LOG_TAG OBF("ATTACK_FishingGameplay")
 #include <Includes/Logger.h>
@@ -633,6 +634,59 @@ bool HasPendingRaid() {
 
 unsigned int GetPendingRaidIdx() {
     return g_raidIdx;
+}
+
+int shadowIndexFromAssetName(const char *name) {
+    if (!name || !name[0]) return 0;
+    if (strcmp(name, OBF("fish_s_shadow")) == 0) return 1;
+    if (strcmp(name, OBF("fish_m_shadow")) == 0) return 2;
+    if (strcmp(name, OBF("fish_l_shadow")) == 0) return 3;
+    if (strcmp(name, OBF("fish_xl_shadow")) == 0) return 4;
+    if (strcmp(name, OBF("fish_xxl_shadow")) == 0) return 5;
+    if (strcmp(name, OBF("fish_xxxl_shadow")) == 0) return 6;
+    if (strcmp(name, OBF("fish_4xl_shadow")) == 0) return 7;
+    return 0;
+}
+
+unsigned int GetCachedCastDifficultyId() {
+    return g_fishingDifficultyId;
+}
+
+bool QueryFishDifficulty(unsigned int sid, int *outShadowIndex, unsigned int *outDifficultyId) {
+    if (sid == 0) return false;
+    Object *impl = getTableImpl(eTableType::FishingDifficulty);
+    if (!impl) return false;
+    Class *cls = impl->get_class();
+    if (!cls || !cls->find_method(OBF("GetTableData"), 1)) return false;
+    Object *row = impl->invoke_method<Object *>(OBF("GetTableData"), sid);
+    if (!row) return false;
+    Class *rowCls = row->get_class();
+    if (!rowCls) return false;
+    if (outDifficultyId) {
+        if (!rowCls->find_method(OBF("get_FishingDifficultyId"), 0)) return false;
+        *outDifficultyId = row->invoke_method<unsigned int>(OBF("get_FishingDifficultyId"));
+    }
+    if (outShadowIndex) {
+        *outShadowIndex = 0;
+        if (!rowCls->find_method(OBF("get_AssetName"), 0)) return false;
+        String *asset = row->invoke_method<String *>(OBF("get_AssetName"));
+        if (!asset) return false;
+        *outShadowIndex = shadowIndexFromAssetName(asset->to_string().c_str());
+    }
+    return true;
+}
+
+const char *ShadowLabelFromIndex(int index) {
+    switch (index) {
+        case 1: return OBF("S");
+        case 2: return OBF("M");
+        case 3: return OBF("L");
+        case 4: return OBF("XL");
+        case 5: return OBF("XXL");
+        case 6: return OBF("XXXL");
+        case 7: return OBF("4XL");
+        default: return OBF("?");
+    }
 }
 
 } // namespace FishingGameplay

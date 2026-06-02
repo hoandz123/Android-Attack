@@ -28,6 +28,7 @@ void ShowInfoWindow() {
             if (gPLConfig.fishing.enabled && gPLConfig.fishing.showStatus) {
                 ImGui::Separator();
                 ImGui::Text(OBF("Câu cá: %s"), OverlaySnapshot::FishingStateLabel(snap.fishingState));
+                if (snap.currentFishLevel > 0) ImGui::Text(OBF("Bóng %s | lv %u"), OverlaySnapshot::ShadowLabel(snap.currentShadowIndex), snap.currentFishLevel);
                 ImGui::Text(OBF("Đã câu: %d"), snap.fishCaught);
                 if (gPLConfig.fishing.showSessionStats) {
                     ImGui::Text(OBF("Phiên: %um — hụt %d / trượt %d"), snap.sessionSec / 60, snap.failCount, snap.missCount);

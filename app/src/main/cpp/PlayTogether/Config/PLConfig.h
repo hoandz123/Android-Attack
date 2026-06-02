@@ -61,6 +61,12 @@ struct PLConfig {
         int minSellValue = 0;
         bool keepCodexFish = true;
         bool autoRaidEnter = false;
+        bool filterByShadow = false;
+        bool keepShadow[7] = {true, true, true, true, true, true, true};
+        bool filterByLevel = false;
+        int levelMin = 0;
+        int levelMax = 0;
+        std::vector<unsigned int> keepLevelIds;
     } fishing;
 
     static int GetPlayerMapID();

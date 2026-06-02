@@ -83,6 +83,11 @@ void DRAW_RENDER() {
         else if (gPLConfig.fishing.showEfficiency && snap.sessionSec >= 30) {
             snprintf(buf, sizeof(buf), OBF("Câu: %s | #%d ~%d/h"), OverlaySnapshot::FishingStateLabel(snap.fishingState), snap.fishCaught, snap.catchesPerHour);
         }
+        if (snap.currentFishLevel > 0) {
+            char fishBuf[160];
+            snprintf(fishBuf, sizeof(fishBuf), OBF("%s | bóng %s lv%u"), buf, OverlaySnapshot::ShadowLabel(snap.currentShadowIndex), snap.currentFishLevel);
+            snprintf(buf, sizeof(buf), "%s", fishBuf);
+        }
         if (snap.statusHint) {
             char hintBuf[160];
             snprintf(hintBuf, sizeof(hintBuf), OBF("%s | %s"), buf, snap.statusHint);
