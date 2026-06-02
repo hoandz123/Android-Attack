@@ -14,7 +14,6 @@ namespace ActorControl {
     extern Object *my_Player;
     extern Object *(*old_get_Kunit)(Object *instance);
     Object *get_Kunit(Object *instance);
-    void GetListNPC();
 }
 
 #endif //IL2CPP_PLAY_ACTORCONTROL_H

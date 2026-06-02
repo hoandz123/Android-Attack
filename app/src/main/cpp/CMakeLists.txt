@@ -14,26 +14,12 @@ set(PLAY_TOGETHER_SOURCES
     PlayTogether/Config/PLConfigJson.cpp
     PlayTogether/UI/MenuUi.cpp
     PlayTogether/UI/InfoWindow.cpp
-    PlayTogether/KhoiPhucTrangThai.cpp
     PlayTogether/AutoFishing.cpp
     PlayTogether/SDK/FrameWork.cpp
     PlayTogether/SDK/SystemHelper.cpp
     PlayTogether/SDK/CacheSystem.cpp
     PlayTogether/SDK/CacheUser.cpp
-    PlayTogether/SDK/ActorControl.cpp
-    PlayTogether/SDK/KinematicCharacterMotor.cpp
-    PlayTogether/SDK/LayerSystem.cpp
-    PlayTogether/SDK/TableSystem.cpp
-    PlayTogether/SDK/NetNativeProtocol.cpp
-    PlayTogether/SDK/JsonConvert.cpp
-    PlayTogether/SDK/NguiExtensions.cpp
-    PlayTogether/SDK/UILabel.cpp
-    PlayTogether/SDK/DialogJoyStick.cpp
-    PlayTogether/SDK/DialogUnit.cpp
-    PlayTogether/SDK/EquipmentSystem.cpp
-    PlayTogether/SDK/MapGuideArrow.cpp
-    PlayTogether/SDK/HeadUpSelectButton.cpp
-    PlayTogether/SDK/DialogShopInGame.cpp)
+    PlayTogether/SDK/ActorControl.cpp)
 
 add_library(attack SHARED
     NativeLib.cpp Menu.cpp Games.cpp

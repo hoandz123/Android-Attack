@@ -3,12 +3,8 @@
 //
 
 #include "ActorControl.h"
-#include "CacheUser.h"
 #include "Config/Config.h"
 #include "SystemHelper.h"
-#include "enum/eNickNameHeadUpTag.h"
-#include "KhoiPhucTrangThai.h"
-#include "LayerSystem.h"
 #include "../AutoFishing.h"
 #include <Tools/Tools.h>
 #include <Includes/obfuscate.h>
@@ -18,42 +14,6 @@
 namespace ActorControl {
     Class *get_class() {
         return FindClass("ActorControl");
-    }
-
-    void GetListNPC() {
-        volatile static int cacheMapId = 0;
-        if (cacheMapId != CacheUser::myCurrentMapID()) {
-            cacheMapId = CacheUser::myCurrentMapID();
-            PLConfig::npcMap.clear();
-            return;
-        }
-        if (!PLConfig::npcMap.empty()) return;
-        Object *hubSystem = SystemHelper::get_Hud();
-        if (!hubSystem) {
-            PLConfig::npcMap.clear();
-            return;
-        }
-        List<Object *> *_npcHeadUp3DNicknames = hubSystem->get_field_object<List<Object *> *>("_npcHeadUp3DNicknames");
-        if (!_npcHeadUp3DNicknames || _npcHeadUp3DNicknames->get_Count() < 1) {
-            PLConfig::npcMap.clear();
-            return;
-        }
-        for (int i = 0; i < _npcHeadUp3DNicknames->get_Count(); i++) {
-            Object *headUp = _npcHeadUp3DNicknames->get_item(i);
-            if (headUp->get_field_value<eNickNameHeadUpTag>("_nickNameTag") != eNickNameHeadUpTag::NPC) continue;
-            Object *nickName = headUp->get_field_object<Object *>("nickName");
-            Object *cacheTransform = headUp->get_field_object<Object *>("cacheTransform");
-            if (!nickName || !cacheTransform) continue;
-            String *name = nickName->get_field_object<String *>("m_Text");
-            if (!name) continue;
-            long uid = headUp->get_field_value<long>("_uid");
-            PLConfig::NPCData npcData;
-            npcData.instance = headUp;
-            npcData.pos = cacheTransform->invoke_method<Vector3>("get_position");
-            npcData.name = name->to_string();
-            npcData.uid = uid;
-            PLConfig::npcMap[headUp] = npcData;
-        }
     }
 
     Object *my_Unit = nullptr;
@@ -103,10 +63,7 @@ namespace ActorControl {
                     }
                     isFistLoading = false;
                     isGameLoading = false;
-                    KhoiPhucTrangThai::Update();
-                    LayerSystem::Update();
                     AutoFishing::Update();
-                    GetListNPC();
                 }
             }
         }

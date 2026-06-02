@@ -6,52 +6,13 @@
 #include <Includes/obfuscate.h>
 #define LOG_TAG OBF("ATTACK_PlayTogether")
 #include <Includes/Logger.h>
-#include <API/Vector3.h>
-
-void to_json(nlohmann::json& j, const Vector3& v) {
-    j = nlohmann::json{{"x", v.x}, {"y", v.y}, {"z", v.z}};
-}
-
-void from_json(const nlohmann::json& j, Vector3& v) {
-    if (j.contains("x")) v.x = j["x"];
-    if (j.contains("y")) v.y = j["y"];
-    if (j.contains("z")) v.z = j["z"];
-}
-
-void to_json(nlohmann::json& j, const PLConfig::NameAndPos& obj) {
-    j = nlohmann::json{
-        {"name", obj.name},
-        {"mapID", obj.mapID},
-        {"pos", obj.pos},
-        {"isRandom", obj.isRandom}
-    };
-}
-
-void from_json(const nlohmann::json& j, PLConfig::NameAndPos& obj) {
-    if (j.contains("name")) j["name"].get_to(obj.name);
-    if (j.contains("mapID")) j["mapID"].get_to(obj.mapID);
-    if (j.contains("pos")) j["pos"].get_to(obj.pos);
-    if (j.contains("isRandom")) j["isRandom"].get_to(obj.isRandom);
-}
 
 void to_json(nlohmann::json& j, const PLConfig::GeneralConfig& cfg) {
-    j = nlohmann::json{
-        {"isInfo", cfg.isInfo},
-        {"isRepair", cfg.isRepair},
-        {"isBoQuaLoiThoaiNPC", cfg.isBoQuaLoiThoaiNPC},
-        {"isResetTrangThai", cfg.isResetTrangThai},
-        {"chaynhanh", cfg.chaynhanh},
-        {"nhaycao", cfg.nhaycao}
-    };
+    j = nlohmann::json{{"isInfo", cfg.isInfo}};
 }
 
 void from_json(const nlohmann::json& j, PLConfig::GeneralConfig& cfg) {
     if (j.contains("isInfo")) j["isInfo"].get_to(cfg.isInfo);
-    if (j.contains("isRepair")) j["isRepair"].get_to(cfg.isRepair);
-    if (j.contains("isBoQuaLoiThoaiNPC")) j["isBoQuaLoiThoaiNPC"].get_to(cfg.isBoQuaLoiThoaiNPC);
-    if (j.contains("isResetTrangThai")) j["isResetTrangThai"].get_to(cfg.isResetTrangThai);
-    if (j.contains("chaynhanh")) j["chaynhanh"].get_to(cfg.chaynhanh);
-    if (j.contains("nhaycao")) j["nhaycao"].get_to(cfg.nhaycao);
 }
 
 void to_json(nlohmann::json& j, const PLConfig::FishingConfig& cfg) {
@@ -77,15 +38,10 @@ void from_json(const nlohmann::json& j, PLConfig::FishingConfig& cfg) {
 }
 
 void to_json(nlohmann::json& j, const PLConfig& cfg) {
-    j = nlohmann::json{
-        {"viTriCoSan", cfg.viTriCoSan},
-        {"general", cfg.general},
-        {"fishing", cfg.fishing}
-    };
+    j = nlohmann::json{{"general", cfg.general}, {"fishing", cfg.fishing}};
 }
 
 void from_json(const nlohmann::json& j, PLConfig& cfg) {
-    if (j.contains("viTriCoSan")) j["viTriCoSan"].get_to(cfg.viTriCoSan);
     if (j.contains("general")) j["general"].get_to(cfg.general);
     if (j.contains("fishing")) j["fishing"].get_to(cfg.fishing);
 }
