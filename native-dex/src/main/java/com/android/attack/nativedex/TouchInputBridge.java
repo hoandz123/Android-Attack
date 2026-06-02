@@ -2,6 +2,7 @@ package com.android.attack.nativedex;
 
 import android.app.Activity;
 import android.os.Build;
+import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.DisplayCutout;
@@ -20,6 +21,7 @@ import java.lang.reflect.Proxy;
 public final class TouchInputBridge {
 
     private static final String TAG = "AttackTouch";
+    private static final Handler MAIN = new Handler(Looper.getMainLooper());
 
     private static volatile Activity attachedActivity;
     private static Window.Callback previousCallback;
@@ -32,6 +34,11 @@ public final class TouchInputBridge {
 
     public static void install(Activity activity) {
         if (activity == null) return;
+        // setAttributes/setCallback đụng view hierarchy → bắt buộc main thread.
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            MAIN.post(() -> install(activity));
+            return;
+        }
         try {
             if (attachedActivity == activity && proxyCallback != null) {
                 ensureCallback(activity);
@@ -59,8 +66,8 @@ public final class TouchInputBridge {
             InvocationHandler handler = (proxy, method, args) -> {
                 if ("dispatchTouchEvent".equals(method.getName()) && args != null && args.length == 1
                         && args[0] instanceof MotionEvent) {
-                    logTouchDispatch(activity);
                     feedTouch((MotionEvent) args[0]);
+                    logTouchDispatch(activity);
                 } else if ("dispatchKeyEvent".equals(method.getName()) && args != null && args.length == 1
                         && args[0] instanceof KeyEvent) {
                     KeyboardInputBridge.feedKeyEvent((KeyEvent) args[0]);
@@ -71,7 +78,7 @@ public final class TouchInputBridge {
                     base.getClass().getClassLoader(), new Class<?>[] {Window.Callback.class}, handler);
             w.setCallback((Window.Callback) proxyCallback);
             refreshInsets(activity);
-            Log.i(TAG, "install ok " + activity.getClass().getSimpleName()
+            Log.i(TAG, "install ok (main) " + activity.getClass().getSimpleName()
                     + " delegate=" + delegate.getClass().getSimpleName());
         } catch (Throwable t) {
             Log.e(TAG, "install", t);

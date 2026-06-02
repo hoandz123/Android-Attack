@@ -3,6 +3,7 @@ package com.android.attack.nativedex;
 import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
+import android.os.Looper;
 import android.util.ArrayMap;
 import android.util.Log;
 
@@ -97,13 +98,23 @@ public final class ActivityTrackerBridge implements Application.ActivityLifecycl
         try {
             Log.i(TAG, "resumed " + a.getClass().getName());
             nativeOnResumed(a);
-            EglOverlay.onActivityResumed(a);
-            TouchInputBridge.install(a);
-            KeyboardInputBridge.install(a);
-            TouchInputBridge.refreshInsets(a);
+            // syncExistingActivities chạy trên thread nền → đẩy phần đụng view/window
+            // sang main thread (tránh CalledFromWrongThreadException).
+            if (Looper.myLooper() == Looper.getMainLooper()) {
+                attachViews(a);
+            } else {
+                a.runOnUiThread(() -> attachViews(a));
+            }
         } catch (Throwable t) {
             Log.e(TAG, "resume", t);
         }
+    }
+
+    private static void attachViews(Activity a) {
+        EglOverlay.onActivityResumed(a);
+        TouchInputBridge.install(a);
+        KeyboardInputBridge.install(a);
+        TouchInputBridge.refreshInsets(a);
     }
 
     private static void dispatchPaused(Activity a) {
