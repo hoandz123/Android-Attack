@@ -1450,13 +1450,17 @@ struct Il2CppDictionary : public Il2CppObject {
 
     K *CollectKeys() {
         int count = get_Count();
+        if (count <= 0) return nullptr;
         K *outKeys = new K[count];
         if (outKeys == nullptr) return nullptr;
 
         int idx = 0;
-        for (int i = 0; i < buckets->getLength() && idx < count; ++i) {
+        int steps = 0;
+        const int maxSteps = count * 8 + 64;
+        for (int i = 0; i < buckets->getLength() && idx < count && steps < maxSteps; ++i) {
             int entryIdx = buckets->getPointer()[i];
-            while (entryIdx >= 0 && idx < count) {
+            while (entryIdx >= 0 && idx < count && steps < maxSteps) {
+                steps++;
                 if (entries->getPointer()[entryIdx].hashCode >= 0) {
                     outKeys[idx++] = entries->getPointer()[entryIdx].key;
                 }
@@ -1468,13 +1472,17 @@ struct Il2CppDictionary : public Il2CppObject {
 
     V *CollectValues() {
         int count = get_Count();
+        if (count <= 0) return nullptr;
         V *outValues = new V[count];
         if (outValues == nullptr) return nullptr;
 
         int idx = 0;
-        for (int i = 0; i < buckets->getLength() && idx < count; ++i) {
+        int steps = 0;
+        const int maxSteps = count * 8 + 64;
+        for (int i = 0; i < buckets->getLength() && idx < count && steps < maxSteps; ++i) {
             int entryIdx = buckets->getPointer()[i];
-            while (entryIdx >= 0 && idx < count) {
+            while (entryIdx >= 0 && idx < count && steps < maxSteps) {
+                steps++;
                 if (entries->getPointer()[entryIdx].hashCode >= 0) {
                     outValues[idx++] = entries->getPointer()[entryIdx].value;
                 }
