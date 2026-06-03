@@ -36,9 +36,10 @@ int GetDictCount(Object *tableUnit) {
     if (!tableUnit) return -1;
     Class *cls = tableUnit->get_class();
     if (!cls || !cls->find_method(OBF("get_Container"), 0)) return -2;
-    Object *rawDict = tableUnit->invoke_method<Object *>(OBF("get_Container"));
-    if (!rawDict) return -3;
-    auto *dict = (Dictionary<uint32_t, Object *> *)rawDict;
+    Object *rawContainer = tableUnit->invoke_method<Object *>(OBF("get_Container"));
+    if (!rawContainer) return -3;
+    if (containerIsList(rawContainer)) return -2;
+    auto *dict = (Dictionary<uint32_t, Object *> *)rawContainer;
     return dict->get_Count();
 }
 
@@ -65,22 +66,33 @@ void LoadTable(eTableType type, Object *tableUnit) {
     tableSys->invoke_method<void>(OBF("LoadTable"), key, tableUnit);
 }
 
+int GetEntryCount(Object *tableUnit) {
+    if (!tableUnit) return -1;
+    int listCount = GetCount(tableUnit);
+    if (listCount > 0) return listCount;
+    int dictCount = GetDictCount(tableUnit);
+    if (dictCount > 0) return dictCount;
+    return 0;
+}
+
 bool TryForceLoad(eTableType type, Object *tableUnit) {
-    static long long s_lastTryMs = 0;
+    static long long s_lastTryMsByType[256]{};
     long long now = Tools::getSystemMilliseconds();
-    if (now - s_lastTryMs < 7000) return false;
     if (!tableUnit) return false;
-    if (GetDictCount(tableUnit) > 0) return true;
-    s_lastTryMs = now;
+    if (GetEntryCount(tableUnit) > 0) return true;
+    int idx = (int) type;
+    if (idx < 0 || idx >= 256) idx = 0;
+    if (now - s_lastTryMsByType[idx] < 7000) return false;
+    s_lastTryMsByType[idx] = now;
     LOGI(OBF("TableSystem: force-load type=%d isBuild=%d"), (int) type, get_IsBuild(tableUnit) ? 1 : 0);
     LoadBuildToTable(tableUnit);
-    if (GetDictCount(tableUnit) > 0) {
-        LOGI(OBF("TableSystem: force-load OK LoadBuildToTable type=%d"), (int) type);
+    if (GetEntryCount(tableUnit) > 0) {
+        LOGI(OBF("TableSystem: force-load OK LoadBuildToTable type=%d count=%d"), (int) type, GetEntryCount(tableUnit));
         return true;
     }
     LoadTable(type, tableUnit);
-    if (GetDictCount(tableUnit) > 0) {
-        LOGI(OBF("TableSystem: force-load OK LoadTable type=%d"), (int) type);
+    if (GetEntryCount(tableUnit) > 0) {
+        LOGI(OBF("TableSystem: force-load OK LoadTable type=%d count=%d"), (int) type, GetEntryCount(tableUnit));
         return true;
     }
     LOGW(OBF("TableSystem: force-load thất bại type=%d"), (int) type);

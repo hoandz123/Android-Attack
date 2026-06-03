@@ -8,6 +8,8 @@ Class *get_class();
 Object *get_Instance();
 long long get_FishingBaitUID(Object *self);
 void set_FishingBaitUID(Object *self, long long uid);
+void set_CastingFishingZoneID(Object *self, unsigned int zoneId);
+void notifyUpdateFishingBait(Object *self);
 unsigned int get_CastingFishingZoneID(Object *self);
 unsigned int get_CatchFishingZone(Object *self);
 int get_CatchItemGrade(Object *self);
