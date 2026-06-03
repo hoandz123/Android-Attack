@@ -1,10 +1,12 @@
 #include "../Games.hpp"
-#include <imgui.h>
+#include <API/Il2CppApi.h>
+#define LOGGER_TAG "ATTACK_LienQuan"
+#include <Includes/Logger.h>
+#include <Includes/obfuscate.h>
 #include <ModUi.hpp>
 #include <Tools/Tools.h>
-
-#define LOGGER_TAG "ATTACK_PlayTogether"
-#include <Includes/Logger.h>
+#include <imgui.h>
+#include <thread>
 
 namespace lienquan {
 
@@ -24,12 +26,21 @@ static void InitHooks() {
 }
 
 void Activate() {
-    InitHooks();
     modui::AppUi ui{};
     ui.menu_size = ImVec2(480.f, 340.f);
     ui.set_window_title(OBF("Liên Quân##modui_shell"));
     ui.add_tab(OBF("main"), OBF("Chính"), DrawMainTab);
     modui::SetAppUi(ui);
+
+    std::thread([]() {
+        Init_Il2cpp_Symbol();
+        if (!il2cpp_loaded.load()) {
+            LOGE(OBF("[LienQuan] il2cpp chua load"));
+            return;
+        }
+        LOGI(OBF("[LienQuan] il2cpp da load, bat dau hook"));
+        InitHooks();
+    }).detach();
 }
 
 REGISTER_GAME(OBF("com.garena.game.kgvn"), Activate);

@@ -1,5 +1,7 @@
 # LienQuan — game mod (Liên Quân Mobile)
 
+**Nhánh phát triển:** `LienQuan` (từ `main`). Deploy mặc định: `attack.pushTarget=com.garena.game.kgvn` trong `gradle.properties`.
+
 ## Tổng quan
 
 | | |
@@ -8,7 +10,8 @@
 | Package | `com.garena.game.kgvn` |
 | Engine | Unity **IL2CPP** |
 | Đăng ký | `REGISTER_GAME("com.garena.game.kgvn", Activate)` trong `LienQuan.cpp` |
-| Trạng thái | **STUB / khung** — chỉ menu demo, **chưa có hook thật** |
+| Trạng thái | **STUB / khung** — menu demo; hook IL2CPP chờ dump/RVA |
+| Logcat | `ATTACK_LienQuan` |
 
 ## Cấu trúc
 
@@ -23,10 +26,8 @@ Chưa có `Config/`, `SDK/`, `UI/` riêng. Khi mở rộng nên theo cấu trúc
 
 `lienquan::Activate()` (gọi bởi `games::Dispatch` khi package khớp):
 
-1. `InitHooks()` — **hiện rỗng** (chỉ có comment mẫu `HOOK_LIB(...)`).
-2. Menu `modui::AppUi` 480×340 — 1 tab **Chính** (`DrawMainTab`) với 2 checkbox demo (Aim assist, Map hack) **chưa nối logic**.
-
-> Khác PlayTogether: LienQuan cài hook **đồng bộ** ngay trong `Activate()`, không tách thread `Init_Il2cpp_Symbol`. Nếu cần IL2CPP symbol, thêm `Init_Il2cpp_Symbol()` + check `il2cpp_loaded` như PlayTogether.
+1. Menu `modui::AppUi` 480×340 — tab **Chính** (`DrawMainTab`), checkbox demo chưa nối logic.
+2. Thread nền: `Init_Il2cpp_Symbol()` → nếu `il2cpp_loaded` → `InitHooks()` (**hiện rỗng**, mẫu `HOOK_LIB(...)`).
 
 ## Stub có sẵn dùng được
 
@@ -41,4 +42,4 @@ Chưa có `Config/`, `SDK/`, `UI/` riêng. Khi mở rộng nên theo cấu trúc
 
 ## Logcat
 
-Tag hiện dùng chung `ATTACK_PlayTogether` (nên đổi thành `ATTACK_LienQuan` khi phát triển thật).
+`adb logcat -s ATTACK_LienQuan`
