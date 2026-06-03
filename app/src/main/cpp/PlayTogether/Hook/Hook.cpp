@@ -54,6 +54,7 @@ void init() {
     Tools::Hook((void *)GET_METHOD("NetNativeProtocol", "PID_Crafting_Start", 1), (void *)CombineContent::onPID_Crafting_Start, (void **)&CombineContent::old_PID_Crafting_Start);
     Tools::Hook((void *)GET_METHOD("NetNativeProtocol", "PID_Crafting_TimeDecrease", 1), (void *)CombineContent::onPID_Crafting_TimeDecrease, (void **)&CombineContent::old_PID_Crafting_TimeDecrease);
     Tools::Hook((void *)GET_METHOD("NetNativeProtocol", "PID_Crafting_ItemReward", 1), (void *)CombineContent::onPID_Crafting_ItemReward, (void **)&CombineContent::old_PID_Crafting_ItemReward);
+    Tools::Hook((void *)GET_METHOD("NetNativeProtocol", "PID_ITEM_Combine", 1), (void *)CombineContent::onPID_ITEM_Combine, (void **)&CombineContent::old_PID_ITEM_Combine);
     Tools::Hook((void *)GET_METHOD("CombineContent", "ShowCraftingRewardDialog", 1), (void *)CombineContent::onShowCraftingRewardDialog, nullptr);
     DialogBaseLock::installHooks();
     Tools::Hook((void *)GET_METHOD("NetWebProtocol", "PID_SHOP_Buy", 1), (void *)NetWebProtocol::onPID_SHOP_Buy, (void **)&NetWebProtocol::old_PID_SHOP_Buy);

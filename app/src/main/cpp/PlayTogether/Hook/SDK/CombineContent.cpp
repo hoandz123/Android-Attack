@@ -4,6 +4,7 @@
 #include "NetNativeProtocol.h"
 #include "NetWebProtocol.h"
 #include "TableRecipeImpl.h"
+#include "TableItemCraftingListImpl.h"
 #include "TableIngredientGroupImpl.h"
 #include "TableIngredientImpl.h"
 #include "UserItemCraftingSlot.h"
@@ -23,6 +24,7 @@ namespace CombineContent {
 void (*old_PID_Crafting_Start)(Object *, Object *) = nullptr;
 void (*old_PID_Crafting_TimeDecrease)(Object *, Object *) = nullptr;
 void (*old_PID_Crafting_ItemReward)(Object *, Object *) = nullptr;
+void (*old_PID_ITEM_Combine)(Object *, Object *) = nullptr;
 
 namespace {
 
@@ -38,7 +40,7 @@ static const char *kVal[] = {
         OBF("get_Ingredient4Value"), OBF("get_Ingredient5Value"),
 };
 
-enum class Phase : int { None, Create, Finish, WaitReward, Reward, Collect };
+enum class Phase : int { None, Create, Finish, WaitReward, Reward, Collect, CombineWait };
 
 struct Pending {
     bool active = false;
@@ -174,7 +176,7 @@ Object *buildShopBuyList(Object *recipe, int cookCount) {
     return buyList;
 }
 
-Object *buildRemoveDict(Object *recipe, int *findFail) {
+Object *buildRemoveDict(Object *recipe, int cookCount, int *findFail) {
     if (findFail) *findFail = 0;
     Object *s = self(), *candidates = candidateItems();
     static Class *dictCls = FindClass(
@@ -182,13 +184,15 @@ Object *buildRemoveDict(Object *recipe, int *findFail) {
     Object *dict = dictCls ? dictCls->new_object() : nullptr;
     if (!s || !recipe || !dict || !candidates || !cls() || !cls()->find_method(OBF("FindIngredientItems"), 7)) return nullptr;
     if (((List<Object *> *) candidates)->get_Count() <= 0) return nullptr;
+    int batch = cookCount > 0 ? cookCount : 1;
 
     bool ok = true;
     foreachIngredient(recipe, [&](unsigned gid, int per) {
         if (!ok) return;
         bool uI = false, uP = false, uG = false;
         Object *ref = dict;
-        int r = s->invoke_method<int>(OBF("FindIngredientItems"), gid, per, candidates, &ref, &uI, &uP, &uG);
+        int needCount = per * batch;
+        int r = s->invoke_method<int>(OBF("FindIngredientItems"), gid, needCount, candidates, &ref, &uI, &uP, &uG);
         dict = ref;
         if (r == kFindOk) return;
         ok = false;
@@ -196,6 +200,49 @@ Object *buildRemoveDict(Object *recipe, int *findFail) {
         LOGD(OBF("Chế mồi FindIngredientItems fail: group=%u result=%d (%s)"), gid, r, findResultName(r));
     });
     return ok ? dict : nullptr;
+}
+
+Object *buildSlotRemoveDict(Object *recipe, int *findFail) {
+    if (findFail) *findFail = 0;
+    Object *s = self(), *candidates = candidateItems();
+    static Class *dictCls = FindClass(
+            OBF("System.Collections.Generic.Dictionary<System.UInt32,System.Collections.Generic.List<PlayTogether.RemoveItemInfo>>"));
+    Object *dict = dictCls ? dictCls->new_object() : nullptr;
+    if (!s || !recipe || !dict || !candidates || !cls() || !cls()->find_method(OBF("FindCraftingIngredient"), 7))
+        return nullptr;
+    if (((List<Object *> *) candidates)->get_Count() <= 0) return nullptr;
+
+    bool ok = true;
+    foreachIngredient(recipe, [&](unsigned gid, int per) {
+        if (!ok) return;
+        bool uI = false, uP = false, uG = false;
+        Object *ref = dict;
+        if (s->invoke_method<bool>(OBF("FindCraftingIngredient"), gid, per, candidates, &ref, &uI, &uP, &uG)) {
+            dict = ref;
+            return;
+        }
+        ok = false;
+        dict = ref;
+        if (findFail) {
+            int itemCount = 0, realCount = 0;
+            *findFail = s->invoke_method<int>(OBF("GetIngredientSlotState"), gid, per, &itemCount, &realCount);
+        }
+        LOGD(OBF("Chế mồi FindCraftingIngredient fail: group=%u result=%d (%s)"), gid,
+             findFail ? *findFail : -1, findResultName(findFail ? *findFail : -1));
+    });
+    return ok ? dict : nullptr;
+}
+
+void prepSlotCraft(unsigned recipeId) {
+    Object *s = self();
+    Class *c = cls();
+    if (!s || !c) return;
+    Object *info = TableItemCraftingListImpl::GetCraftingInfo(recipeId);
+    if (info && info->get_class() && info->get_class()->find_method(OBF("get_ThemeGroup"), 0)) {
+        if (info->invoke_method<int16_t>(OBF("get_ThemeGroup")) != 0 && c->find_method(OBF("ForceThemeUpdate"), 0))
+            s->invoke_method<void>(OBF("ForceThemeUpdate"));
+    }
+    if (c->find_method(OBF("CheckCraftingSlotInfo"), 0)) s->invoke_method<void>(OBF("CheckCraftingSlotInfo"));
 }
 
 bool buyInFlight() {
@@ -234,22 +281,23 @@ bool applySilentReward(Object *protocol) {
     return true;
 }
 
+void logUserItems(Object *listObj) {
+    if (!listObj) return;
+    auto *list = (List<Object *> *) listObj;
+    for (int i = 0, n = list->get_Count(); i < n; i++) {
+        Object *it = list->get_item(i);
+        if (!it || !it->get_class()) continue;
+        LOGD(OBF("Chế mồi kết quả: itemId=%u x%d"),
+             it->invoke_method<unsigned int>(OBF("get_ItemID")),
+             it->invoke_method<int>(OBF("get_ItemCount")));
+    }
+}
+
 void logReward(Object *protocol) {
     Object *pack = ItemCraftingRewardItemA::get_Reward(protocol);
     if (!pack) return;
-    auto logList = [](Object *listObj) {
-        if (!listObj) return;
-        auto *list = (List<Object *> *) listObj;
-        for (int i = 0, n = list->get_Count(); i < n; i++) {
-            Object *it = list->get_item(i);
-            if (!it || !it->get_class()) continue;
-            LOGD(OBF("Chế mồi kết quả: itemId=%u x%d"),
-                 it->invoke_method<unsigned int>(OBF("get_ItemID")),
-                 it->invoke_method<int>(OBF("get_ItemCount")));
-        }
-    };
-    logList(NetworkRewardPack::get_ItemRewardList(pack));
-    logList(NetworkRewardPack::get_RewardList(pack));
+    logUserItems(NetworkRewardPack::get_ItemRewardList(pack));
+    logUserItems(NetworkRewardPack::get_RewardList(pack));
 }
 
 unsigned resolveRecipe(unsigned recipeId, unsigned itemId) {
@@ -269,6 +317,20 @@ bool tryBuy(Object *recipe, unsigned recipeId, int cookCount, unsigned itemId) {
     }
     g_buy = {true, recipeId, itemId, cookCount, nowMs(), 0};
     LOGD(OBF("Chế mồi mua shop: recipe=%u cook=%d"), recipeId, cookCount);
+    return true;
+}
+
+bool tryItemCombine(Object *recipe, unsigned recipeId, int cookCount, unsigned lookup) {
+    int findFail = 0;
+    Object *removeDict = buildRemoveDict(recipe, cookCount, &findFail);
+    if (!removeDict) {
+        if (findFail == kFindShortage && tryBuy(recipe, recipeId, cookCount, lookup)) return true;
+        LOGD(OBF("Chế mồi combine fail: recipe=%u find=%d (%s)"), recipeId, findFail, findResultName(findFail));
+        return false;
+    }
+    if (!NetNativeProtocol::SendToItemCombine(recipeId, removeDict, cookCount)) return false;
+    markPending(-1, Phase::CombineWait, recipeId, lookup);
+    LOGD(OBF("Chế mồi combine: recipe=%u x%d"), recipeId, cookCount);
     return true;
 }
 
@@ -310,7 +372,7 @@ long long lastCraftAckMs() { return g_lastAckMs; }
 void onShopBuyAck(int result) {
     if (!g_buy.active) return;
     if (result != 0) {
-        LOGD(OBF("Chế mồi mua fail recipe=%u result=%d"), g_buy.recipeId, result);
+        LOGD(OBF("Chế mồi mua fail recipe=%u %s"), g_buy.recipeId, ProtocolA::describe(result).c_str());
         clearBuyPending();
         clearPending();
         return;
@@ -347,6 +409,15 @@ bool TryInstantCombine(unsigned int recipeId, int cookCount, unsigned int itemId
     Object *recipe = lookup ? TableRecipeImpl::GetRecipeForItem(lookup) : nullptr;
     if (!recipe) return false;
 
+    int batch = cookCount > 0 ? cookCount : 1;
+    unsigned craftTime = TableItemCraftingListImpl::GetCraftingTime(recipeId);
+    if (!TableItemCraftingListImpl::UsesSlotCraft(recipeId)) {
+        LOGD(OBF("Chế mồi loại combine: recipe=%u (craftTime=%u)"), recipeId, craftTime);
+        return tryItemCombine(recipe, recipeId, batch, lookup);
+    }
+
+    prepSlotCraft(recipeId);
+
     int16_t slotId = findSlot([](Object *slot) { return UserItemCraftingSlot::isIdle(slot); });
     if (slotId < 0) {
         LOGD(findSlot([](Object *slot) { return UserItemCraftingSlot::isReady(slot); }) >= 0
@@ -355,8 +426,7 @@ bool TryInstantCombine(unsigned int recipeId, int cookCount, unsigned int itemId
     }
 
     int findFail = 0;
-    int batch = cookCount > 0 ? cookCount : 1;
-    Object *removeDict = buildRemoveDict(recipe, &findFail);
+    Object *removeDict = buildSlotRemoveDict(recipe, &findFail);
     if (!removeDict) {
         if (findFail == kFindShortage && tryBuy(recipe, recipeId, batch, lookup)) return true;
         LOGD(OBF("Chế mồi fail: recipe=%u find=%d (%s)"), recipeId, findFail, findResultName(findFail));
@@ -364,7 +434,7 @@ bool TryInstantCombine(unsigned int recipeId, int cookCount, unsigned int itemId
     }
     if (!NetNativeProtocol::SendToCraftingCreate(slotId, recipeId, removeDict)) return false;
     markPending(slotId, Phase::Create, recipeId, lookup);
-    LOGD(OBF("Chế mồi create: slot=%d recipe=%u"), (int) slotId, recipeId);
+    LOGD(OBF("Chế mồi slot create: slot=%d recipe=%u time=%u"), (int) slotId, recipeId, craftTime);
     return true;
 }
 
@@ -377,7 +447,12 @@ void onPID_Crafting_Start(Object *self, Object *protocol) {
         if (id >= 0) slotId = id;
     }
     int r = ProtocolA::get_Result(protocol);
-    if (r != 0) { LOGD(OBF("Chế mồi start fail slot=%d r=%d"), (int) slotId, r); clearPending(); return; }
+    if (r != 0) {
+        LOGD(OBF("Chế mồi start fail slot=%d %s"), (int) slotId, ProtocolA::describe(r).c_str());
+        g_lastAckMs = nowMs();
+        clearPending();
+        return;
+    }
     g_p.slotId = slotId;
     LOGD(OBF("Chế mồi start OK slot=%d"), (int) slotId);
     if (UserItemCraftingSlot::isReady(getSlot(slotId))) {
@@ -393,7 +468,11 @@ void onPID_Crafting_TimeDecrease(Object *self, Object *protocol) {
     old_PID_Crafting_TimeDecrease(self, protocol);
     if (!protocol || !pendingIs(Phase::Finish)) return;
     int r = ProtocolA::get_Result(protocol);
-    if (r != 0) { LOGD(OBF("Chế mồi finish fail r=%d"), r); clearPending(); return; }
+    if (r != 0) {
+        LOGD(OBF("Chế mồi finish fail %s"), ProtocolA::describe(r).c_str());
+        clearPending();
+        return;
+    }
     LOGD(OBF("Chế mồi finish OK slot=%d"), (int) g_p.slotId);
     scheduleReward(g_p.slotId);
 }
@@ -408,11 +487,37 @@ void onPID_Crafting_ItemReward(Object *self, Object *protocol) {
     int r = ProtocolA::get_Result(protocol);
     clearPending();
     if (!ours) { if (r == 0) logReward(protocol); return; }
-    if (r != 0) { LOGD(OBF("Chế mồi reward fail slot=%d r=%d"), (int) slotId, r); return; }
+    if (r != 0) {
+        LOGD(OBF("Chế mồi reward fail slot=%d %s"), (int) slotId, ProtocolA::describe(r).c_str());
+        return;
+    }
     if (!applySilentReward(protocol)) return;
     g_lastAckMs = nowMs();
     LOGD(OBF("Chế mồi reward OK slot=%d item=%u"), (int) slotId, itemId);
     logReward(protocol);
+}
+
+void onPID_ITEM_Combine(Object *self, Object *protocol) {
+    old_PID_ITEM_Combine(self, protocol);
+    if (!protocol || !pendingIs(Phase::CombineWait)) return;
+    unsigned recipeId = g_p.recipeId;
+    unsigned itemId = g_p.itemId;
+    int r = ProtocolA::get_Result(protocol);
+    clearPending();
+    if (r != 0) {
+        LOGD(OBF("Chế mồi combine fail recipe=%u %s"), recipeId, ProtocolA::describe(r).c_str());
+        g_lastAckMs = nowMs();
+        return;
+    }
+    g_lastAckMs = nowMs();
+    if (protocol->get_class() && protocol->get_class()->find_method(OBF("get_SuccessCount"), 0)) {
+        LOGD(OBF("Chế mồi combine OK recipe=%u success=%u item=%u"),
+             recipeId, protocol->invoke_method<unsigned int>(OBF("get_SuccessCount")), itemId);
+    } else {
+        LOGD(OBF("Chế mồi combine OK recipe=%u item=%u"), recipeId, itemId);
+    }
+    if (protocol->get_class() && protocol->get_class()->find_method(OBF("get_ResultItem"), 0))
+        logUserItems(protocol->invoke_method<Object *>(OBF("get_ResultItem")));
 }
 
 }

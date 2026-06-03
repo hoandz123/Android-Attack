@@ -43,4 +43,13 @@ bool SendToCraftingItemReward(int16_t slotId) {
     return true;
 }
 
+bool SendToItemCombine(unsigned int recipeId, Object *removeDict, int count) {
+    Object *self = get_Instance();
+    Class *cls = get_class();
+    if (!self || !cls || !removeDict || !recipeId || count <= 0) return false;
+    if (!cls->find_method(OBF("SendToItemCombine"), 4)) return false;
+    self->invoke_method<void>(OBF("SendToItemCombine"), recipeId, removeDict, (Object *) nullptr, count);
+    return true;
+}
+
 }

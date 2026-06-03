@@ -27,6 +27,7 @@ set(PLAY_TOGETHER_SOURCES
     PlayTogether/Hook/SDK/TableFishingAreaImpl.cpp
     PlayTogether/Hook/SDK/TableFishingBaitImpl.cpp
     PlayTogether/Hook/SDK/TableRecipeImpl.cpp
+    PlayTogether/Hook/SDK/TableItemCraftingListImpl.cpp
     PlayTogether/Hook/SDK/NetNativeProtocol.cpp
     PlayTogether/Hook/SDK/ContentSystem.cpp
     PlayTogether/Hook/SDK/CombineContent.cpp

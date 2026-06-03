@@ -11,6 +11,7 @@ Object *get_Instance();
 bool SendToCraftingCreate(int16_t slotId, unsigned int recipeId, Object *removeDict);
 bool SendToCraftingTimeDecrease(int16_t slotId, int decreaseType, long long adTransactionSeq);
 bool SendToCraftingItemReward(int16_t slotId);
+bool SendToItemCombine(unsigned int recipeId, Object *removeDict, int count);
 
 }
 
