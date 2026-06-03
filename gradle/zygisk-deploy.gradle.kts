@@ -76,7 +76,7 @@ tasks.register("deployZygiskDebug") {
 
     doLast {
         val root = rootProject.projectDir
-        val targetPkg = project.gradleProp("attack.deployTargetPackage", "com.vng.playtogether")
+        val targetPkg = project.gradleProp("attack.pushTarget", "com.vng.playtogether")
         val moduleDesc = project.gradleProp(
             "attack.magiskModule.description",
             "Zygisk loader inject libattack.so (arm64); adb payload -> {package}",
