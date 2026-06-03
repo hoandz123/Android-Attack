@@ -12,6 +12,10 @@ namespace AutoFishing {
 
     void onReceiveFishingCatch(Object *self, Object *rewardInfo);
     void onPID_FISHING_CASTING(Object *self, Object *protocol);
+    void onSendToFishingCasting(Object *self, Object *fishingZoneList);
+    void onShowFishingZoneTitle(Object *self, Object *command);
     extern void (*old_ReceiveFishingCatch)(Object *, Object *);
     extern void (*old_PID_FISHING_CASTING)(Object *, Object *);
+    extern void (*old_SendToFishingCasting)(Object *, Object *);
+    extern void (*old_ShowFishingZoneTitle)(Object *, Object *);
 }

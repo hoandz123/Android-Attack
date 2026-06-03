@@ -1,15 +1,17 @@
 #include "AutoFishing.h"
 #include "../../Config/Config.h"
+#include "PickerSnapshot.h"
 #include "../SDK/ActorControl.h"
 #include "../SDK/CacheUser.h"
+#include "../SDK/CombineContent.h"
 #include "../SDK/FishingSystem.h"
 #include "../SDK/SystemHelper.h"
-#include "../SDK/TableFishingAreaImpl.h"
-#include "../SDK/TableFishingBaitImpl.h"
 #include "../SDK/TableFishingDifficultyImpl.h"
 #include "../SDK/TableItemImpl.h"
+#include "../SDK/TableRecipeImpl.h"
 #include "../SDK/enum/eFishingState.h"
 #include <API/Il2CppApi.h>
+#include <API/Il2cpp_Struct.h>
 #include <Tools/Tools.h>
 #define LOGGER_TAG "ATTACK_AutoFishing"
 #include <Includes/Logger.h>
@@ -21,6 +23,8 @@ namespace AutoFishing {
 // Trampoline gốc IL2CPP (set bởi Hook.cpp)
 void (*old_ReceiveFishingCatch)(Object *, Object *);
 void (*old_PID_FISHING_CASTING)(Object *, Object *);
+void (*old_SendToFishingCasting)(Object *, Object *);
+void (*old_ShowFishingZoneTitle)(Object *, Object *);
 
 namespace {
 // Timing / cooldown giữa các action (cast, skip, dialog, đổi mồi)
@@ -28,7 +32,7 @@ constexpr int kTickIntervalMs = 400;
 constexpr int kActionIntervalMs = 500;
 constexpr int kRestartDelayMs = 1500;
 constexpr int kStartFishingFailDelayMs = 5000;
-
+constexpr int kCraftBaitCooldownMs = 500;
 // g_time: cooldown | g_sm: FSM | g_cast: cast/telemetry | g_fish: cá đang cắn + catch item | g_filter: skip cycle
 struct Timing {
     long long lastActionMs = 0;
@@ -79,11 +83,57 @@ bool canActNow() {
 
 } // anonymous
 
+unsigned int activeFakeZoneId() {
+    if (!gPLConfig.fishing.fakeZoneEnabled || gPLConfig.fishing.fakeZoneId == 0) return 0;
+    return gPLConfig.fishing.fakeZoneId;
+}
+
+void applyFakeZoneClient(unsigned int zoneId) {
+    if (zoneId == 0) return;
+    Object *fishingSys = SystemHelper::get_Fishing();
+    if (!fishingSys) return;
+    FishingSystem::set_CastingFishingZoneID(fishingSys, zoneId);
+}
+
+void patchFishingZoneList(Object *fishingZoneList, unsigned int zoneId) {
+    if (!fishingZoneList || zoneId == 0) return;
+    auto *list = (Il2CppList<unsigned int> *) fishingZoneList;
+    const int count = list->get_Count();
+    if (count <= 0) {
+        list->Add(zoneId);
+        return;
+    }
+    for (int i = 0; i < count; i++) list->set_item(i, zoneId);
+}
+
+// Hook net send: thay FishingZoneIDList trước khi gửi server
+void onSendToFishingCasting(Object *self, Object *fishingZoneList) {
+    const unsigned int fakeZone = activeFakeZoneId();
+    if (!isGameLoading && fakeZone > 0) {
+        patchFishingZoneList(fishingZoneList, fakeZone);
+        applyFakeZoneClient(fakeZone);
+        LOGD(OBF("Fake zone send: %u"), fakeZone);
+    }
+    old_SendToFishingCasting(self, fishingZoneList);
+}
+
+// Hook title vùng câu: đảm bảo CastingFishingZoneID khớp vùng fake khi hiện title
+void onShowFishingZoneTitle(Object *self, Object *command) {
+    const unsigned int fakeZone = activeFakeZoneId();
+    if (!isGameLoading && fakeZone > 0) applyFakeZoneClient(fakeZone);
+    old_ShowFishingZoneTitle(self, command);
+}
+
 // Hook cast: lưu FishingDifficultyID từ protocol (fallback level khi chưa có get_FishLevel)
 void onPID_FISHING_CASTING(Object *self, Object *protocol) {
     old_PID_FISHING_CASTING(self, protocol);
     if (isGameLoading || !protocol) return;
     g_cast.difficultyId = protocol->invoke_method<unsigned int>(OBF("get_FishingDifficultyID"));
+    const unsigned int fakeZone = activeFakeZoneId();
+    if (fakeZone > 0) {
+        applyFakeZoneClient(fakeZone);
+        g_cast.castingZoneId = fakeZone;
+    }
 }
 
 // Hook câu trúng: lưu CatchItemID cho kiểm tra bán ở dialog
@@ -95,8 +145,11 @@ void onReceiveFishingCatch(Object *self, Object *rewardInfo) {
 
 // Tick chính — gọi từ ActorControl::get_Kunit mỗi ~400ms
 void Update() {
-    // Gate: bật config, không loading, có player/motor/unit, có FishingSystem
-    if (!gPLConfig.fishing.enabled || isGameLoading) return;
+    if (isGameLoading) return;
+    const bool wantFish = gPLConfig.fishing.enabled;
+    const bool wantBait = gPLConfig.fishing.autoEquipBait;
+    const bool wantCraft = gPLConfig.fishing.autoCraftBait;
+    if (!wantFish && !wantBait && !wantCraft) return;
     if (!ActorControl::my_Player || !ActorControl::my_Motor || !ActorControl::my_Unit) return;
     RATE_LIMIT(kTickIntervalMs);
 
@@ -121,8 +174,77 @@ void Update() {
         g_sm.sinceMs = Tools::getSystemMilliseconds();
     }
 
+    // Gắn mồi: lấy baitItemId từ config
+    auto resolveBaitItemId = [&]() -> unsigned int {
+        return (unsigned int) gPLConfig.fishing.baitItemId;
+    };
+
+    // Tự chế mồi — độc lập với gắn mồi (craftBaitItemId / craftBaitTargetCount)
+    auto tryAutoCraftBait = [&]() -> bool {
+        if (!wantCraft) return false;
+        unsigned int baitId = gPLConfig.fishing.craftBaitItemId;
+        if (baitId == 0) return false;
+        int target = gPLConfig.fishing.craftBaitTargetCount;
+        if (target < 1) target = 1;
+        int have = CacheUser::GetItemCount(baitId, true);
+        if (have >= target) return false;
+        long long now = Tools::getSystemMilliseconds();
+        if (CombineContent::isCraftInFlight()) return false;
+        long long lastAck = CombineContent::lastCraftAckMs();
+        if (lastAck > 0 && now - lastAck < kCraftBaitCooldownMs) return false;
+        unsigned int recipeId = TableRecipeImpl::ResolveRecipeId(baitId);
+        if (recipeId == 0) return false;
+        int cookCount = target - have;
+        int maxCook = CombineContent::CalculateMaxCookCount(recipeId);
+        if (maxCook <= 0) return false;
+        if (cookCount > maxCook) cookCount = maxCook;
+        if (!CombineContent::TryInstantCombine(recipeId, cookCount, baitId)) return false;
+        return true;
+    };
+
+    if (wantCraft && tryAutoCraftBait()) return;
+
+    auto tryAutoEquipBait = [&]() -> bool {
+        if (!wantBait) return false;
+        if (!player->invoke_method<bool>(OBF("get_HasFishingPole"))) return false;
+        if (state != eFishingState::None && state != eFishingState::Fail && state != eFishingState::Miss &&
+            state != eFishingState::CastingFail) {
+            return false;
+        }
+        long long now = Tools::getSystemMilliseconds();
+        unsigned int baitId = resolveBaitItemId();
+        if (baitId == 0) return false;
+        int count = CacheUser::GetItemCount(baitId, true);
+        long long uid = CacheUser::GetBaitItemUid(baitId);
+        if (count <= 0 || uid == 0) {
+            static long long lastWarnMs = 0;
+            if (now - lastWarnMs >= 5000) {
+                lastWarnMs = now;
+                LOGD(OBF("Gắn mồi thất bại: itemId=%u count=%d uid=%lld"), baitId, count, uid);
+            }
+            return false;
+        }
+        if (FishingSystem::get_FishingBaitUID(fishingSys) == uid) return false;
+        if (g_time.lastBaitEquipMs > 0 && now - g_time.lastBaitEquipMs < 1200) return false;
+        g_time.lastBaitEquipMs = now;
+        FishingSystem::set_FishingBaitUID(fishingSys, uid);
+        FishingSystem::notifyUpdateFishingBait(fishingSys);
+        LOGD(OBF("Gắn mồi: itemId=%u uid=%lld"), baitId, uid);
+        return true;
+    };
+
+    if (wantBait && tryAutoEquipBait()) {
+        g_cast.baitUid = FishingSystem::get_FishingBaitUID(fishingSys);
+        return;
+    }
+    if (!wantFish) {
+        g_cast.baitUid = FishingSystem::get_FishingBaitUID(fishingSys);
+        return;
+    }
+
     // Telemetry UI + đọc level/bóng cá hiện tại (get_FishLevel hoặc difficultyId cast)
     g_cast.castingZoneId = fishingSys->get_field_value<unsigned int>(OBF("CastingFishingZoneID"));
+    if (const unsigned int fakeZone = activeFakeZoneId()) g_cast.castingZoneId = fakeZone;
     g_cast.catchZoneId = fishingSys->invoke_method<unsigned int>(OBF("get_CatchFishingZone"));
     g_cast.baitUid = fishingSys->invoke_method<long long>(OBF("get_FishingBaitUID"));
     if (player->invoke_method<bool>(OBF("get_IsFishing")) && (state == eFishingState::Idle || state == eFishingState::Search || state == eFishingState::Hit || state == eFishingState::Fighting)) {
@@ -227,41 +349,17 @@ void Update() {
         LOGD(OBF("Bỏ cá: lv=%u bóng=%s"), g_fish.level, TableFishingDifficultyImpl::ShadowLabelFromIndex(g_fish.shadowIndex));
     };
 
-    // Cast mới: gắn mồi (smart/config) rồi gọi StartFishing
+    // Cast mới: gọi StartFishing (mồi đã gắn ở tryAutoEquipBait tick trước)
     auto tryStartFishing = [&]() {
         long long now = Tools::getSystemMilliseconds();
         long long retryDelayMs = g_sm.startFishingFailed ? kStartFishingFailDelayMs : kRestartDelayMs;
         if (g_time.lastCastAttemptMs > 0 && now - g_time.lastCastAttemptMs < retryDelayMs) return;
         if (!player->invoke_method<bool>(OBF("get_HasFishingPole"))) return;
-        if (gPLConfig.fishing.autoEquipBait) {
-            bool smart = gPLConfig.fishing.smartBaitByZone || gPLConfig.fishing.smartBaitAutoEffect;
-            unsigned int baitId = (unsigned int) gPLConfig.fishing.baitItemId;
-            if (smart) {
-                unsigned int zoneId = FishingSystem::get_CastingFishingZoneID(fishingSys);
-                if (zoneId == 0) zoneId = FishingSystem::get_CatchFishingZone(fishingSys);
-                unsigned int picked = 0;
-                if (gPLConfig.fishing.smartBaitByZone) {
-                    for (const auto &entry : gPLConfig.fishing.baitZonePrefs) {
-                        if (entry.first == zoneId && entry.second > 0) {
-                            picked = entry.second;
-                            break;
-                        }
-                    }
-                }
-                if (picked == 0 && gPLConfig.fishing.smartBaitAutoEffect) {
-                    unsigned int fromFx = TableFishingBaitImpl::PickBestItemIdForAction(TableFishingAreaImpl::GetActionId(zoneId));
-                    if (fromFx > 0) picked = fromFx;
-                }
-                if (picked > 0) baitId = picked;
-            }
-            if (baitId > 0 && CacheUser::GetItemCount(baitId, true) > 0) {
-                long long uid = CacheUser::GetItemUid(baitId);
-                if (uid != 0 && FishingSystem::get_FishingBaitUID(fishingSys) != uid) {
-                    if (g_time.lastBaitEquipMs == 0 || now - g_time.lastBaitEquipMs >= 1200) {
-                        g_time.lastBaitEquipMs = now;
-                        FishingSystem::set_FishingBaitUID(fishingSys, uid);
-                    }
-                }
+        if (wantBait) {
+            unsigned int baitId = resolveBaitItemId();
+            if (baitId > 0) {
+                long long uid = CacheUser::GetBaitItemUid(baitId);
+                if (uid != 0 && FishingSystem::get_FishingBaitUID(fishingSys) != uid) return;
             }
         }
         if (player->invoke_method<bool>(OBF("get_IsFishing"))) return;

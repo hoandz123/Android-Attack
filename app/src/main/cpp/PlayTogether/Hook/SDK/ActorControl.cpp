@@ -70,7 +70,7 @@ namespace ActorControl {
                     }
                     isFirstLoading = false;
                     isGameLoading = false;
-                    if (gPLConfig.fishing.enabled) {
+                    if (gPLConfig.fishing.enabled || gPLConfig.fishing.autoEquipBait || gPLConfig.fishing.autoCraftBait) {
                         AutoFishing::Update();
                     }
                     AutoFishing::UpdatePickerFromGameThread();
