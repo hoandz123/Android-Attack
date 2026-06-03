@@ -1,6 +1,9 @@
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import org.gradle.api.logging.Logger
 
 fun runCmd(vararg cmd: String): Pair<Int, String> {
     val pb = ProcessBuilder(*cmd)
@@ -15,6 +18,46 @@ fun adbAvailable(): Boolean {
     if (which.first != 0) return false
     val state = runCmd("adb", "get-state")
     return state.first == 0 && state.second == "device"
+}
+
+/** Windows hay khoá .so đang mở — copyTo(overwrite) fail ngẫu nhiên. */
+fun copyFileRobust(src: File, dest: File, logger: Logger, maxAttempts: Int = 8): Boolean {
+    dest.parentFile?.mkdirs()
+    val tmp = File(dest.parentFile, "${dest.name}.deploytmp")
+    var last: Exception? = null
+    repeat(maxAttempts) { attempt ->
+        try {
+            Files.copy(src.toPath(), tmp.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            deleteQuiet(dest)
+            try {
+                Files.move(
+                    tmp.toPath(),
+                    dest.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE,
+                )
+            } catch (_: Exception) {
+                Files.move(tmp.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            }
+            if (tmp.exists()) tmp.delete()
+            return true
+        } catch (e: Exception) {
+            last = e
+            if (tmp.exists()) tmp.delete()
+            if (attempt + 1 < maxAttempts) Thread.sleep(50L * (attempt + 1))
+        }
+    }
+    logger.warn("Khong ghi duoc ${dest.name} sau $maxAttempts lan (${last?.message})")
+    return false
+}
+
+fun deleteQuiet(file: File) {
+    if (!file.exists()) return
+    try {
+        Files.delete(file.toPath())
+    } catch (_: Exception) {
+        file.delete()
+    }
 }
 
 tasks.register("deployZygiskDebug") {
@@ -73,12 +116,17 @@ tasks.register("deployZygiskDebug") {
                 continue
             }
             val dest = File(zygiskDir, "$abi.so")
-            src.copyTo(dest, overwrite = true)
+            if (!copyFileRobust(src, dest, logger)) {
+                logger.warn("Skip zygisk/$abi.so (file dich bi khoa?)")
+                continue
+            }
             logger.lifecycle("Copied ${dest.relativeTo(root)}")
         }
 
         val zipFile = File(outRoot, "AndroidAttackLoader-zygisk.zip")
-        ZipOutputStream(zipFile.outputStream()).use { zos ->
+        val zipTmp = File(outRoot, "AndroidAttackLoader-zygisk.zip.deploytmp")
+        deleteQuiet(zipFile)
+        ZipOutputStream(zipTmp.outputStream()).use { zos ->
             moduleDir.walkTopDown().filter { it.isFile }.forEach { file ->
                 val entryName = file.relativeTo(moduleDir).invariantSeparatorsPath
                 zos.putNextEntry(ZipEntry(entryName))
@@ -86,6 +134,11 @@ tasks.register("deployZygiskDebug") {
                 zos.closeEntry()
             }
         }
+        if (!copyFileRobust(zipTmp, zipFile, logger)) {
+            logger.warn("Khong ghi duoc zip Zygisk — bo qua adb deploy")
+            return@doLast
+        }
+        zipTmp.delete()
         logger.lifecycle("Packed ${zipFile.relativeTo(root)}")
 
         if (!adbAvailable()) {
