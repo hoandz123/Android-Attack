@@ -32,7 +32,9 @@ Phụ thuộc compile: `-DNATIVE_CORE_CPP` (imgui headers từ native-core).
 ## API public (`ModUi.hpp`)
 
 - `Init()` — ImGui context + JNI `RegisterNatives` (gọi `RegisterSurfaceNatives` trong `SurfaceBridge.cpp`)
-- `AppUi` — `add_tab(id, label, draw)`, `set_window_title`
+- `AppUi` — `set_window_title`, `add_tab(id, label, draw)` (≤16 tab); field `menu_size` (dp, {0,0}=mặc định), `fab_icon_path` (icon FAB local)
+- `SetAppUi(ui)` / `GetAppUi()` — **đăng ký** menu (app dựng `AppUi` rồi gọi `SetAppUi`); `RegisterOverlayDraw(fn)` — vẽ overlay thêm
+- `SetMenuVisible/MenuVisible`, `SetMenuExpanded/MenuExpanded` — bật/tắt + thu gọn FAB
 - Menu: **X** ImGui (`Begin(..., &p_open)`) thu gọn → FAB; bấm FAB mở lại (`SetMenuExpanded`)
 - Icon: chỉ `Icon.cpp` / `Icon.hpp` (shell/app không gọi)
 - Theme: title bar căn giữa (`WindowTitleAlign` trong `Theme.cpp`)

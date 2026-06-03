@@ -17,8 +17,22 @@ APK load libloader.so
   → dlopen libattack.so
        → dex_loader::Init (embedded_dex.hpp từ :native-dex)
        → activity_tracker::Init
-       → modui + Menu (app)
+       → modui::Init
+       → games::Dispatch(package)         (Games.cpp)
+            ├─ khớp → <game>::Activate()   (menu + hook game đó)
+            └─ không khớp → appui::RegisterMenu()  (Menu.cpp, fallback)
 ```
+
+## Games (đa game trong 1 APK)
+
+Mỗi game tự đăng ký qua `REGISTER_GAME(package, Activate)`; `Dispatch` chọn theo package process. **Mỗi game 1 AGENT.md riêng:**
+
+| Game | Package | AGENT.md |
+|------|---------|----------|
+| Play Together | `com.vng.playtogether` | [app/src/main/cpp/PlayTogether/AGENT.md](app/src/main/cpp/PlayTogether/AGENT.md) |
+| Liên Quân (stub) | `com.garena.game.kgvn` | [app/src/main/cpp/LienQuan/AGENT.md](app/src/main/cpp/LienQuan/AGENT.md) |
+
+Thêm game mới: xem [app/AGENT.md](app/AGENT.md) §"Thêm game mới".
 
 ## Build nhanh
 

@@ -9,23 +9,46 @@ Module **application** duy nhất. Build ra `libattack.so` (plugin thật) + APK
 | Module | Mục đích |
 |--------|----------|
 | `:loader` | `libloader.so` trong APK, `dlopen` plugin |
-| `:native-core` | Prefab: dexloader, activitytracker, imgui, kitty, dobby, curl |
+| `:native-core` | Prefab: gameapi, tools, kitty, dobby, dexloader, activitytracker, imgui, curl, httpclient, … |
 | `:mod-ui` | Prefab: modui (menu shell + GLES) |
 | `:native-dex` | **Không** `implementation` — chỉ task `generateEmbeddedDex` |
 
 ## Native (`src/main/cpp/`)
 
-| File | Việc |
+| File / thư mục | Việc |
 |------|------|
-| `NativeLib.cpp` | `JNI_OnLoad`: dex → tracker → `modui::Init()` → menu app |
-| `Menu.cpp` | `set_window_title`, `add_tab` |
-| `CMakeLists.txt` | Link `attack` SHARED; include `EMBEDDED_DEX_DIR` |
+| `NativeLib.cpp` | `JNI_OnLoad`: dex → tracker → `modui::Init()` → `games::Dispatch(pkg)` |
+| `Games.{hpp,cpp}` | Registry đa game: `REGISTER_GAME`, `Dispatch(package)` |
+| `Menu.{hpp,cpp}` | `appui::RegisterMenu()` — menu **fallback** khi package không khớp game nào |
+| `PlayTogether/` | Game Play Together (đầy đủ) — xem `PlayTogether/AGENT.md` |
+| `LienQuan/` | Game Liên Quân (stub) — xem `LienQuan/AGENT.md` |
+| `CMakeLists.txt` | Link `attack` SHARED; gộp source mọi game; include `EMBEDDED_DEX_DIR` |
 
 ### Thứ tự `JNI_OnLoad` (giữ nguyên thứ tự)
 
-1. `dex_loader::Init(vm, embedded_dex::data, size)`
-2. `activity_tracker::Init(vm)` → Java `ActivityTrackerBridge.install()` (+ `Surface` overlay)
-3. `modui::Init()` → `appui::RegisterMenu()`
+1. `jni::Init(vm)`
+2. `dex_loader::Init(vm, embedded_dex::data, size)`
+3. `activity_tracker::Init(vm)` → Java `ActivityTrackerBridge.install()` (+ `Surface` overlay)
+4. `modui::Init()`
+5. `games::Dispatch(pkg)` → game khớp gọi `Activate()`; **không khớp** → `appui::RegisterMenu()` (fallback)
+
+## Hệ thống đa game (`Games.hpp` / `Games.cpp`)
+
+Mỗi game tự đăng ký lúc nạp `.so` (static init):
+
+```cpp
+REGISTER_GAME(OBF("com.vng.playtogether"), Activate);
+```
+
+`games::Dispatch(package)` so `package` (lấy từ `Tools::GetPackageName()`) với registry; khớp thì gọi `Activate()` của game đó và trả `true`. Một APK chứa mọi game; chỉ game khớp package process hiện tại được kích hoạt.
+
+### Thêm game mới
+
+1. Tạo thư mục `src/main/cpp/<Game>/` (theo mẫu `PlayTogether/`: `Config/`, `Hook/`, `UI/`, `SDK/`).
+2. Viết `<Game>.cpp`: hàm `Activate()` (dựng `modui::AppUi` + cài hook) + `REGISTER_GAME("<package>", Activate)`.
+3. Thêm source vào `CMakeLists.txt` (`add_library(attack ...)`).
+4. Tạo `<Game>/AGENT.md` bao quát game (bắt buộc — mỗi game 1 AGENT.md).
+5. Build `./gradlew :app:assembleDebug`.
 
 ## CMake args (tự set trong `build.gradle.kts`)
 
@@ -57,11 +80,14 @@ Module **application** duy nhất. Build ra `libattack.so` (plugin thật) + APK
 
 ## Logcat
 
-- `AttackPlugin` — plugin init
+- `ATTACK_PlayTogether` — plugin init (`NativeLib.cpp`) + game (tag theo từng game, xem AGENT.md của game)
 - `DexLoader`, `ActivityTracker` — từ native-core / native-dex
+- `AttackLoader` — từ `:loader`
 
 ## Khi sửa
 
-- Menu UI app → `Menu.cpp`
-- Thứ tự khởi tạo / thêm init → `NativeLib.cpp`
-- Không nhét Java bridge vào app; dex Java thuộc `:native-dex`
+- Logic/menu một game cụ thể → thư mục game đó (`PlayTogether/`, `LienQuan/`), **không** sửa `Menu.cpp`.
+- Menu fallback (không thuộc game nào) → `Menu.cpp`.
+- Thêm game / đổi dispatch → `Games.cpp` + `CMakeLists.txt` (xem "Thêm game mới").
+- Thứ tự khởi tạo / thêm init chung → `NativeLib.cpp`.
+- Không nhét Java bridge vào app; dex Java thuộc `:native-dex`.

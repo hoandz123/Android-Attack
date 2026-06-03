@@ -18,16 +18,30 @@ Android library **chỉ C++**. Xuất static libs qua **Prefab** cho `:app` và 
 | `jnihelper` | `JavaVM` + `JNIEnv` thống nhất (`JNIHelper/`) |
 | `dexloader` | In-memory DEX inject (`DexLoader/`) |
 | `activitytracker` | JVM activity refs + JNI bridge |
+| `gameapi` | **IL2CPP runtime API** + System/UnityEngine wrappers (`API/`): `FindClass`, `GET_METHOD`, `Object`/`List`/`Dictionary`, `Init_Il2cpp_Symbol` |
+| `tools` | Hook/memory helper (`Tools/`): `Tools::Hook` (A64Hook arm64 / Dobby), maps, `GetPackageName`, `Sleep`, `HEX_*` |
+| `xdl` | `dlopen`/`dlsym`/`dladdr` bypass linker namespace (`xdl/`, C) |
+| `base64` | Encode/decode + HMG helpers (`Base64/`) |
+| `sharedprefs` | Key/value lưu file (`SharedPrefs/`) |
+| `gameui` | ESP draw + viewport size (`GameUI/`, dùng imgui + gameapi) |
 
-Headers: `src/main/cpp/` (dexloader/activitytracker export cả cpp root).
+Headers: `src/main/cpp/` (lgl/jnihelper/dexloader/activitytracker/gameapi export cả cpp root).
+
+**Static lib nội bộ (không publish Prefab):** `json` (nlohmann INTERFACE), `xhook` (PLT/GOT hook), `antilibpatch` (chống vá `.text`), `apksig` (verify chữ ký APK — cần header OpenSSL/BoringSSL mới compile).
 
 ## Thư mục chính (`src/main/cpp/`)
 
 ```
+API/                IL2CPP API (Il2CppApi.h, Il2cpp_Struct.h, Il2cpp_Symbol.h) + API/game/{System,UnityEngine}
+Tools/              Tools::Hook, GetPackageName, maps, sleep (+ And64Hook arm64)
 FileManager/        fs::Exists, ReadBytes, WriteBytes, MkdirP, ListDir, …
 JNIHelper/          jni::Init, Env(), ScopedEnv, FindClass, RegisterNatives
 DexLoader/          DexLoader.cpp, JniReflect — makeInMemoryDexElements
 ActivityTracker/    Init → Java install; nativeOn* giữ global ref Activity
+GameUI/             EspGUI, GameViewport (vẽ ESP)
+SharedPrefs/        key/value lưu file
+Base64/             encode/decode
+xdl/ xhook/         dlopen bypass / PLT-GOT hook (C)
 imgui/              vendored
 kittymemory/        KittyMemory
 dobby/{abi}/        libdobby.a
@@ -113,9 +127,11 @@ Consumer CMake: `-DNATIVE_CORE_PREFAB=.../prefab` + `link_prefab_static` + `link
 
 ## Khi sửa
 
+- API IL2CPP / wrapper class game chung → `API/` (`gameapi`); `Tools::Hook`, maps → `Tools/` (`tools`)
 - Hook/patch/memory → kitty/dobby
 - Cơ chế inject dex → `DexLoader/` (không trộn Java)
 - Tracker state native → `ActivityTracker.cpp`; đăng ký lifecycle → sửa Java ở `:native-dex`
+- ESP draw / viewport → `GameUI/` (`gameui`)
 
 ## Không làm ở đây
 
