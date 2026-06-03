@@ -21,28 +21,9 @@ size_t VecWrite(char *p, size_t sz, size_t n, void *out) {
     return sz * n;
 }
 
-int CurlDebug(CURL *, curl_infotype type, char *data, size_t size, void *) {
-    if (!data || size == 0) return 0;
-    if (type == CURLINFO_DATA_IN || type == CURLINFO_DATA_OUT) {
-        LOGI(OBF("curl[data]: %zu bytes"), size);
-        return 0;
-    }
-    while (size > 0 && (data[size - 1] == '\n' || data[size - 1] == '\r')) --size;
-    const char *kind = OBF("info");
-    if (type == CURLINFO_TEXT) kind = OBF("text");
-    else if (type == CURLINFO_HEADER_IN) kind = OBF("hdr<-");
-    else if (type == CURLINFO_HEADER_OUT) kind = OBF("hdr->");
-    else if (type == CURLINFO_SSL_DATA_IN) kind = OBF("ssl<-");
-    else if (type == CURLINFO_SSL_DATA_OUT) kind = OBF("ssl->");
-    LOGI(OBF("curl[%s]: %.*s"), kind, (int) size, data);
-    return 0;
-}
-
-void RemovePath(const std::string &path, const char *why) {
-    LOGW(OBF("remove path=%s reason=%s"), path.c_str(), why);
+void RemovePath(const std::string &path, const char * /*why*/) {
     const int rc = std::remove(path.c_str());
     if (rc != 0) LOGE(OBF("remove failed path=%s rc=%d errno=%d (%s)"), path.c_str(), rc, errno, std::strerror(errno));
-    else LOGI(OBF("remove ok path=%s"), path.c_str());
 }
 
 void SetupCommon(CURL *c, const std::string &url, long timeout) {
@@ -59,11 +40,8 @@ void SetupCommon(CURL *c, const std::string &url, long timeout) {
     curl_easy_setopt(c, CURLOPT_USERAGENT, user_agent);
 }
 
-void SetupVerbose(CURL *c, char *errbuf) {
+void SetupErrorBuffer(CURL *c, char *errbuf) {
     curl_easy_setopt(c, CURLOPT_ERRORBUFFER, errbuf);
-    curl_easy_setopt(c, CURLOPT_VERBOSE, 1L);
-    curl_easy_setopt(c, CURLOPT_DEBUGFUNCTION, CurlDebug);
-    curl_easy_setopt(c, CURLOPT_DEBUGDATA, nullptr);
 }
 
 struct HeaderCapture {
@@ -158,7 +136,6 @@ Response Post(const std::string &url, const void *body, size_t n, const char *ct
 
 Response Download(const std::string &url, const std::string &path, long t) {
     std::call_once(g_once, [] { curl_global_init(CURL_GLOBAL_DEFAULT); });
-    LOGI(OBF("Download begin url=%s path=%s timeout=%lds"), url.c_str(), path.c_str(), t);
     Response r;
     char errbuf[CURL_ERROR_SIZE]{};
     FILE *f = std::fopen(path.c_str(), OBF("wb"));
@@ -167,7 +144,6 @@ Response Download(const std::string &url, const std::string &path, long t) {
         LOGE(OBF("Download fopen failed path=%s errno=%d (%s)"), path.c_str(), errno, std::strerror(errno));
         return r;
     }
-    LOGI(OBF("Download fopen ok path=%s (0-byte file created)"), path.c_str());
     CURL *c = curl_easy_init();
     if (!c) {
         std::fclose(f);
@@ -177,21 +153,18 @@ Response Download(const std::string &url, const std::string &path, long t) {
         return r;
     }
     SetupCommon(c, url, t);
-    SetupVerbose(c, errbuf);
+    SetupErrorBuffer(c, errbuf);
     curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, nullptr);
     curl_easy_setopt(c, CURLOPT_WRITEDATA, f);
     const CURLcode res = curl_easy_perform(c);
     long http_code = 0;
     curl_easy_getinfo(c, CURLINFO_RESPONSE_CODE, &http_code);
-    char *effective_url = nullptr;
-    curl_easy_getinfo(c, CURLINFO_EFFECTIVE_URL, &effective_url);
     curl_off_t curl_bytes = 0;
     curl_easy_getinfo(c, CURLINFO_SIZE_DOWNLOAD_T, &curl_bytes);
     curl_easy_cleanup(c);
     std::fflush(f);
     const long ftell_bytes = std::ftell(f);
     std::fclose(f);
-    LOGI(OBF("Download perform res=%d (%s) http=%ld curl_bytes=%lld ftell=%ld errbuf=%s effective=%s"), (int) res, curl_easy_strerror(res), http_code, (long long) curl_bytes, ftell_bytes, errbuf[0] ? errbuf : OBF("(empty)"), effective_url ? effective_url : OBF("?"));
     if (res != CURLE_OK) {
         r.error = curl_easy_strerror(res);
         if (errbuf[0]) r.error += OBFS(" | ") + errbuf;
@@ -212,7 +185,6 @@ Response Download(const std::string &url, const std::string &path, long t) {
         LOGE(OBF("Download KEPT=no decision=deleted empty body ftell=%ld curl_bytes=%lld"), ftell_bytes, (long long) curl_bytes);
         return r;
     }
-    LOGI(OBF("Download KEPT=yes path=%s bytes=%ld"), path.c_str(), ftell_bytes);
     return r;
 }
 
@@ -220,10 +192,6 @@ Response DownloadConditional(const std::string &url, const std::string &path, lo
                              const CacheValidators *in, CacheValidators *out) {
     std::call_once(g_once, [] { curl_global_init(CURL_GLOBAL_DEFAULT); });
     const std::string tmp = path + OBFS(".tmp");
-    LOGI(OBF("DownloadConditional begin url=%s path=%s tmp=%s timeout=%lds conditional=%d"), url.c_str(), path.c_str(), tmp.c_str(), t, in ? 1 : 0);
-    if (in) {
-        LOGI(OBF("DownloadConditional request if-none-match=%s if-modified-since=%s"), in->etag.empty() ? OBF("(none)") : in->etag.c_str(), in->last_modified.empty() ? OBF("(none)") : in->last_modified.c_str());
-    }
     Response r;
     char errbuf[CURL_ERROR_SIZE]{};
     FILE *f = std::fopen(tmp.c_str(), OBF("wb"));
@@ -240,7 +208,7 @@ Response DownloadConditional(const std::string &url, const std::string &path, lo
         return r;
     }
     SetupCommon(c, url, t);
-    SetupVerbose(c, errbuf);
+    SetupErrorBuffer(c, errbuf);
     curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, nullptr);
     curl_easy_setopt(c, CURLOPT_WRITEDATA, f);
     CacheValidators captured;
@@ -252,8 +220,6 @@ Response DownloadConditional(const std::string &url, const std::string &path, lo
     const CURLcode res = curl_easy_perform(c);
     long http_code = 0;
     curl_easy_getinfo(c, CURLINFO_RESPONSE_CODE, &http_code);
-    char *effective_url = nullptr;
-    curl_easy_getinfo(c, CURLINFO_EFFECTIVE_URL, &effective_url);
     curl_off_t curl_bytes = 0;
     curl_easy_getinfo(c, CURLINFO_SIZE_DOWNLOAD_T, &curl_bytes);
     curl_slist_free_all(req_hdrs);
@@ -261,7 +227,6 @@ Response DownloadConditional(const std::string &url, const std::string &path, lo
     std::fflush(f);
     const long ftell_bytes = std::ftell(f);
     std::fclose(f);
-    LOGI(OBF("DownloadConditional perform res=%d (%s) http=%ld curl_bytes=%lld ftell=%ld errbuf=%s effective=%s"), (int) res, curl_easy_strerror(res), http_code, (long long) curl_bytes, ftell_bytes, errbuf[0] ? errbuf : OBF("(empty)"), effective_url ? effective_url : OBF("?"));
     if (res != CURLE_OK) {
         r.error = curl_easy_strerror(res);
         if (errbuf[0]) r.error += OBFS(" | ") + errbuf;
@@ -273,7 +238,6 @@ Response DownloadConditional(const std::string &url, const std::string &path, lo
     if (http_code == 304) {
         RemovePath(tmp, OBF("304 not modified"));
         if (out) *out = captured;
-        LOGI(OBF("DownloadConditional decision=304 keep cache path=%s"), path.c_str());
         return r;
     }
     if (http_code < 200 || http_code >= 300) {
@@ -297,7 +261,6 @@ Response DownloadConditional(const std::string &url, const std::string &path, lo
         return r;
     }
     if (out) *out = captured;
-    LOGI(OBF("DownloadConditional decision=200 replaced path=%s bytes=%ld etag=%s last-mod=%s"), path.c_str(), ftell_bytes, captured.etag.empty() ? OBF("(none)") : captured.etag.c_str(), captured.last_modified.empty() ? OBF("(none)") : captured.last_modified.c_str());
     return r;
 }
 
