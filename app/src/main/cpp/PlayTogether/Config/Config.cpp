@@ -9,15 +9,6 @@
 bool isGameLoading = false;
 PLConfig gPLConfig;
 
-void to_json(nlohmann::json &j, const std::pair<unsigned int, unsigned int> &p) {
-    j = nlohmann::json{{"zoneId", p.first}, {"baitItemId", p.second}};
-}
-
-void from_json(const nlohmann::json &j, std::pair<unsigned int, unsigned int> &p) {
-    if (j.contains("zoneId")) j["zoneId"].get_to(p.first);
-    if (j.contains("baitItemId")) j["baitItemId"].get_to(p.second);
-}
-
 void to_json(nlohmann::json &j, const PLConfig::FishingConfig &cfg) {
     j = nlohmann::json{
         {"enabled", cfg.enabled},
@@ -25,9 +16,11 @@ void to_json(nlohmann::json &j, const PLConfig::FishingConfig &cfg) {
         {"stopWhenCountOver", cfg.stopWhenCountOver},
         {"autoEquipBait", cfg.autoEquipBait},
         {"baitItemId", cfg.baitItemId},
-        {"smartBaitByZone", cfg.smartBaitByZone},
-        {"smartBaitAutoEffect", cfg.smartBaitAutoEffect},
-        {"baitZonePrefs", cfg.baitZonePrefs},
+        {"autoCraftBait", cfg.autoCraftBait},
+        {"craftBaitItemId", cfg.craftBaitItemId},
+        {"craftBaitTargetCount", cfg.craftBaitTargetCount},
+        {"fakeZoneEnabled", cfg.fakeZoneEnabled},
+        {"fakeZoneId", cfg.fakeZoneId},
         {"filterByShadow", cfg.filterByShadow},
         {"keepShadow", std::vector<bool>(cfg.keepShadow, cfg.keepShadow + 7)},
         {"filterByLevel", cfg.filterByLevel},
@@ -45,9 +38,14 @@ void from_json(const nlohmann::json &j, PLConfig::FishingConfig &cfg) {
     if (j.contains("stopWhenCountOver")) j["stopWhenCountOver"].get_to(cfg.stopWhenCountOver);
     if (j.contains("autoEquipBait")) j["autoEquipBait"].get_to(cfg.autoEquipBait);
     if (j.contains("baitItemId")) j["baitItemId"].get_to(cfg.baitItemId);
-    if (j.contains("smartBaitByZone")) j["smartBaitByZone"].get_to(cfg.smartBaitByZone);
-    if (j.contains("smartBaitAutoEffect")) j["smartBaitAutoEffect"].get_to(cfg.smartBaitAutoEffect);
-    if (j.contains("baitZonePrefs")) j["baitZonePrefs"].get_to(cfg.baitZonePrefs);
+    if (j.contains("autoCraftBait")) j["autoCraftBait"].get_to(cfg.autoCraftBait);
+    if (j.contains("craftBaitItemId")) j["craftBaitItemId"].get_to(cfg.craftBaitItemId);
+    if (j.contains("craftBaitTargetCount")) j["craftBaitTargetCount"].get_to(cfg.craftBaitTargetCount);
+    if (!j.contains("craftBaitTargetCount") && j.contains("craftBaitMinCount")) {
+        j["craftBaitMinCount"].get_to(cfg.craftBaitTargetCount);
+    }
+    if (j.contains("fakeZoneEnabled")) j["fakeZoneEnabled"].get_to(cfg.fakeZoneEnabled);
+    if (j.contains("fakeZoneId")) j["fakeZoneId"].get_to(cfg.fakeZoneId);
     if (j.contains("filterByShadow")) j["filterByShadow"].get_to(cfg.filterByShadow);
     if (j.contains("keepShadow") && j["keepShadow"].is_array()) {
         auto arr = j["keepShadow"];

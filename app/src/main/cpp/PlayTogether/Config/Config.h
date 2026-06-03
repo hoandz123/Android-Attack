@@ -1,8 +1,6 @@
 #pragma once
 
 #include <string>
-#include <utility>
-#include <vector>
 
 struct PLConfig {
     struct FishingConfig {
@@ -11,9 +9,11 @@ struct PLConfig {
         bool stopWhenCountOver = true;
         bool autoEquipBait = false;
         int baitItemId = 0;
-        bool smartBaitByZone = false;
-        bool smartBaitAutoEffect = false;
-        std::vector<std::pair<unsigned int, unsigned int>> baitZonePrefs;
+        bool autoCraftBait = false;
+        unsigned int craftBaitItemId = 0;
+        int craftBaitTargetCount = 10;
+        bool fakeZoneEnabled = false;
+        unsigned int fakeZoneId = 0;
         bool filterByShadow = false;
         bool keepShadow[7] = {true, true, true, true, true, true, true};
         bool filterByLevel = false;
