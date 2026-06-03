@@ -11,7 +11,7 @@ set(PLAY_TOGETHER_SOURCES
     PlayTogether/Hook/Hook.cpp
     PlayTogether/Hook/AntiCheat.cpp
     PlayTogether/Config/Config.cpp
-    PlayTogether/UI/MenuUi.cpp
+    PlayTogether/UI/Tab/CauCa.cpp
     PlayTogether/Hook/AutoFishing/AutoFishing.cpp
     PlayTogether/Hook/AutoFishing/PickerSnapshot.cpp
     PlayTogether/Hook/SDK/FrameWork.cpp

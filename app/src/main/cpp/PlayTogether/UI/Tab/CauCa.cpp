@@ -1,9 +1,7 @@
-#include "MenuUi.h"
-#include "Config/Config.h"
-#include "../Hook/AutoFishing/PickerSnapshot.h"
+#include "CauCa.h"
+#include "../../Config/Config.h"
+#include "../../Hook/AutoFishing/PickerSnapshot.h"
 #include <Includes/obfuscate.h>
-#include <ModUi.hpp>
-#include <Tools/Tools.h>
 #include <imgui.h>
 #include <cstring>
 #include <string>
@@ -12,27 +10,27 @@ namespace playtogether {
 
 namespace {
 
-static bool UiCheckbox(const char *label, bool *v) {
+bool UiCheckbox(const char *label, bool *v) {
     bool changed = ImGui::Checkbox(label, v);
     if (changed) SaveConfig();
     return changed;
 }
 
-static const char *PickerBaitLabel(const AutoFishing::PickerSnapshot &cat, int itemId) {
+const char *PickerBaitLabel(const AutoFishing::PickerSnapshot &cat, int itemId) {
     for (int i = 0; i < cat.baitCount; i++) {
         if ((int) cat.baits[i].itemId == itemId) return cat.baits[i].label;
     }
     return nullptr;
 }
 
-static const char *PickerZoneLabel(const AutoFishing::PickerSnapshot &cat, unsigned int zoneId) {
+const char *PickerZoneLabel(const AutoFishing::PickerSnapshot &cat, unsigned int zoneId) {
     for (int i = 0; i < cat.zoneCount; i++) {
         if (cat.zones[i].zoneId == zoneId) return cat.zones[i].label;
     }
     return nullptr;
 }
 
-static bool DrawBaitPicker(const char *id, int *baitItemId) {
+bool DrawBaitPicker(const char *id, int *baitItemId) {
     if (!baitItemId) return false;
     AutoFishing::PickerSnapshot cat{};
     AutoFishing::ReadPicker(cat);
@@ -65,7 +63,7 @@ static bool DrawBaitPicker(const char *id, int *baitItemId) {
     return changed;
 }
 
-static bool DrawZonePicker(const char *id, unsigned int *zoneId) {
+bool DrawZonePicker(const char *id, unsigned int *zoneId) {
     if (!zoneId) return false;
     AutoFishing::PickerSnapshot cat{};
     AutoFishing::ReadPicker(cat);
@@ -102,7 +100,7 @@ static bool DrawZonePicker(const char *id, unsigned int *zoneId) {
     return changed;
 }
 
-static void DrawCraftBaitPanel() {
+void DrawCraftBaitPanel() {
     UiCheckbox(OBF("Tự chế mồi"), &gPLConfig.fishing.autoCraftBait);
 
     int target = gPLConfig.fishing.craftBaitTargetCount;
@@ -145,7 +143,9 @@ static void DrawCraftBaitPanel() {
     ImGui::EndChild();
 }
 
-static void DrawFishingPage() {
+} // namespace
+
+void DrawCauCaPage() {
     ImGui::PushID(OBF("page_fishing"));
     if (!ImGui::BeginTabBar(OBF("##pl_fishing_tabs"), ImGuiTabBarFlags_None)) {
         ImGui::PopID();
@@ -232,11 +232,11 @@ static void DrawFishingPage() {
             UiCheckbox(OBF("Bật bán theo màu nền"), &gPLConfig.fishing.sellByGrade);
             if (gPLConfig.fishing.sellByGrade) {
                 static const char *kSellGradeLabels[5] = {
-                    OBF("Trắng - Thường"),
-                    OBF("Xanh lá - Cao cấp"),
-                    OBF("Xanh dương - Hiếm"),
-                    OBF("Tím - Huyền thoại"),
-                    OBF("Cực quang - Truyền thuyết"),
+                        OBF("Trắng - Thường"),
+                        OBF("Xanh lá - Cao cấp"),
+                        OBF("Xanh dương - Hiếm"),
+                        OBF("Tím - Huyền thoại"),
+                        OBF("Cực quang - Truyền thuyết"),
                 };
                 ImGui::TextUnformatted(OBF("Bán khi khớp:"));
                 for (int i = 0; i < 5; i++) {
@@ -283,17 +283,6 @@ static void DrawFishingPage() {
 
     ImGui::EndTabBar();
     ImGui::PopID();
-}
-
-}
-
-void SetupMenuUi() {
-    modui::AppUi ui{};
-    ui.menu_size = ImVec2(720.f, 520.f);
-    ui.fab_icon_path = OBF("/data/user/0/") + Tools::GetPackageName() + OBF("/files/fab.png");
-    ui.set_window_title(OBF("Play Together##modui_shell"));
-    ui.add_tab(OBF("fishing"), OBF("Câu Cá"), DrawFishingPage);
-    modui::SetAppUi(ui);
 }
 
 }

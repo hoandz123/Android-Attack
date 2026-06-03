@@ -21,6 +21,7 @@
 
 namespace CombineContent {
 
+// Hook gốc — gọi trước handler mod để game cập nhật state/UI.
 void (*old_PID_Crafting_Start)(Object *, Object *) = nullptr;
 void (*old_PID_Crafting_TimeDecrease)(Object *, Object *) = nullptr;
 void (*old_PID_Crafting_ItemReward)(Object *, Object *) = nullptr;
@@ -28,8 +29,17 @@ void (*old_PID_ITEM_Combine)(Object *, Object *) = nullptr;
 
 namespace {
 
-constexpr long long kTimeoutMs = 30000, kRewardDelayMs = 500, kBuyRetryDelayMs = 400;
-constexpr int kFindOk = 4, kFindShortage = 0;
+// --- Hằng số timing & mã FindIngredient (khớp CombineContent.IngredientFindResult) ---
+struct CraftTiming {
+    static constexpr long long timeoutMs = 30000;
+    static constexpr long long rewardDelayMs = 500;
+    static constexpr long long buyRetryDelayMs = 400;
+};
+
+struct IngredientFindResult {
+    static constexpr int shortage = 0;
+    static constexpr int ok = 4;
+};
 
 static const char *kGrp[] = {
         OBF("get_Ingredient1GroupId"), OBF("get_Ingredient2GroupId"), OBF("get_Ingredient3GroupId"),
@@ -40,6 +50,7 @@ static const char *kVal[] = {
         OBF("get_Ingredient4Value"), OBF("get_Ingredient5Value"),
 };
 
+// --- FSM chế mồi: phase + state craft đang chạy / mua NL đang chờ ---
 enum class Phase : int { None, Create, Finish, WaitReward, Reward, Collect, CombineWait };
 
 struct Pending {
@@ -61,6 +72,7 @@ long long g_lastAckMs = 0;
 Pending g_p;
 BuyPending g_buy;
 
+// --- Il2Cpp helpers: CombineContent instance, thời gian, reset pending ---
 Class *cls() {
     static Class *c = FindClass(OBF("CombineContent"));
     return c;
@@ -91,6 +103,7 @@ void foreachIngredient(Object *recipe, Fn fn) {
     }
 }
 
+// --- Slot workbench: tìm slot theo điều kiện (idle / ready), lấy UserItemCraftingSlot ---
 template<typename Pred>
 int16_t findSlot(Pred pred) {
     Object *s = self();
@@ -121,6 +134,7 @@ Object *getSlot(int16_t slotId) {
     return (slot && UserItemCraftingSlot::get_SlotId(slot) == slotId) ? slot : nullptr;
 }
 
+// --- Gom item túi làm ứng viên chọn NL (giống UI chế/nấu) ---
 Object *candidateItems() {
     Object *cache = CacheUser::get_Instance(), *out = nullptr;
     Class *cc = CacheUser::get_class();
@@ -142,6 +156,7 @@ Object *candidateItems() {
     return out;
 }
 
+// --- Thiếu NL → tính product shop + số lượng, gửi PID_SHOP_BuyList ---
 Object *buildShopBuyList(Object *recipe, int cookCount) {
     Object *s = self();
     Class *c = cls();
@@ -176,6 +191,7 @@ Object *buildShopBuyList(Object *recipe, int cookCount) {
     return buyList;
 }
 
+// --- Combine tức thì (craftTime=0): FindIngredientItems × batch → RemoveItemInfo dict ---
 Object *buildRemoveDict(Object *recipe, int cookCount, int *findFail) {
     if (findFail) *findFail = 0;
     Object *s = self(), *candidates = candidateItems();
@@ -194,7 +210,7 @@ Object *buildRemoveDict(Object *recipe, int cookCount, int *findFail) {
         int needCount = per * batch;
         int r = s->invoke_method<int>(OBF("FindIngredientItems"), gid, needCount, candidates, &ref, &uI, &uP, &uG);
         dict = ref;
-        if (r == kFindOk) return;
+        if (r == IngredientFindResult::ok) return;
         ok = false;
         if (findFail) *findFail = r;
         LOGD(OBF("Chế mồi FindIngredientItems fail: group=%u result=%d (%s)"), gid, r, findResultName(r));
@@ -202,6 +218,7 @@ Object *buildRemoveDict(Object *recipe, int cookCount, int *findFail) {
     return ok ? dict : nullptr;
 }
 
+// --- Slot timed (craftTime>0): FindCraftingIngredient × 1 lần chế / slot ---
 Object *buildSlotRemoveDict(Object *recipe, int *findFail) {
     if (findFail) *findFail = 0;
     Object *s = self(), *candidates = candidateItems();
@@ -233,6 +250,7 @@ Object *buildSlotRemoveDict(Object *recipe, int *findFail) {
     return ok ? dict : nullptr;
 }
 
+// --- Trước slot create: sync theme event + CraftingSlotList nếu recipe thuộc theme ---
 void prepSlotCraft(unsigned recipeId) {
     Object *s = self();
     Class *c = cls();
@@ -245,11 +263,12 @@ void prepSlotCraft(unsigned recipeId) {
     if (c->find_method(OBF("CheckCraftingSlotInfo"), 0)) s->invoke_method<void>(OBF("CheckCraftingSlotInfo"));
 }
 
+// --- Chờ ack shop hoặc delay retry sau mua ---
 bool buyInFlight() {
     long long t = nowMs();
     if (g_buy.retryAfterMs) return t < g_buy.retryAfterMs;
     if (!g_buy.active) return false;
-    if (g_buy.sentMs && t - g_buy.sentMs > kTimeoutMs) {
+    if (g_buy.sentMs && t - g_buy.sentMs > CraftTiming::timeoutMs) {
         LOGD(OBF("Chế mồi mua timeout recipe=%u"), g_buy.recipeId);
         clearBuyPending();
         return false;
@@ -257,6 +276,7 @@ bool buyInFlight() {
     return true;
 }
 
+// --- FSM helpers: đánh dấu pending, hẹn thu reward sau rewardDelayMs ---
 void markPending(int16_t slotId, Phase phase, unsigned recipeId, unsigned itemId) {
     g_p = {true, recipeId, itemId, nowMs(), 0, slotId, phase};
 }
@@ -264,9 +284,10 @@ void markPending(int16_t slotId, Phase phase, unsigned recipeId, unsigned itemId
 void scheduleReward(int16_t slotId) {
     g_p.phase = Phase::WaitReward;
     g_p.slotId = slotId;
-    g_p.waitUntilMs = nowMs() + kRewardDelayMs;
+    g_p.waitUntilMs = nowMs() + CraftTiming::rewardDelayMs;
 }
 
+// --- Slot reward: cập nhật túi + slot local, bỏ dialog (hook ShowCraftingRewardDialog đã noop) ---
 bool applySilentReward(Object *protocol) {
     Object *pack = ItemCraftingRewardItemA::get_Reward(protocol);
     if (!pack || !CacheUser::SetRewardPack(pack, false)) return false;
@@ -300,6 +321,7 @@ void logReward(Object *protocol) {
     logUserItems(NetworkRewardPack::get_RewardList(pack));
 }
 
+// --- Đồng bộ recipeId từ itemId mồi (cache UI có thể lệch) ---
 unsigned resolveRecipe(unsigned recipeId, unsigned itemId) {
     if (!itemId) return recipeId;
     if (!TableRecipeImpl::GetRecipeForItem(itemId)) return 0;
@@ -308,6 +330,7 @@ unsigned resolveRecipe(unsigned recipeId, unsigned itemId) {
     return live;
 }
 
+// --- Gửi mua shop; sau ack (onShopBuyAck) retry craft sau buyRetryDelayMs ---
 bool tryBuy(Object *recipe, unsigned recipeId, int cookCount, unsigned itemId) {
     if (g_buy.active || g_p.active || !recipe || !recipeId || cookCount <= 0) return false;
     Object *buyList = buildShopBuyList(recipe, cookCount);
@@ -320,11 +343,12 @@ bool tryBuy(Object *recipe, unsigned recipeId, int cookCount, unsigned itemId) {
     return true;
 }
 
+// --- Luồng combine: buildRemoveDict → SendToItemCombine → chờ PID_ITEM_Combine ---
 bool tryItemCombine(Object *recipe, unsigned recipeId, int cookCount, unsigned lookup) {
     int findFail = 0;
     Object *removeDict = buildRemoveDict(recipe, cookCount, &findFail);
     if (!removeDict) {
-        if (findFail == kFindShortage && tryBuy(recipe, recipeId, cookCount, lookup)) return true;
+        if (findFail == IngredientFindResult::shortage && tryBuy(recipe, recipeId, cookCount, lookup)) return true;
         LOGD(OBF("Chế mồi combine fail: recipe=%u find=%d (%s)"), recipeId, findFail, findResultName(findFail));
         return false;
     }
@@ -334,6 +358,7 @@ bool tryItemCombine(Object *recipe, unsigned recipeId, int cookCount, unsigned l
     return true;
 }
 
+// --- Poll FSM: chờ mua NL / WaitReward→SendItemReward / timeout ---
 bool inFlight() {
     if (buyInFlight()) return true;
     if (!g_p.active) return false;
@@ -346,7 +371,7 @@ bool inFlight() {
         }
         return true;
     }
-    if (g_p.sentMs && t - g_p.sentMs > kTimeoutMs) {
+    if (g_p.sentMs && t - g_p.sentMs > CraftTiming::timeoutMs) {
         if (g_p.phase == Phase::Finish && UserItemCraftingSlot::isReady(getSlot(g_p.slotId))) {
             scheduleReward(g_p.slotId);
             return true;
@@ -359,6 +384,7 @@ bool inFlight() {
 
 } // namespace
 
+// --- Public: số lần chế tối đa game cho phép (NL + túi) ---
 int CalculateMaxCookCount(unsigned int recipeId) {
     Object *s = self();
     return (s && cls() && cls()->find_method(OBF("CalculateMaxCookCount"), 1))
@@ -369,6 +395,7 @@ bool isCraftInFlight() { return inFlight(); }
 bool isIngredientBuyInFlight() { return buyInFlight(); }
 long long lastCraftAckMs() { return g_lastAckMs; }
 
+// --- Hook shop: mua NL xong → delay rồi TryInstantCombine retry ---
 void onShopBuyAck(int result) {
     if (!g_buy.active) return;
     if (result != 0) {
@@ -378,13 +405,18 @@ void onShopBuyAck(int result) {
         return;
     }
     g_buy.active = false;
-    g_buy.retryAfterMs = nowMs() + kBuyRetryDelayMs;
+    g_buy.retryAfterMs = nowMs() + CraftTiming::buyRetryDelayMs;
     g_lastAckMs = nowMs();
     clearPending();
     LOGD(OBF("Chế mồi mua xong recipe=%u"), g_buy.recipeId);
 }
 
+// --- Entry chế mồi (AutoFishing):
+//     1) Thu slot ready nếu có
+//     2) craftTime=0 → combine batch | craftTime>0 → slot create→finish→reward
+//     3) Thiếu NL → tryBuy ---
 bool TryInstantCombine(unsigned int recipeId, int cookCount, unsigned int itemId) {
+    // Retry sau khi mua shop (g_buy.retryAfterMs)
     if (!g_buy.active && g_buy.retryAfterMs && nowMs() >= g_buy.retryAfterMs && g_buy.recipeId) {
         recipeId = g_buy.recipeId;
         itemId = g_buy.itemId;
@@ -394,6 +426,7 @@ bool TryInstantCombine(unsigned int recipeId, int cookCount, unsigned int itemId
     Object *s = self();
     if (!s || !recipeId) return false;
 
+    // Ưu tiên thu món slot đã xong (kể cả craft tay / lần trước)
     if (!g_p.active) {
         int16_t ready = findSlot([](Object *slot) { return UserItemCraftingSlot::isReady(slot); });
         if (ready >= 0 && NetNativeProtocol::SendToCraftingItemReward(ready)) {
@@ -411,6 +444,7 @@ bool TryInstantCombine(unsigned int recipeId, int cookCount, unsigned int itemId
 
     int batch = cookCount > 0 ? cookCount : 1;
     unsigned craftTime = TableItemCraftingListImpl::GetCraftingTime(recipeId);
+    // ItemCraftingList.CraftingTime==0: chế tức thì qua ItemCombine (1 gói × N)
     if (!TableItemCraftingListImpl::UsesSlotCraft(recipeId)) {
         LOGD(OBF("Chế mồi loại combine: recipe=%u (craftTime=%u)"), recipeId, craftTime);
         return tryItemCombine(recipe, recipeId, batch, lookup);
@@ -418,6 +452,7 @@ bool TryInstantCombine(unsigned int recipeId, int cookCount, unsigned int itemId
 
     prepSlotCraft(recipeId);
 
+    // Slot timed: 1 recipe / 1 slot / 1 lần create
     int16_t slotId = findSlot([](Object *slot) { return UserItemCraftingSlot::isIdle(slot); });
     if (slotId < 0) {
         LOGD(findSlot([](Object *slot) { return UserItemCraftingSlot::isReady(slot); }) >= 0
@@ -428,7 +463,7 @@ bool TryInstantCombine(unsigned int recipeId, int cookCount, unsigned int itemId
     int findFail = 0;
     Object *removeDict = buildSlotRemoveDict(recipe, &findFail);
     if (!removeDict) {
-        if (findFail == kFindShortage && tryBuy(recipe, recipeId, batch, lookup)) return true;
+        if (findFail == IngredientFindResult::shortage && tryBuy(recipe, recipeId, batch, lookup)) return true;
         LOGD(OBF("Chế mồi fail: recipe=%u find=%d (%s)"), recipeId, findFail, findResultName(findFail));
         return false;
     }
@@ -438,6 +473,7 @@ bool TryInstantCombine(unsigned int recipeId, int cookCount, unsigned int itemId
     return true;
 }
 
+// --- Hook slot FSM: PID_Crafting_Start → TimeDecrease (FinishNow) hoặc thu ngay nếu ready ---
 void onPID_Crafting_Start(Object *self, Object *protocol) {
     old_PID_Crafting_Start(self, protocol);
     if (!protocol || !pendingIs(Phase::Create)) return;
@@ -464,6 +500,7 @@ void onPID_Crafting_Start(Object *self, Object *protocol) {
     if (!NetNativeProtocol::SendToCraftingTimeDecrease(slotId, 1, (long long) 0)) clearPending();
 }
 
+// --- Hook slot: PID_Crafting_TimeDecrease OK → hẹn thu reward ---
 void onPID_Crafting_TimeDecrease(Object *self, Object *protocol) {
     old_PID_Crafting_TimeDecrease(self, protocol);
     if (!protocol || !pendingIs(Phase::Finish)) return;
@@ -479,6 +516,7 @@ void onPID_Crafting_TimeDecrease(Object *self, Object *protocol) {
 
 void onShowCraftingRewardDialog(Object * /*self*/, Object * /*rewardList*/) {}
 
+// --- Hook slot: PID_Crafting_ItemReward → applySilentReward, bỏ popup ---
 void onPID_Crafting_ItemReward(Object *self, Object *protocol) {
     old_PID_Crafting_ItemReward(self, protocol);
     bool ours = g_p.active && (g_p.phase == Phase::Reward || g_p.phase == Phase::Collect);
@@ -497,6 +535,7 @@ void onPID_Crafting_ItemReward(Object *self, Object *protocol) {
     logReward(protocol);
 }
 
+// --- Hook combine: PID_ITEM_Combine → ResCombineItem (game gốc) + log kết quả ---
 void onPID_ITEM_Combine(Object *self, Object *protocol) {
     old_PID_ITEM_Combine(self, protocol);
     if (!protocol || !pendingIs(Phase::CombineWait)) return;
