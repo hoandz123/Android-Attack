@@ -51,10 +51,11 @@ fun copyFileRobust(src: File, dest: File, logger: Logger, maxAttempts: Int = 8):
     return false
 }
 
-fun deleteQuiet(file: File) {
-    if (!file.exists()) return
-    try {
+fun deleteQuiet(file: File): Boolean {
+    if (!file.exists()) return true
+    return try {
         Files.delete(file.toPath())
+        true
     } catch (_: Exception) {
         file.delete()
     }
@@ -62,6 +63,12 @@ fun deleteQuiet(file: File) {
 
 fun org.gradle.api.Project.gradleProp(key: String, default: String): String =
     (findProperty(key) as String?)?.trim()?.takeIf { it.isNotEmpty() } ?: default
+
+fun org.gradle.api.Project.ndkAbis(): List<String> =
+    gradleProp("attack.ndkAbis", "arm64-v8a")
+        .split(",")
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
 
 tasks.register("deployZygiskDebug") {
     group = "build"
@@ -116,7 +123,16 @@ tasks.register("deployZygiskDebug") {
         )
         File(metaInfDir, "updater-script").writeText("#MAGISK\n")
 
-        val abis = listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+        val abis = project.ndkAbis()
+        logger.lifecycle("Zygisk ABI (attack.ndkAbis): ${abis.joinToString()}")
+
+        // Xóa .so ABI không còn build — tránh zip/deploy nhầm bản cũ (out/lib có thể còn từ build đủ ABI trước đó)
+        val keepNames = abis.map { "$it.so" }.toSet()
+        zygiskDir.listFiles()?.filter { it.isFile && it.name.endsWith(".so") && it.name !in keepNames }
+            ?.forEach { stale ->
+                if (deleteQuiet(stale)) logger.lifecycle("Removed stale ${stale.relativeTo(root)}")
+            }
+
         for (abi in abis) {
             val src = File(outRoot, "lib/loader/debug/$abi/libloader.so")
             if (!src.isFile) {
@@ -125,7 +141,9 @@ tasks.register("deployZygiskDebug") {
             }
             val dest = File(zygiskDir, "$abi.so")
             if (!copyFileRobust(src, dest, logger)) {
-                logger.warn("Skip zygisk/$abi.so (file dich bi khoa?)")
+                logger.warn(
+                    "Skip zygisk/$abi.so (Windows khoa file? dong Explorer/antivirus tren out/magisk-module, hoac xoa thu muc zygisk roi build lai)",
+                )
                 continue
             }
             logger.lifecycle("Copied ${dest.relativeTo(root)}")
@@ -154,11 +172,13 @@ tasks.register("deployZygiskDebug") {
             return@doLast
         }
 
-        val payload = File(outRoot, "lib/attack/debug/arm64-v8a/libattack.so")
+        val pushAbi = project.gradleProp("attack.pushAbi", "arm64-v8a")
+        val payload = File(outRoot, "lib/attack/debug/$pushAbi/libattack.so")
         if (!payload.isFile) {
-            logger.warn("Khong co payload arm64: $payload")
+            logger.warn("Khong co payload ($pushAbi): $payload")
             return@doLast
         }
+        logger.lifecycle("adb payload ABI: $pushAbi")
 
         val targetPath = "/data/user/0/$targetPkg/libattack.so"
 
