@@ -45,6 +45,7 @@ Thêm game mới: xem [app/AGENT.md](app/AGENT.md) §"Thêm game mới".
 ## Gradle root
 
 - `gradle/copy-build-outputs.gradle.kts` — copy sau assemble
+- `gradle/zygisk-deploy.gradle.kts` — adb push `libattack.so`; package: `attack.deployTargetPackage` trong `gradle.properties`
 - `gradle/embed-native-dex.gradle.kts` — apply từ `:native-dex` only
 
 ## SDK dự án

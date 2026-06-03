@@ -60,12 +60,20 @@ fun deleteQuiet(file: File) {
     }
 }
 
+fun org.gradle.api.Project.gradleProp(key: String, default: String): String =
+    (findProperty(key) as String?)?.trim()?.takeIf { it.isNotEmpty() } ?: default
+
 tasks.register("deployZygiskDebug") {
     group = "build"
     dependsOn(tasks.named("copyDebugBuildOutputs"))
 
     doLast {
         val root = rootProject.projectDir
+        val targetPkg = project.gradleProp("attack.deployTargetPackage", "com.vng.playtogether")
+        val moduleDesc = project.gradleProp(
+            "attack.magiskModule.description",
+            "Zygisk loader inject libattack.so (arm64); adb payload -> {package}",
+        ).replace("{package}", targetPkg)
         val outRoot = File(root, "out")
         val moduleDir = File(outRoot, "magisk-module")
         val zygiskDir = File(moduleDir, "zygisk")
@@ -74,12 +82,12 @@ tasks.register("deployZygiskDebug") {
 
         File(moduleDir, "module.prop").writeText(
             """
-            id=android_attack_loader
-            name=Android Attack Loader
-            version=v1.0
-            versionCode=1
-            author=Android-Attack
-            description=Zygisk loader inject libattack.so (arm64) vao com.vng.playtogether qua native bridge
+            id=${project.gradleProp("attack.magiskModule.id", "android_attack_loader")}
+            name=${project.gradleProp("attack.magiskModule.name", "Android Attack Loader")}
+            version=${project.gradleProp("attack.magiskModule.version", "v1.0")}
+            versionCode=${project.gradleProp("attack.magiskModule.versionCode", "1")}
+            author=${project.gradleProp("attack.magiskModule.author", "Android-Attack")}
+            description=$moduleDesc
             """.trimIndent() + "\n",
         )
 
@@ -152,7 +160,6 @@ tasks.register("deployZygiskDebug") {
             return@doLast
         }
 
-        val targetPkg = "com.vng.playtogether"
         val targetPath = "/data/user/0/$targetPkg/libattack.so"
 
         try {
