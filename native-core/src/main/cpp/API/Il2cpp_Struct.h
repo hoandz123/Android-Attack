@@ -16,6 +16,7 @@
 #include <string>
 #include <jni.h>
 #include "il2cpp-tabledefs.h"
+#include "obfuscate.h"
 
 // Forward declarations
 
@@ -1351,13 +1352,13 @@ struct Il2CppList : public Il2CppObject {
         this->invoke_method<void>("set_Capacity", value);
     }
     int get_Count() const {
-        return this->invoke_method<int>("get_Count");
+        return this->invoke_method<int>(OBF("get_Count"));
     }
     T get_item(int index) const {
-        return this->invoke_method<T>("get_Item", index);
+        return this->invoke_method<T>(OBF("get_Item"), index);
     }
     void set_item(int index, T value) {
-        this->invoke_method<void>("set_Item", index, value);
+        this->invoke_method<void>(OBF("set_Item"), index, value);
     }
     void Add(T item) {
         this->invoke_method<void>("Add", item);
@@ -1421,13 +1422,13 @@ struct Il2CppDictionary : public Il2CppObject {
     Array<Entry<K, V>> *entries;    // _entries
 
     int get_Count() const {
-        return this->invoke_method<int>("get_Count");
+        return this->invoke_method<int>(OBF("get_Count"));
     }
     V get_Item(K key) const {
-        return this->invoke_method<V>("get_Item", key);
+        return this->invoke_method<V>(OBF("get_Item"), key);
     }
     void set_Item(K key, V value) {
-        this->invoke_method<void>("set_Item", key, value);
+        this->invoke_method<void>(OBF("set_Item"), key, value);
     }
     bool ContainsKey(K key) const {
         return this->invoke_method<bool>("ContainsKey", key);
