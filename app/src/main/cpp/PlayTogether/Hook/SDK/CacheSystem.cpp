@@ -3,7 +3,7 @@
 
 namespace CacheSystem {
     Class *get_class() {
-        return FindClass("CacheSystem");
+        return FindClass(OBF("CacheSystem"));
     }
     Object *get_Instance() {
         return SystemHelper::get_Cache();
@@ -11,11 +11,11 @@ namespace CacheSystem {
     Object *get_CacheUser() {
         Object *instance = get_Instance();
         if (!instance) return nullptr;
-        return instance->invoke_method<Object *>("get_CacheUser");
+        return instance->invoke_method<Object *>(OBF("get_CacheUser"));
     }
     Object *get_CachePost() {
         Object *instance = get_Instance();
         if (!instance) return nullptr;
-        return instance->invoke_method<Object *>("get_CachePost");
+        return instance->invoke_method<Object *>(OBF("get_CachePost"));
     }
 }

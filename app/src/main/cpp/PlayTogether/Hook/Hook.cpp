@@ -37,10 +37,10 @@ void init() {
         while (true) {
             Tools::Sleep(1);
             if (Object *obj = FrameWork::get_Instance()) {
-                Object *AntiCheatListener = obj->get_field_object<Object *>("AntiCheatListener");
+                Object *AntiCheatListener = obj->get_field_object<Object *>(OBF("AntiCheatListener"));
                 if (AntiCheatListener) {
                     LOGI(OBF("AntiCheatListener found, disabling..."));
-                    obj->set_field_object("AntiCheatListener", nullptr);
+                    obj->set_field_object(OBF("AntiCheatListener"), nullptr);
                     LOGI(OBF("AntiCheatListener disabled"));
                     break;
                 }

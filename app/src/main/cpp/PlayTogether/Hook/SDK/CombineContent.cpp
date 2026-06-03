@@ -87,7 +87,7 @@ void clearPending() { g_p = {}; }
 void clearBuyPending() { g_buy = {}; }
 
 const char *findResultName(int r) {
-    static const char *n[] = {"Shortage", "HasFavorite", "HasLock", "HasEquip", "OK"};
+    static const char *n[] = {OBF("Shortage"), OBF("HasFavorite"), OBF("HasLock"), OBF("HasEquip"), OBF("OK")};
     return (r >= 0 && r < 5) ? n[r] : "?";
 }
 

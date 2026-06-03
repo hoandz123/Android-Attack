@@ -7,7 +7,7 @@
 
 namespace CacheUser {
     Class *get_class() {
-        return FindClass("CacheUser");
+        return FindClass(OBF("CacheUser"));
     }
     Object *get_Instance() {
         return CacheSystem::get_CacheUser();
@@ -15,7 +15,7 @@ namespace CacheUser {
     int myCurrentMapID() {
         Object *instance = get_Instance();
         if (!instance) return 0;
-        return instance->get_field_value<int>("myCurrentMapID");
+        return instance->get_field_value<int>(OBF("myCurrentMapID"));
     }
 
     int GetItemCount(unsigned int itemId, bool ignoreEquip) {

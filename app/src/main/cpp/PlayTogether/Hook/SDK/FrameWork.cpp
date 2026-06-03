@@ -3,7 +3,7 @@
 
 namespace FrameWork {
     Class *get_class() {
-        return FindClass("FrameWork");
+        return FindClass(OBF("FrameWork"));
     }
     Object *get_Instance() {
         return SystemHelper::GetFrameWorkInstance();
@@ -11,6 +11,6 @@ namespace FrameWork {
     void SystemRestart() {
         Object *instance = get_Instance();
         if (!instance) return;
-        instance->invoke_method<void>("SystemRestart");
+        instance->invoke_method<void>(OBF("SystemRestart"));
     }
 }

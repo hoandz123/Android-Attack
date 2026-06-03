@@ -12,7 +12,7 @@
 
 namespace ActorControl {
     Class *get_class() {
-        return FindClass("ActorControl");
+        return FindClass(OBF("ActorControl"));
     }
 
     Object *my_Unit = nullptr;
@@ -28,11 +28,11 @@ namespace ActorControl {
         inProgress = true;
         Object *kunit = old_get_Kunit(instance);
         if (kunit && instance) {
-            if (instance->invoke_method<bool>("get_IsMyActor")) {
-                my_Motor = kunit->get_field_object<Object *>("Motor");
+            if (instance->invoke_method<bool>(OBF("get_IsMyActor"))) {
+                my_Motor = kunit->get_field_object<Object *>(OBF("Motor"));
                 if (my_Motor) {
                     my_Unit = kunit;
-                    my_Player = kunit->get_field_object<Object *>("actorDefaultControlPlayer");
+                    my_Player = kunit->get_field_object<Object *>(OBF("actorDefaultControlPlayer"));
                     static long long timeLimit = 0;
                     if (timeLimit > 0 && Tools::getSystemMilliseconds() - timeLimit < 30) {
                         inProgress = false;
@@ -45,7 +45,7 @@ namespace ActorControl {
                         inProgress = false;
                         return kunit;
                     }
-                    Object *loading = dialog->invoke_method<Object *>("get_GetLoading");
+                    Object *loading = dialog->invoke_method<Object *>(OBF("get_GetLoading"));
                     if (!loading) {
                         isGameLoading = true;
                         inProgress = false;
@@ -53,7 +53,7 @@ namespace ActorControl {
                     }
                     static long long loadingSettledAt = 0;
                     static bool isFirstLoading = true;
-                    if (loading->invoke_method<bool>("GetIsLoading")) {
+                    if (loading->invoke_method<bool>(OBF("GetIsLoading"))) {
                         loadingSettledAt = 0;
                         isGameLoading = true;
                         inProgress = false;
