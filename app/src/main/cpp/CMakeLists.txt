@@ -25,7 +25,21 @@ set(PLAY_TOGETHER_SOURCES
     PlayTogether/Hook/SDK/FishingSystem.cpp
     PlayTogether/Hook/SDK/TableFishingDifficultyImpl.cpp
     PlayTogether/Hook/SDK/TableFishingAreaImpl.cpp
-    PlayTogether/Hook/SDK/TableFishingBaitImpl.cpp)
+    PlayTogether/Hook/SDK/TableFishingBaitImpl.cpp
+    PlayTogether/Hook/SDK/TableRecipeImpl.cpp
+    PlayTogether/Hook/SDK/NetNativeProtocol.cpp
+    PlayTogether/Hook/SDK/ContentSystem.cpp
+    PlayTogether/Hook/SDK/CombineContent.cpp
+    PlayTogether/Hook/SDK/DialogBaseLock.cpp
+    PlayTogether/Hook/SDK/UserItemCraftingSlot.cpp
+    PlayTogether/Hook/SDK/ProtocolA.cpp
+    PlayTogether/Hook/SDK/NetworkRewardPack.cpp
+    PlayTogether/Hook/SDK/ItemCraftingStartA.cpp
+    PlayTogether/Hook/SDK/ItemCraftingTimeDecreaseA.cpp
+    PlayTogether/Hook/SDK/ItemCraftingRewardItemA.cpp
+    PlayTogether/Hook/SDK/TableIngredientGroupImpl.cpp
+    PlayTogether/Hook/SDK/TableIngredientImpl.cpp
+    PlayTogether/Hook/SDK/NetWebProtocol.cpp)
 
 add_library(attack SHARED
     NativeLib.cpp Menu.cpp Games.cpp
