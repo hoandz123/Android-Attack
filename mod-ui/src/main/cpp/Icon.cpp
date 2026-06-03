@@ -53,16 +53,13 @@ ImTextureID LoadIcon(const char *path) {
     if (!path) {
         if (g_load_icon_tex) glDeleteTextures(1, &g_load_icon_tex);
         DropLoadIconCache();
-        LOGI(OBF("LoadIcon cleared cached texture"));
         return (ImTextureID) 0;
     }
     if (!path[0]) return (ImTextureID) 0;
     if (g_load_icon_tex && strncmp(g_load_icon_path, path, sizeof(g_load_icon_path)) == 0) {
-        LOGI(OBF("LoadIcon cache hit path=%s tex=%u"), path, g_load_icon_tex);
         return (ImTextureID) (intptr_t) g_load_icon_tex;
     }
 
-    LOGI(OBF("LoadIcon stbi_load begin path=%s size=%lld"), path, (long long) fs::FileSize(path));
     int w = 0, h = 0, ch = 0;
     unsigned char *px = stbi_load(path, &w, &h, &ch, 4);
     if (!px || w <= 0 || h <= 0) {
@@ -87,7 +84,6 @@ ImTextureID LoadIcon(const char *path) {
 
     strncpy(g_load_icon_path, path, sizeof(g_load_icon_path) - 1);
     g_load_icon_path[sizeof(g_load_icon_path) - 1] = '\0';
-    LOGI(OBF("LoadIcon OK path=%s %dx%d ch=%d tex=%u"), path, w, h, ch, g_load_icon_tex);
     return (ImTextureID) (intptr_t) g_load_icon_tex;
 }
 
@@ -122,9 +118,7 @@ bool DownloadIcon(const char *url, const char *save_path) {
         LOGE(OBF("DownloadIcon invalid args url=%p path=%p"), (void *) url, (void *) save_path);
         return false;
     }
-    LOGI(OBF("DownloadIcon begin url=%s path=%s"), url, save_path);
     const int64_t existing = fs::IsFile(save_path) ? fs::FileSize(save_path) : -1;
-    LOGI(OBF("DownloadIcon existing size=%lld"), (long long) existing);
     if (existing == 0) {
         LOGW(OBF("DownloadIcon removing stale 0-byte file path=%s"), save_path);
         fs::Remove(save_path);
@@ -141,27 +135,17 @@ bool DownloadIcon(const char *url, const char *save_path) {
     const bool have_cache = fs::IsFile(save_path) && fs::FileSize(save_path) > 0;
     const bool have_meta = ReadMeta(meta_path, &in);
     const http::CacheValidators *in_ptr = nullptr;
-    if (have_cache && have_meta && (!in.etag.empty() || !in.last_modified.empty())) {
-        in_ptr = &in;
-        LOGI(OBF("DownloadIcon conditional GET if-none-match=%s if-modified-since=%s"), in.etag.empty() ? OBF("(none)") : in.etag.c_str(), in.last_modified.empty() ? OBF("(none)") : in.last_modified.c_str());
-    } else {
-        LOGI(OBF("DownloadIcon plain GET (cache=%d meta=%d)"), have_cache ? 1 : 0, have_meta ? 1 : 0);
-    }
+    if (have_cache && have_meta && (!in.etag.empty() || !in.last_modified.empty())) in_ptr = &in;
     const http::Response resp = http::DownloadConditional(url, save_path, 20, in_ptr, &out);
     const int64_t after = fs::IsFile(save_path) ? fs::FileSize(save_path) : -1;
-    if (resp.cache_hit()) {
-        LOGI(OBF("DownloadIcon conditional -> 304 keep cache size=%lld"), (long long) after);
-        return after > 0;
-    }
+    if (resp.cache_hit()) return after > 0;
     if (resp.ok()) {
         WriteMeta(meta_path, out);
         DropLoadIconCache();
         g_fab_icon = (ImTextureID) 0;
-        LOGI(OBF("DownloadIcon conditional -> 200 replaced (%lld bytes)"), (long long) after);
         return after > 0;
     }
-    LOGI(OBF("DownloadIcon http ok=%d status=%ld error=%s size_after=%lld"), resp.ok() ? 1 : 0, resp.status, resp.error.empty() ? OBF("(none)") : resp.error.c_str(), (long long) after);
-    LOGW(OBF("DownloadIcon failed — removing path=%s"), save_path);
+    LOGW(OBF("DownloadIcon failed status=%ld %s"), resp.status, resp.error.empty() ? OBF("(none)") : resp.error.c_str());
     fs::Remove(save_path);
     fs::Remove(meta_path);
     return false;
@@ -177,9 +161,7 @@ void PollFabDownload() {
     if (now < g_fab_next_retry_ms.load(std::memory_order_acquire)) return;
     bool expected = false;
     if (!g_fab_downloading.compare_exchange_strong(expected, true, std::memory_order_acq_rel)) return;
-    LOGI(OBF("PollFabDownload spawning download thread url=%s path=%s"), FabIconUrl(), path.c_str());
     std::thread([path, now] {
-        LOGI(OBF("FabDownload thread started"));
         const bool ok = DownloadIcon(FabIconUrl(), path.c_str());
         if (ok) {
             g_fab_file_ready.store(true, std::memory_order_release);
@@ -189,14 +171,12 @@ void PollFabDownload() {
             if (n >= kMaxFabRetries) LOGW(OBF("FabDownload abandoned after %d failures path=%s"), n, path.c_str());
         }
         g_fab_downloading.store(false, std::memory_order_release);
-        LOGI(OBF("FabDownload thread done ok=%d file_ready=%d size=%lld"), ok ? 1 : 0, ok ? 1 : 0, (long long) (fs::IsFile(path) ? fs::FileSize(path) : -1));
     }).detach();
 }
 
 } // namespace
 
 void InvalidateIcon() {
-    LOGI(OBF("InvalidateIcon: dropping stale texture for context recreate"));
     g_fab_icon = (ImTextureID) 0;
     DropLoadIconCache();
 }
@@ -206,14 +186,11 @@ ImTextureID GetFabIcon() {
         PollFabDownload();
         if (g_fab_file_ready.load(std::memory_order_acquire)) {
             const std::string &path = FabIconPath();
-            LOGI(OBF("GetFabIcon loading texture from %s"), path.c_str());
             g_fab_icon = LoadIcon(path.c_str());
             if (!g_fab_icon) {
                 LOGW(OBF("GetFabIcon LoadIcon failed — removing %s and retry later"), path.c_str());
                 fs::Remove(path);
                 g_fab_file_ready.store(false, std::memory_order_release);
-            } else {
-                LOGI(OBF("GetFabIcon texture ready id=%p"), (void *) g_fab_icon);
             }
         }
     }
