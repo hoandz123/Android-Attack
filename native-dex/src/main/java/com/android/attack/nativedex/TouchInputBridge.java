@@ -28,7 +28,6 @@ public final class TouchInputBridge {
     private static Object proxyCallback;
     private static int touchDispatchCount;
     private static int touchFedCount;
-    private static long lastTouchLogMs;
     /** Reuse on main thread — feedTouch chỉ chạy trên UI thread qua Window.Callback. */
     private static final int[] sTouchLoc = new int[2];
 
@@ -115,7 +114,7 @@ public final class TouchInputBridge {
             if ("dispatchTouchEvent".equals(method.getName()) && args != null && args.length == 1
                     && args[0] instanceof MotionEvent) {
                 feedTouch((MotionEvent) args[0]);
-                logTouchDispatch(activity);
+                touchDispatchCount++;
             } else if ("dispatchKeyEvent".equals(method.getName()) && args != null && args.length == 1
                     && args[0] instanceof KeyEvent) {
                 KeyboardInputBridge.feedKeyEvent((KeyEvent) args[0]);
@@ -125,17 +124,6 @@ public final class TouchInputBridge {
         proxyCallback = Proxy.newProxyInstance(
                 base.getClass().getClassLoader(), new Class<?>[] {Window.Callback.class}, handler);
         w.setCallback((Window.Callback) proxyCallback);
-    }
-
-    private static void logTouchDispatch(Activity activity) {
-        touchDispatchCount++;
-        long now = System.currentTimeMillis();
-        if (touchDispatchCount == 1 || now - lastTouchLogMs >= 3000L) {
-            lastTouchLogMs = now;
-            Log.d(TAG, "dispatchTouch total=" + touchDispatchCount + " fed=" + touchFedCount
-                    + " (lifetime counter, log 3s) "
-                    + (activity != null ? activity.getClass().getSimpleName() : "?"));
-        }
     }
 
     private static View touchCoordView() {

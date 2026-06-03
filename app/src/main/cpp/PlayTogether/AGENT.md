@@ -44,10 +44,10 @@ Config: `PLConfig::fishing` (`Config.h`), lưu JSON tại `/storage/emulated/0/A
 
 | Tính năng | Config field | Code |
 |-----------|--------------|------|
-| Auto câu (FSM) | `enabled`, `stopWhenCountOver` | `AutoFishing::Update` |
-| Đóng dialog thưởng | `autoCloseReward` | `handleRewardDialog` |
+| Auto câu (FSM) | `enabled` (hết lượt: luôn dừng cast, không còn config) | `AutoFishing::Update` |
+| Bảo Quản (đóng dialog thưởng) | `autoCloseReward` | `handleRewardDialog` |
 | Lọc cá theo bóng (1–7) | `filterByShadow`, `keepShadow[7]` | `keepCurrentFish` / `trySkipFish` |
-| Lọc cá theo level | `filterByLevel`, `keepLevels` (CSV) | `keepCurrentFish` |
+| Lọc Theo ID | `filterByLevel`, `keepLevels` (CSV FishingDifficulty ID) | `keepCurrentFish` |
 | Bán cá theo bóng | `sellByShadow`, `sellShadow[7]` | `handleRewardDialog` |
 | Bán cá theo độ hiếm (grade 1–5) | `sellByGrade`, `sellGrade[5]` | `handleRewardDialog` |
 | Tự gắn mồi | `autoEquipBait`, `baitItemId` | `tryAutoEquipBait` |
@@ -111,6 +111,12 @@ Snapshot thread-safe (game thread ghi, UI thread đọc qua `ReadPicker`) cho co
 - `isGameLoading` gate — bỏ qua khi đang load (tránh crash/đụng state chưa sẵn sàng).
 - Chống spam: `RATE_LIMIT(ms)`, `canActNow()`, cooldown per-action trong `g_time`.
 - Chuỗi bọc `OBF(...)`; con trỏ hook `RetType (*old_Foo)(...)`; dùng `Object`/`List`/`Dictionary` từ `API/Il2cpp_Struct.h` (xem `.cursor/rules/code-style.mdc`).
+
+## Dump / RE
+
+Il2CppDumper + `libil2cpp.so` (cùng version APK) đặt trong:
+
+`dump/com.vng.playtogether/` — ví dụ `com.vng.playtogether_2.27.1_[arm64-v8a].cs`. Không để chung root `dump/` (tránh lẫn game khác). Chi tiết: [dump/README.md](../../../../../../dump/README.md).
 
 ## Khi sửa
 

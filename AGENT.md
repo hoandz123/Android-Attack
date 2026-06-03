@@ -51,6 +51,14 @@ Thêm game mới: xem [app/AGENT.md](app/AGENT.md) §"Thêm game mới".
 
 `minSdk 26`, `target/compile 36` — khớp Dex in-memory (`DexLoader`).
 
+## Dump IL2CPP
+
+Theo **package** — xem [dump/README.md](dump/README.md):
+
+- Play Together (VNG): `dump/com.vng.playtogether/` (`*.cs` + `libil2cpp.so` cùng version)
+- Global PT: `dump/com.haegin.playtogether/`
+- Liên Quân: `dump/com.garena.game.kgvn/`
+
 ## Clean
 
 `./gradlew clean` trên app xóa `out/`. Sau clean native-core: build lại native-core rồi app.

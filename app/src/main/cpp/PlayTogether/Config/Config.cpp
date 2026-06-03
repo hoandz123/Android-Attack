@@ -13,7 +13,6 @@ void to_json(nlohmann::json &j, const PLConfig::FishingConfig &cfg) {
     j = nlohmann::json{
         {OBF("enabled"), cfg.enabled},
         {OBF("autoCloseReward"), cfg.autoCloseReward},
-        {OBF("stopWhenCountOver"), cfg.stopWhenCountOver},
         {OBF("autoEquipBait"), cfg.autoEquipBait},
         {OBF("baitItemId"), cfg.baitItemId},
         {OBF("autoCraftBait"), cfg.autoCraftBait},
@@ -35,7 +34,6 @@ void to_json(nlohmann::json &j, const PLConfig::FishingConfig &cfg) {
 void from_json(const nlohmann::json &j, PLConfig::FishingConfig &cfg) {
     if (j.contains(OBF("enabled"))) j[OBF("enabled")].get_to(cfg.enabled);
     if (j.contains(OBF("autoCloseReward"))) j[OBF("autoCloseReward")].get_to(cfg.autoCloseReward);
-    if (j.contains(OBF("stopWhenCountOver"))) j[OBF("stopWhenCountOver")].get_to(cfg.stopWhenCountOver);
     if (j.contains(OBF("autoEquipBait"))) j[OBF("autoEquipBait")].get_to(cfg.autoEquipBait);
     if (j.contains(OBF("baitItemId"))) j[OBF("baitItemId")].get_to(cfg.baitItemId);
     if (j.contains(OBF("autoCraftBait"))) j[OBF("autoCraftBait")].get_to(cfg.autoCraftBait);

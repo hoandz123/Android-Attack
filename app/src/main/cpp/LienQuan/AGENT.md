@@ -35,7 +35,7 @@ Chưa có `Config/`, `SDK/`, `UI/` riêng. Khi mở rộng nên theo cấu trúc
 ## Khi mở rộng
 
 1. Hook thật → điền `InitHooks()`: `HOOK_LIB("libil2cpp.so", "0xRVA", cb, old_cb)` (offset) hoặc `Tools::Hook(GET_METHOD(...), ...)` (theo tên class/method nếu có dump).
-2. Tìm RVA/signature → dùng skill `il2cpp-call-flow-analysis` (dump.cs + libil2cpp.so).
+2. Tìm RVA/signature → skill `il2cpp-call-flow-analysis`; dump đặt tại `dump/com.garena.game.kgvn/` (xem [dump/README.md](../../../../../../dump/README.md)).
 3. Có nhiều tính năng → tách `Config/`, `SDK/`, `UI/` theo mẫu PlayTogether.
 4. Build: `./gradlew :app:assembleDebug`.
 

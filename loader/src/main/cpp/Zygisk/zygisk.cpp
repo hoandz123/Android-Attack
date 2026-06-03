@@ -66,7 +66,11 @@ private:
     char *game_data_dir = nullptr;
 
     void preSpecialize(const char *package_name, const char *app_data_dir) {
-        std::vector<std::string> target_packages = {OBF("com.vng.playtogether"), OBF("com.haegin.playtogether")};
+        std::vector<std::string> target_packages = {
+            OBF("com.vng.playtogether"), 
+            OBF("com.haegin.playtogether"),
+            OBF("com.garena.game.kgvn")
+        };
         if (std::find(target_packages.begin(), target_packages.end(), std::string(package_name)) == target_packages.end()) {
             api->setOption(zygisk::Option::DLCLOSE_MODULE_LIBRARY);
             return;

@@ -159,10 +159,7 @@ void DrawCauCaPage() {
             ImGui::TableNextColumn();
             UiCheckbox(OBF("Auto câu"), &gPLConfig.fishing.enabled);
             ImGui::TableNextColumn();
-            UiCheckbox(OBF("Hết lượt"), &gPLConfig.fishing.stopWhenCountOver);
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            UiCheckbox(OBF("Đóng thưởng"), &gPLConfig.fishing.autoCloseReward);
+            UiCheckbox(OBF("Bảo Quản"), &gPLConfig.fishing.autoCloseReward);
             ImGui::TableNextColumn();
             ImGui::EndTable();
         }
@@ -187,8 +184,8 @@ void DrawCauCaPage() {
                 }
             }
             ImGui::TableNextColumn();
-            ImGui::TextUnformatted(OBF("Lọc theo level"));
-            UiCheckbox(OBF("Bật lọc level"), &gPLConfig.fishing.filterByLevel);
+            ImGui::TextUnformatted(OBF("Lọc Theo ID"));
+            UiCheckbox(OBF("Bật lọc ID"), &gPLConfig.fishing.filterByLevel);
             if (gPLConfig.fishing.filterByLevel) {
                 static char keepLevelsBuf[128] = {};
                 static std::string keepLevelsSynced;

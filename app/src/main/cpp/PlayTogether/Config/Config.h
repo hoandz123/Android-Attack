@@ -6,7 +6,6 @@ struct PLConfig {
     struct FishingConfig {
         bool enabled = false;
         bool autoCloseReward = true;
-        bool stopWhenCountOver = true;
         bool autoEquipBait = false;
         int baitItemId = 0;
         bool autoCraftBait = false;

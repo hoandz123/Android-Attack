@@ -363,7 +363,7 @@ void Update() {
             }
         }
         if (player->invoke_method<bool>(OBF("get_IsFishing"))) return;
-        if (fishingSys->invoke_method<bool>(OBF("get_IsFishingCountOver")) && gPLConfig.fishing.stopWhenCountOver) return;
+        if (fishingSys->invoke_method<bool>(OBF("get_IsFishingCountOver"))) return;
         if (fishingSys->get_field_value<bool>(OBF("IsFishing")) && state == eFishingState::None) return;
         if (!canActNow()) return;
         g_time.lastCastAttemptMs = now;
