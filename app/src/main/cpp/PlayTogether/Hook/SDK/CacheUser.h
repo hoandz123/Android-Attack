@@ -9,9 +9,11 @@ namespace CacheUser {
     int myCurrentMapID();
     int GetItemCount(unsigned int itemId, bool ignoreEquip = true);
     long long GetItemUid(unsigned int itemId);
+    long long GetBaitItemUid(unsigned int itemId);
     int GetItemTypeCount(int itemType);
     int GetInventoryLimitFish();
     bool IsItemLocked(unsigned int itemId);
+    bool SetRewardPack(Object *rewardPack, bool coinLateUpdate = false);
 }
 
 #endif // SDK_CACHEUSER_H
