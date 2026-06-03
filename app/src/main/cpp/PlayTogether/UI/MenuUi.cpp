@@ -41,7 +41,7 @@ static bool DrawBaitPicker(const char *id, int *baitItemId) {
     if (*baitItemId > 0) {
         const char *lbl = cat.ready ? PickerBaitLabel(cat, *baitItemId) : nullptr;
         if (lbl) snprintf(preview, sizeof(preview), "%s", lbl);
-        else snprintf(preview, sizeof(preview), OBF("Mồi ID %d"), *baitItemId);
+        else snprintf(preview, sizeof(preview), "%s", OBF("(chưa chọn)"));
     } else {
         snprintf(preview, sizeof(preview), "%s", OBF("(chưa chọn)"));
     }
@@ -61,8 +61,6 @@ static bool DrawBaitPicker(const char *id, int *baitItemId) {
         }
         ImGui::EndCombo();
     }
-    ImGui::InputInt(OBF("Hoặc ID tay##bait_manual"), baitItemId, 0, 0);
-    if (ImGui::IsItemDeactivatedAfterEdit()) changed = true;
     ImGui::PopID();
     return changed;
 }
@@ -76,16 +74,16 @@ static bool DrawZonePicker(const char *id, unsigned int *zoneId) {
     if (*zoneId > 0) {
         const char *lbl = cat.ready ? PickerZoneLabel(cat, *zoneId) : nullptr;
         if (lbl) snprintf(preview, sizeof(preview), "%s", lbl);
-        else snprintf(preview, sizeof(preview), OBF("Vùng %u"), *zoneId);
+        else snprintf(preview, sizeof(preview), "%s", OBF("(chưa chọn)"));
     } else {
-        snprintf(preview, sizeof(preview), "%s", OBF("(tự / chưa chọn)"));
+        snprintf(preview, sizeof(preview), "%s", OBF("(chưa chọn)"));
     }
     ImGui::PushID(id);
     if (ImGui::BeginCombo(OBF("Vùng câu##zone_combo"), preview)) {
         AutoFishing::NotifyPickerOpen();
         if (!cat.ready) ImGui::TextUnformatted(OBF("Đang tải danh sách…"));
-        else if (cat.zoneCount <= 0) ImGui::TextUnformatted(OBF("Chưa có vùng (vào game?)"));
-        if (ImGui::Selectable(OBF("(Không chọn / 0)"), *zoneId == 0)) {
+        else if (cat.zoneCount <= 0) ImGui::TextUnformatted(OBF("Chưa có vùng"));
+        if (ImGui::Selectable(OBF("Không chọn"), *zoneId == 0)) {
             *zoneId = 0;
             changed = true;
         }
@@ -100,14 +98,51 @@ static bool DrawZonePicker(const char *id, unsigned int *zoneId) {
         }
         ImGui::EndCombo();
     }
-    int manual = (int) *zoneId;
-    ImGui::InputInt(OBF("Hoặc ID tay##zone_manual"), &manual, 0, 0);
-    if (ImGui::IsItemDeactivatedAfterEdit()) {
-        *zoneId = (unsigned int) (manual < 0 ? 0 : manual);
-        changed = true;
-    }
     ImGui::PopID();
     return changed;
+}
+
+static void DrawCraftBaitPanel() {
+    UiCheckbox(OBF("Tự chế mồi"), &gPLConfig.fishing.autoCraftBait);
+
+    int target = gPLConfig.fishing.craftBaitTargetCount;
+    if (target < 1) target = 1;
+    ImGui::SetNextItemWidth(-1);
+    if (ImGui::InputInt(OBF("##craft_qty"), &target, 1, 5)) {
+        if (target < 1) target = 1;
+        if (target > 999) target = 999;
+        gPLConfig.fishing.craftBaitTargetCount = target;
+        SaveConfig();
+    }
+
+    AutoFishing::PickerSnapshot cat{};
+    AutoFishing::ReadPicker(cat);
+    ImGui::TextUnformatted(OBF("Công thức mồi:"));
+
+    ImGui::BeginChild(OBF("craft_recipe_list##scroll"), ImVec2(-1, 500.f), ImGuiChildFlags_Borders | ImGuiChildFlags_FrameStyle);
+    if (!cat.ready || cat.baitRecipeCount <= 0) {
+        ImGui::TextUnformatted(cat.ready ? OBF("Không có công thức mồi") : OBF("Đang tải danh sách…"));
+    } else {
+        bool changed = false;
+        const unsigned sel = gPLConfig.fishing.craftBaitItemId;
+        bool selValid = sel == 0;
+        for (int i = 0; i < cat.baitRecipeCount; i++) {
+            const auto &e = cat.baitRecipes[i];
+            if (e.itemId == sel) selValid = true;
+            ImGui::PushID(i);
+            if (ImGui::Selectable(e.label, sel == e.itemId)) {
+                gPLConfig.fishing.craftBaitItemId = e.itemId;
+                changed = true;
+            }
+            ImGui::PopID();
+        }
+        if (!selValid) {
+            gPLConfig.fishing.craftBaitItemId = 0;
+            changed = true;
+        }
+        if (changed) SaveConfig();
+    }
+    ImGui::EndChild();
 }
 
 static void DrawFishingPage() {
@@ -218,56 +253,32 @@ static void DrawFishingPage() {
 
     if (ImGui::BeginTabItem(OBF("Nâng cao"))) {
         ImGui::BeginChild(OBF("sub_adv##scroll"), ImVec2(0, 0));
-        ImGui::TextUnformatted(OBF("Mồi & zone"));
-        if (ImGui::Checkbox(OBF("Tự gắn mồi UID (rủi ro)"), &gPLConfig.fishing.autoEquipBait)) SaveConfig();
-        if (gPLConfig.fishing.autoEquipBait) {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.45f, 0.2f, 1.f));
-            ImGui::TextUnformatted(OBF("Cảnh báo: set_FishingBaitUID trước cast"));
-            ImGui::PopStyleColor();
-            if (DrawBaitPicker(OBF("main_bait"), &gPLConfig.fishing.baitItemId)) SaveConfig();
-            UiCheckbox(OBF("Mồi theo zone (config JSON)"), &gPLConfig.fishing.smartBaitByZone);
-            UiCheckbox(OBF("Mồi auto EffectId/ActionId"), &gPLConfig.fishing.smartBaitAutoEffect);
-            if (gPLConfig.fishing.smartBaitByZone) {
-                static unsigned int pickZone = 0;
-                static int pickBait = 0;
-                AutoFishing::PickerSnapshot cat{};
-                AutoFishing::ReadPicker(cat);
-                bool changed = false;
-                ImGui::TextUnformatted(OBF("Ưu tiên mồi theo vùng:"));
-                if (DrawZonePicker(OBF("pref_zone"), &pickZone)) changed = true;
-                if (DrawBaitPicker(OBF("pref_bait"), &pickBait)) changed = true;
-                if (ImGui::Button(OBF("Thêm/cập nhật ưu tiên##zone_bait_add"), ImVec2(-1, 0)) && pickZone > 0 && pickBait > 0) {
-                    bool found = false;
-                    for (auto &p : gPLConfig.fishing.baitZonePrefs) {
-                        if (p.first == pickZone) {
-                            p.second = (unsigned int) pickBait;
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) gPLConfig.fishing.baitZonePrefs.emplace_back(pickZone, (unsigned int) pickBait);
-                    changed = true;
-                }
-                for (size_t i = 0; i < gPLConfig.fishing.baitZonePrefs.size(); i++) {
-                    const auto &p = gPLConfig.fishing.baitZonePrefs[i];
-                    const char *zLbl = PickerZoneLabel(cat, p.first);
-                    const char *bLbl = PickerBaitLabel(cat, (int) p.second);
-                    ImGui::PushID((int) i);
-                    ImGui::Text(OBF("• %s → %s"), zLbl ? zLbl : OBF("?"), bLbl ? bLbl : OBF("?"));
-                    ImGui::SameLine();
-                    if (ImGui::SmallButton(OBF("Xóa##rm_pref"))) {
-                        gPLConfig.fishing.baitZonePrefs.erase(gPLConfig.fishing.baitZonePrefs.begin() + (long) i);
-                        changed = true;
-                        ImGui::PopID();
-                        break;
-                    }
-                    ImGui::PopID();
-                }
-                if (changed) SaveConfig();
+
+        if (ImGui::CollapsingHeader(OBF("Gắn mồi##adv_equip"))) {
+            if (ImGui::Checkbox(OBF("Tự gắn mồi"), &gPLConfig.fishing.autoEquipBait)) SaveConfig();
+            if (gPLConfig.fishing.autoEquipBait) {
+                if (DrawBaitPicker(OBF("main_bait"), &gPLConfig.fishing.baitItemId)) SaveConfig();
             }
         }
+
+        ImGui::Spacing();
+        if (ImGui::CollapsingHeader(OBF("Fake vùng câu##adv_zone"))) {
+            if (UiCheckbox(OBF("Bật fake vùng"), &gPLConfig.fishing.fakeZoneEnabled)) {}
+            if (gPLConfig.fishing.fakeZoneEnabled) {
+                if (DrawZonePicker(OBF("fake_zone"), &gPLConfig.fishing.fakeZoneId)) SaveConfig();
+            }
+        }
+
+        ImGui::Spacing();
+        if (ImGui::CollapsingHeader(OBF("Chế mồi##adv_craft"))) {
+            AutoFishing::NotifyCraftPanelVisible();
+            DrawCraftBaitPanel();
+        }
+
         ImGui::EndChild();
         ImGui::EndTabItem();
+    } else {
+        AutoFishing::NotifyPickerClosed();
     }
 
     ImGui::EndTabBar();
