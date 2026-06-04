@@ -61,7 +61,6 @@ obj/
 **/obj/
 *.o
 *.obj
-*.so
 *.a
 *.lib
 *.map

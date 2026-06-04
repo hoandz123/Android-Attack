@@ -10,7 +10,8 @@ bool UnityEngine::Object::isValid() {
 }
 
 bool UnityEngine::Object::IsNativeObjectAlive(Object* obj) {
-    static bool (*IsNativeObjectAlive)(Object* obj) = (bool (*)(Object*)) GET_METHOD("UnityEngine", "Object", "IsNativeObjectAlive", 1);
+    static bool (*IsNativeObjectAlive)(Object* obj) = (bool (*)(Object*)) GET_METHOD(
+        "UnityEngine.CoreModule.dll", "UnityEngine", "Object", "IsNativeObjectAlive", 1);
     if (IsNativeObjectAlive) {
         return IsNativeObjectAlive(obj);
     }

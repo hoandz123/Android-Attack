@@ -17,9 +17,14 @@ bool UiCheckbox(const char *label, bool *v) {
 
 void DrawChinhPage() {
     if (ImGui::CollapsingHeader(OBF("Liên Quân"), ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::TextUnformatted(OBF("Tab Chính — cấu hình lưu vào lq_config.json"));
-        UiCheckbox(OBF("Aim assist (demo)"), &gLQConfig.main.aimAssist);
         UiCheckbox(OBF("Map sáng"), &gLQConfig.main.mapHack);
+        UiCheckbox(OBF("Block tải tài nguyên"), &gLQConfig.main.blockDlcDownload);
+        UiCheckbox(OBF("Unlock skin"), &gLQConfig.main.unlockSkin);
+        UiCheckbox(OBF("Unlock nút (PersonalButton)"), &gLQConfig.main.unlockButton);
+        if (gLQConfig.main.unlockButton) {
+            if (ImGui::InputInt(OBF("Hero ID"), &gLQConfig.main.buttonHeroId)) SaveConfig();
+            if (ImGui::InputInt(OBF("Skin ID"), &gLQConfig.main.buttonSkinId)) SaveConfig();
+        }
     }
 }
 

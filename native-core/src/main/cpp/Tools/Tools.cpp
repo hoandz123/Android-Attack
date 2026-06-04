@@ -131,6 +131,18 @@ std::string Tools::GetPackageName() {
     return fullName;
 }
 
+bool Tools::IsMainProcess() {
+    char buf[256]{};
+    if (FILE *fp = std::fopen(OBF("/proc/self/cmdline"), "r")) {
+        std::fread(buf, 1, sizeof(buf) - 1, fp);
+        std::fclose(fp);
+    }
+    for (size_t i = 0; i < sizeof(buf) && buf[i]; ++i) {
+        if (buf[i] == ':') return false;
+    }
+    return true;
+}
+
 static bool checkApkPath(const std::string& packageName, const std::string& apkPath) {
     if (apkPath.empty() || apkPath[0] != '/' || apkPath.find(".apk") == std::string::npos) {
         return false;

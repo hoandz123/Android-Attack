@@ -5,10 +5,8 @@
 namespace lienquan {
 
 namespace KyriosFramework {
-    Class *get_class();
-    Object *get_Instance();
-    bool get_IsRunning();
-    Object *get_actorManager();
+    bool GetIsRunning();
+    int GetHostPlayerCamp();
 }
 
 } // namespace lienquan

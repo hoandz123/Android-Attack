@@ -1,7 +1,78 @@
 #include "EspGUI.h"
+#include <API/game/UnityEngine/Camera.h>
+#include <cmath>
 #include <imgui.h>
 
 namespace EspGUI {
+
+bool projectSegment(const Vector3 &from, const Vector3 &to, float sw, float sh, float outFrom[2], float outTo[2]) {
+    (void)sw;
+    Vector3 sf = UnityEngine::Camera::StaticWorldToScreenPoint(from);
+    Vector3 st = UnityEngine::Camera::StaticWorldToScreenPoint(to);
+    const float kNear = 0.1f;
+    bool fFront = sf.z > kNear;
+    bool tFront = st.z > kNear;
+    if (!fFront && !tFront) return false;
+    Vector3 ef = from;
+    Vector3 et = to;
+    if (!fFront) {
+        float denom = st.z - sf.z;
+        if (fabsf(denom) < 1e-4f) return false;
+        float t = (kNear - sf.z) / denom;
+        ef = from + (to - from) * t;
+    }
+    if (!tFront) {
+        float denom = sf.z - st.z;
+        if (fabsf(denom) < 1e-4f) return false;
+        float t = (kNear - st.z) / denom;
+        et = to + (from - to) * t;
+    }
+    Vector3 pf = fFront ? sf : UnityEngine::Camera::StaticWorldToScreenPoint(ef);
+    Vector3 pt = tFront ? st : UnityEngine::Camera::StaticWorldToScreenPoint(et);
+    outFrom[0] = pf.x;
+    outFrom[1] = sh - pf.y;
+    outTo[0] = pt.x;
+    outTo[1] = sh - pt.y;
+    return true;
+}
+
+unsigned int PosSmoother::keyFor(unsigned int objId) const { return objId ? objId : kMyKey; }
+
+int PosSmoother::findSlot(unsigned int objId) const {
+    for (int i = 0; i < kSlots; ++i) if (slots[i].valid && slots[i].objId == objId) return i;
+    return -1;
+}
+
+int PosSmoother::allocSlot(unsigned int objId) {
+    int empty = -1, oldest = 0;
+    float oldestTime = 1e9f;
+    for (int i = 0; i < kSlots; ++i) {
+        if (!slots[i].valid && empty < 0) empty = i;
+        if (slots[i].lastSeen < oldestTime) { oldestTime = slots[i].lastSeen; oldest = i; }
+    }
+    const int idx = empty >= 0 ? empty : oldest;
+    slots[idx].objId = objId;
+    slots[idx].valid = true;
+    slots[idx].lastSeen = clock;
+    return idx;
+}
+
+void PosSmoother::tick(float dt) { clock += dt; }
+
+Vector3 PosSmoother::get(unsigned int objId, const Vector3 &target, float dt) {
+    int idx = findSlot(objId);
+    if (idx < 0) {
+        idx = allocSlot(objId);
+        slots[idx].disp = target;
+        return target;
+    }
+    Slot &s = slots[idx];
+    s.lastSeen = clock;
+    if (Vector3::Distance(s.disp, target) > kSnapDist) { s.disp = target; return target; }
+    const float alpha = 1.f - std::expf(-dt / kTau);
+    s.disp = s.disp + (target - s.disp) * alpha;
+    return s.disp;
+}
 
 void DrawLine(ImVec2 start, ImVec2 end, float thickness, ImVec4 color) {
     ImDrawList *background = ImGui::GetBackgroundDrawList();

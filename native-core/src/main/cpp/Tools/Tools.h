@@ -40,6 +40,8 @@ namespace Tools {
     uintptr_t String2Offset(const char *c);
     uintptr_t FindSymbol(const char* module, const char* symbol);
     std::string GetPackageName();
+    /** true nếu /proc/self/cmdline không có ':' (process chính của app). */
+    bool IsMainProcess();
     std::string getApkPath();
     long long getSystemMilliseconds();
     void Sleep(int ms);

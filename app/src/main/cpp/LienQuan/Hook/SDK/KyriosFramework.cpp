@@ -4,12 +4,14 @@
 namespace lienquan {
 namespace KyriosFramework {
 
-Class *get_class() {
+namespace {
+
+Class *GetClass() {
     return FindClass(OBF("Kyrios.KyriosFramework"));
 }
 
-Object *get_Instance() {
-    Class *cls = get_class();
+Object *GetInstance() {
+    Class *cls = GetClass();
     if (!cls) return nullptr;
     Il2CppMethod *method = cls->find_method(OBF("GetInstance"), 0);
     if (!method) method = cls->find_method(OBF("get_instance"), 0);
@@ -17,18 +19,26 @@ Object *get_Instance() {
     return method->static_invoke<Object *>();
 }
 
-bool get_IsRunning() {
-    Object *inst = get_Instance();
+Object *GetHostLogic() {
+    Class *cls = GetClass();
+    if (!cls) return nullptr;
+    Il2CppMethod *getHost = cls->find_method(OBF("get_hostLogic"), 0);
+    if (!getHost) return nullptr;
+    return getHost->static_invoke<Object *>();
+}
+
+} // namespace
+
+bool GetIsRunning() {
+    Object *inst = GetInstance();
     if (!inst) return false;
     return inst->invoke_method<bool>(OBF("get_IsRunning"));
 }
 
-Object *get_actorManager() {
-    Class *cls = get_class();
-    if (!cls) return nullptr;
-    Il2CppMethod *method = cls->find_method(OBF("get_actorManager"), 0);
-    if (!method) return nullptr;
-    return method->static_invoke<Object *>();
+int GetHostPlayerCamp() {
+    Object *host = GetHostLogic();
+    if (!host) return -1;
+    return host->invoke_method<int>(OBF("get_hostPlayerCamp"));
 }
 
 } // namespace KyriosFramework

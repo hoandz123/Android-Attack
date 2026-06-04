@@ -45,13 +45,25 @@ set(PLAY_TOGETHER_SOURCES
 set(LIEN_QUAN_SOURCES
     LienQuan/LienQuan.cpp
     LienQuan/Hook/Hook.cpp
+    LienQuan/Hook/EspHelper.cpp
+    LienQuan/Hook/EspRuntime.cpp
+    LienQuan/Hook/EspIconView.cpp
+    LienQuan/Hook/SkinUnlock.cpp
     LienQuan/Hook/Bypass/AntiCheat.cpp
     LienQuan/Config/Config.cpp
     LienQuan/UI/Tab/Chinh.cpp
+    LienQuan/UI/Tab/Esp.cpp
     LienQuan/Hook/SDK/KyriosFramework.cpp
-    LienQuan/Hook/SDK/CLobbySystem.cpp
-    LienQuan/Hook/SDK/KyriosActorManager.cpp
-    LienQuan/Hook/MapBright.cpp)
+    LienQuan/Hook/SDK/LFramework.cpp
+    LienQuan/Hook/SDK/LLogicCore.cpp
+    LienQuan/Hook/SDK/LBattleLogic.cpp
+    LienQuan/Hook/SDK/LGameActorMgr.cpp
+    LienQuan/Hook/SDK/LActorRoot.cpp
+    LienQuan/Hook/SDK/CBattleSystem.cpp
+    LienQuan/Hook/SDK/MinimapSys.cpp
+    LienQuan/Hook/SDK/MiniMapSysUT.cpp
+    LienQuan/Hook/SDK/ActorManager.cpp
+    LienQuan/Data/HeroIcon/HeroIcon.cpp)
 
 add_library(attack SHARED
     NativeLib.cpp Menu.cpp Games.cpp
@@ -79,6 +91,7 @@ find_library(GLESv3-lib GLESv3)
 target_include_directories(attack PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${NATIVE_CORE_CPP}
+    ${NATIVE_CORE_CPP}/HttpClient
     ${NATIVE_CORE_CPP}/Includes
     ${NATIVE_CORE_CPP}/Tools
     ${NATIVE_CORE_CPP}/API

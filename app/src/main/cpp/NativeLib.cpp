@@ -51,6 +51,10 @@ static bool PluginInitThread(JavaVM *vm) {
 }
 
 extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
+    if (!Tools::IsMainProcess()) {
+        LOGI(OBF("sub-process, skip plugin load"));
+        return JNI_VERSION_1_6;
+    }
     static std::atomic<bool> s_plugin_ready{false};
     static std::atomic<bool> s_init_started{false};
     if (s_plugin_ready.load()) return JNI_VERSION_1_6;
