@@ -4,11 +4,13 @@
 
 #define LOGGER_TAG "ATTACK_Loader"
 #include <Includes/Logger.h>
+#include <Tools/Tools.h>
 
 static const char *kPlugins[] = {"libattack.so"};
 static void *s_plugin_handle = nullptr;
 
 static bool LoadPlugin(JavaVM *vm, void *reserved, const char *path) {
+    LOGI(OBF("LoadPlugin path=%s"), path);
     if (s_plugin_handle) return true;
     void *handle = dlopen(path, RTLD_NOW | RTLD_GLOBAL);
     if (!handle) { LOGE(OBF("dlopen %s: %s"), path, dlerror()); return false; }
@@ -25,6 +27,7 @@ static bool LoadPlugin(JavaVM *vm, void *reserved, const char *path) {
 }
 
 static bool LoadPlugins(JavaVM *vm, void *reserved, const std::string &dir) {
+    LOGI(OBF("LoadPlugins dir=%s"), dir.c_str());
     for (const char *name : kPlugins) {
         // APK libs are often mmap'd from base.apk (extractNativeLibs=false); basename works.
         if (LoadPlugin(vm, reserved, name)) continue;
@@ -38,20 +41,10 @@ static bool LoadPlugins(JavaVM *vm, void *reserved, const std::string &dir) {
     return true;
 }
 
-static bool NativeLibDir(JNIEnv *env, std::string &out) {
-    jclass at = env->FindClass(OBF("android/app/ActivityThread"));
-    jmethodID app = env->GetStaticMethodID(at, OBF("currentApplication"), OBF("()Landroid/app/Application;"));
-    jobject ctx = env->CallStaticObjectMethod(at, app);
-    if (!ctx) return false;
-    jmethodID info = env->GetMethodID(env->GetObjectClass(ctx), OBF("getApplicationInfo"), OBF("()Landroid/content/pm/ApplicationInfo;"));
-    jobject ai = env->CallObjectMethod(ctx, info);
-    if (!ai) return false;
-    auto dir = (jstring)env->GetObjectField(ai, env->GetFieldID(env->GetObjectClass(ai), OBF("nativeLibraryDir"), OBF("Ljava/lang/String;")));
-    if (!dir) return false;
-    const char *utf = env->GetStringUTFChars(dir, nullptr);
-    if (!utf) return false;
-    out = utf;
-    env->ReleaseStringUTFChars(dir, utf);
+static bool AppDataDir(std::string &out) {
+    std::string pkg = Tools::GetPackageName();
+    if (pkg.empty()) return false;
+    out = OBF("/data/user/0/") + pkg;
     return true;
 }
 
@@ -60,6 +53,6 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     if (vm->GetEnv((void **)&env, JNI_VERSION_1_6) != JNI_OK) return JNI_ERR;
     LOGI(OBF("JNI_OnLoad"));
     std::string dir;
-    NativeLibDir(env, dir);
+    if (!AppDataDir(dir)) LOGE(OBF("AppDataDir failed"));
     return LoadPlugins(vm, reserved, dir) ? JNI_VERSION_1_6 : JNI_ERR;
 }

@@ -42,9 +42,20 @@ set(PLAY_TOGETHER_SOURCES
     PlayTogether/Hook/SDK/TableIngredientImpl.cpp
     PlayTogether/Hook/SDK/NetWebProtocol.cpp)
 
+set(LIEN_QUAN_SOURCES
+    LienQuan/LienQuan.cpp
+    LienQuan/Hook/Hook.cpp
+    LienQuan/Hook/Bypass/AntiCheat.cpp
+    LienQuan/Config/Config.cpp
+    LienQuan/UI/Tab/Chinh.cpp
+    LienQuan/Hook/SDK/KyriosFramework.cpp
+    LienQuan/Hook/SDK/CLobbySystem.cpp
+    LienQuan/Hook/SDK/KyriosActorManager.cpp
+    LienQuan/Hook/MapBright.cpp)
+
 add_library(attack SHARED
     NativeLib.cpp Menu.cpp Games.cpp
-    LienQuan/LienQuan.cpp
+    ${LIEN_QUAN_SOURCES}
     ${PLAY_TOGETHER_SOURCES})
 if(EMBEDDED_DEX_DIR)
     target_include_directories(attack PRIVATE "${EMBEDDED_DEX_DIR}")
@@ -63,13 +74,10 @@ find_library(android-lib android)
 find_library(EGL-lib EGL)
 find_library(GLESv3-lib GLESv3)
 
+# Không thêm PlayTogether/ / LienQuan/ vào include path — mỗi game dùng #include tương đối
+# theo thư mục file nguồn (tránh trùng Config/Hook.h giữa các game).
 target_include_directories(attack PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether
-    ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether/Hook/SDK
-    ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether/Config
-    ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether/UI
-    ${CMAKE_CURRENT_SOURCE_DIR}/PlayTogether/Hook
     ${NATIVE_CORE_CPP}
     ${NATIVE_CORE_CPP}/Includes
     ${NATIVE_CORE_CPP}/Tools

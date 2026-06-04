@@ -6,6 +6,9 @@
 
 namespace dex_loader {
 
+/** Poll ActivityThread.currentApplication(); local ref — caller DeleteLocalRef. */
+jobject WaitForApplication(JNIEnv *env);
+
 // JNI_OnLoad: inject embedded DEX into Application ClassLoader.
 bool Init(JavaVM *vm, const uint8_t *dex, size_t size);
 

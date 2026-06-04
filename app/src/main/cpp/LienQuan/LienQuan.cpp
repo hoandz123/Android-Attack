@@ -1,35 +1,22 @@
 #include "../Games.hpp"
+#include "Hook/Hook.h"
+#include "UI/Tab/Chinh.h"
 #include <API/Il2CppApi.h>
 #define LOGGER_TAG "ATTACK_LienQuan"
 #include <Includes/Logger.h>
 #include <Includes/obfuscate.h>
 #include <ModUi.hpp>
-#include <Tools/Tools.h>
-#include <imgui.h>
+#include <string>
 #include <thread>
 
 namespace lienquan {
 
-static void DrawMainTab() {
-    if (ImGui::CollapsingHeader(OBF("Liên Quân"), ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::TextUnformatted(OBF("Menu Liên Quân — thêm tab/feature tại đây."));
-        static bool aimDemo = false;
-        ImGui::Checkbox(OBF("Aim assist (demo)"), &aimDemo);
-        static bool mapHackDemo = false;
-        ImGui::Checkbox(OBF("Map hack (demo)"), &mapHackDemo);
-    }
-}
-
-static void InitHooks() {
-    LOGI(OBF("[LienQuan] InitHooks"));
-    // HOOK_LIB(OBF("libil2cpp.so"), OBF("0x0"), hook_Foo, old_Foo);
-}
-
 void Activate() {
     modui::AppUi ui{};
     ui.menu_size = ImVec2(480.f, 340.f);
+    ui.icon_url = OBF("https://tools-mod.com/storage/brand/logo.png");
     ui.set_window_title(OBF("Liên Quân##modui_shell"));
-    ui.add_tab(OBF("main"), OBF("Chính"), DrawMainTab);
+    ui.add_tab(OBF("main"), OBF("Chính"), DrawChinhPage);
     modui::SetAppUi(ui);
 
     std::thread([]() {
@@ -38,8 +25,14 @@ void Activate() {
             LOGE(OBF("[LienQuan] il2cpp chua load"));
             return;
         }
-        LOGI(OBF("[LienQuan] il2cpp da load, bat dau hook"));
-        InitHooks();
+        LOGI(OBF("[LienQuan] il2cpp da load, bat dau dump + hook"));
+        const std::string dumpPath = Il2CppDomain::dump_domain();
+        if (dumpPath.empty()) {
+            LOGW(OBF("[LienQuan] dump_domain that bai"));
+        } else {
+            LOGI(OBF("[LienQuan] dump_domain -> %s"), dumpPath.c_str());
+        }
+        Hook::init();
     }).detach();
 }
 

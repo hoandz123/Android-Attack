@@ -46,7 +46,7 @@ REGISTER_GAME(OBF("com.vng.playtogether"), Activate);
 
 1. Tạo thư mục `src/main/cpp/<Game>/` (theo mẫu `PlayTogether/`: `Config/`, `Hook/`, `UI/`, `SDK/`).
 2. Viết `<Game>.cpp`: hàm `Activate()` (dựng `modui::AppUi` + cài hook) + `REGISTER_GAME("<package>", Activate)`.
-3. Thêm source vào `CMakeLists.txt` (`add_library(attack ...)`).
+3. Thêm source vào `CMakeLists.txt` (`LIEN_QUAN_SOURCES` / tương tự) — **không** thêm `<Game>/` vào `target_include_directories` (tránh trùng `Config/Config.h` giữa game); dùng `#include` tương đối theo thư mục file `.cpp`.
 4. Tạo `<Game>/AGENT.md` bao quát game (bắt buộc — mỗi game 1 AGENT.md).
 5. Build `./gradlew :app:assembleDebug`.
 

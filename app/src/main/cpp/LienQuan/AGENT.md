@@ -1,45 +1,77 @@
 # LienQuan — game mod (Liên Quân Mobile)
 
-**Nhánh phát triển:** `LienQuan` (từ `main`). Deploy mặc định: `attack.pushTarget=com.garena.game.kgvn` trong `gradle.properties`.
 
-## Tổng quan
 
-| | |
-|---|---|
-| Game | **Liên Quân Mobile** (Garena / Arena of Valor) |
-| Package | `com.garena.game.kgvn` |
-| Engine | Unity **IL2CPP** |
-| Đăng ký | `REGISTER_GAME("com.garena.game.kgvn", Activate)` trong `LienQuan.cpp` |
-| Trạng thái | **STUB / khung** — menu demo; hook IL2CPP chờ dump/RVA |
-| Logcat | `ATTACK_LienQuan` |
+**Nhánh:** `LienQuan`. Package: `com.garena.game.kgvn`. Dump: `dump/com.garena.game.kgvn/com.garena.game.kgvn_1.62.1.6_[arm64-v8a].cs`.
 
-## Cấu trúc
 
-```
-LienQuan/
-  LienQuan.cpp     toàn bộ logic (entry + menu demo + InitHooks rỗng)
-```
 
-Chưa có `Config/`, `SDK/`, `UI/` riêng. Khi mở rộng nên theo cấu trúc của `PlayTogether/` (xem `PlayTogether/AGENT.md`).
+## SDK (từ dump)
+
+
+
+| Wrapper | IL2CPP class | Ghi chú |
+
+|---------|--------------|---------|
+
+| `KyriosFramework` | `Kyrios.KyriosFramework` | `MonoSingleton` — battle core, `GetInstance`, `get_IsRunning`, `get_actorManager` |
+
+| `CLobbySystem` | `Assets.Scripts.GameSystem.CLobbySystem` | `Singleton` — lobby, `GetInstance` |
+
+| `KyriosActorManager` | `Kyrios.Actor.ActorManager` | Qua `KyriosFramework::get_actorManager`, field `HeroActors` |
+
+
+
+## Map sáng (`main.mapHack`)
+
+
+
+- UI: checkbox **Map sáng** (`Chinh.cpp`).
+
+- **Một hook logic** (`Project.Plugins_d.dll`): `LVActorLinker.SetVisible(camp, bVisible, forceSync)` — khi mapHack, chặn `bVisible=false` nếu `camp == hostPlayerCamp` (`getHostCamp` qua `KyriosFramework.get_hostLogic`).
+
+
+
+## Anti-cheat bypass (`Bypass/AntiCheat::init`)
+
+- `Hook/Bypass/AntiCheat.cpp` — `il2cpp_bypass::install()` + thread `anogs_bypass::apply_anogs_patches()`.
+- `Hook/Bypass/il2cpp_bypass.hpp` — hook `AnoSDK` / `TssSdkCom` / `LSynchrReport` / `LStateSynchr` (stub `false`); egress: `NetworkModule.SendLobbyMsg` (chặn `0xBB8`/`0xBEA`/`0x32AA`), `LNetwork.SendGameMsg` (chặn `0x507` RELAYHASHCHECK).
+- `Hook/Bypass/anogs_bypass.hpp` — memory patch `libanogs.so` (ret/nop/mov) tại các offset cố định; chờ lib tối đa 120s qua xdl.
+- Báo cáo phân tích native (tham khảo): `dump/com.garena.game.kgvn/libanogs-deep-analysis.md`.
+
+
 
 ## Entry & luồng
 
-`lienquan::Activate()` (gọi bởi `games::Dispatch` khi package khớp):
 
-1. Menu `modui::AppUi` 480×340 — tab **Chính** (`DrawMainTab`), checkbox demo chưa nối logic.
-2. Thread nền: `Init_Il2cpp_Symbol()` → nếu `il2cpp_loaded` → `InitHooks()` (**hiện rỗng**, mẫu `HOOK_LIB(...)`).
 
-## Stub có sẵn dùng được
+1. Menu tab **Chính** (`UI/Tab/Chinh.cpp`).
 
-`PlayTogether/Stubs/ESPManager.h` (header-only) — quản lý `ESPEntry` (vị trí world/screen, tên, màu) + `TickStale` để vẽ ESP. Hữu ích nếu làm ESP cho LienQuan; render qua `native-core::gameui` (`GameUI/EspGUI`).
+2. Thread: `Init_Il2cpp_Symbol()` → `Il2CppDomain::dump_domain()` (lần đầu) → `Hook::init()` (`LoadConfig`, `AntiCheat::init`, `MapBright::InstallHooks`).
 
-## Khi mở rộng
 
-1. Hook thật → điền `InitHooks()`: `HOOK_LIB("libil2cpp.so", "0xRVA", cb, old_cb)` (offset) hoặc `Tools::Hook(GET_METHOD(...), ...)` (theo tên class/method nếu có dump).
-2. Tìm RVA/signature → skill `il2cpp-call-flow-analysis`; dump đặt tại `dump/com.garena.game.kgvn/` (xem [dump/README.md](../../../../../../dump/README.md)).
-3. Có nhiều tính năng → tách `Config/`, `SDK/`, `UI/` theo mẫu PlayTogether.
-4. Build: `./gradlew :app:assembleDebug`.
 
-## Logcat
+## Cấu trúc
 
-`adb logcat -s ATTACK_LienQuan`
+
+
+```
+
+LienQuan/
+
+  LienQuan.cpp
+
+  Config/
+
+  Hook/Hook.cpp, Hook/Bypass/*, MapBright.*
+
+  Hook/SDK/KyriosFramework.*, CLobbySystem.*, KyriosActorManager.*
+
+  UI/Tab/Chinh.*
+
+```
+
+
+
+Include: tương đối theo file — không `-I LienQuan/` global trong CMake.
+

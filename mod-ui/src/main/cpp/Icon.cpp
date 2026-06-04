@@ -10,6 +10,7 @@
 #include <imgui.h>
 #include <atomic>
 #include <chrono>
+#include <cstdio>
 #include <cstring>
 #include <string>
 #include <thread>
@@ -27,8 +28,6 @@ namespace {
 constexpr int kMaxFabRetries = 5;
 constexpr int64_t kFabBackoffMs = 30000;
 
-const char *FabIconUrl() { return OBF("https://tools-mod.com/storage/brand/logo.png"); }
-
 std::atomic<bool> g_fab_downloading{false};
 std::atomic<bool> g_fab_file_ready{false};
 std::atomic<int> g_fab_fail_count{0};
@@ -42,7 +41,22 @@ int64_t NowMs() {
     return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
 }
 
-const std::string &FabIconPath() { return GetAppUi().fab_icon_path; }
+const std::string &FabIconUrl() { return GetAppUi().icon_url; }
+
+std::string FabIconCachePath() {
+    static std::string path;
+    if (!path.empty()) return path;
+    char buf[256]{};
+    if (FILE *fp = std::fopen(OBF("/proc/self/cmdline"), "r")) {
+        std::fread(buf, 1, sizeof(buf) - 1, fp);
+        std::fclose(fp);
+    }
+    std::string pkg(buf);
+    const auto colon = pkg.find(':');
+    if (colon != std::string::npos) pkg.resize(colon);
+    path = std::string(OBF("/data/user/0/")) + pkg + OBF("/files/fab.png");
+    return path;
+}
 
 void DropLoadIconCache() {
     g_load_icon_tex = 0;
@@ -154,15 +168,16 @@ bool DownloadIcon(const char *url, const char *save_path) {
 void PollFabDownload() {
     if (g_fab_icon) return;
     if (g_fab_file_ready.load(std::memory_order_acquire)) return;
-    const std::string &path = FabIconPath();
-    if (path.empty()) return;
+    const std::string &url = FabIconUrl();
+    if (url.empty()) return;
+    const std::string path = FabIconCachePath();
     if (g_fab_fail_count.load(std::memory_order_acquire) >= kMaxFabRetries) return;
     const int64_t now = NowMs();
     if (now < g_fab_next_retry_ms.load(std::memory_order_acquire)) return;
     bool expected = false;
     if (!g_fab_downloading.compare_exchange_strong(expected, true, std::memory_order_acq_rel)) return;
-    std::thread([path, now] {
-        const bool ok = DownloadIcon(FabIconUrl(), path.c_str());
+    std::thread([path, url, now] {
+        const bool ok = DownloadIcon(url.c_str(), path.c_str());
         if (ok) {
             g_fab_file_ready.store(true, std::memory_order_release);
         } else {
@@ -185,7 +200,7 @@ ImTextureID GetFabIcon() {
     if (!g_fab_icon) {
         PollFabDownload();
         if (g_fab_file_ready.load(std::memory_order_acquire)) {
-            const std::string &path = FabIconPath();
+            const std::string path = FabIconCachePath();
             g_fab_icon = LoadIcon(path.c_str());
             if (!g_fab_icon) {
                 LOGW(OBF("GetFabIcon LoadIcon failed — removing %s and retry later"), path.c_str());

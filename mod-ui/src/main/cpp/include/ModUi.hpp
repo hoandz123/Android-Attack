@@ -25,8 +25,8 @@ struct AppUi {
     /** Kích thước menu (dp). {0,0} = dùng mặc định shell. */
     ImVec2 menu_size{0.f, 0.f};
 
-    /** Đường dẫn file icon FAB local (tải/đọc). Rỗng = bỏ qua tải icon. */
-    std::string fab_icon_path;
+    /** URL tải icon FAB (HTTP). Rỗng = bỏ qua tải icon. */
+    std::string icon_url;
 
     bool set_window_title(const char *title) {
         if (!title || !title[0]) return false;

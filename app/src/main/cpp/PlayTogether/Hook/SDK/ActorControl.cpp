@@ -3,7 +3,7 @@
 //
 
 #include "ActorControl.h"
-#include "Config/Config.h"
+#include "../../Config/Config.h"
 #include "SystemHelper.h"
 #include "../AutoFishing/AutoFishing.h"
 #include <Tools/Tools.h>

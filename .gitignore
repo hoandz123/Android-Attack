@@ -135,6 +135,10 @@ fastlane/test_output/
 *.patch.bak
 skills-lock.json
 
+# --- Local tooling (APK patch, analysis scripts) ---
+scripts/
+tools/
+
 # RE / dump scratch output
 native-core/build/
 native-core/.cxx/

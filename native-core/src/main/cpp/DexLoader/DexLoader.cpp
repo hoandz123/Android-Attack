@@ -15,7 +15,7 @@ namespace dex_loader {
 
 static constexpr int kMinSdkForInMemoryDex = 26;
 static constexpr int kInitRetryCount = 30;
-static constexpr useconds_t kInitRetryDelayUs = 20000; // 20ms
+static constexpr useconds_t kInitRetryDelayUs = 200000; // 200ms
 
 static jobject FieldGet(JNIEnv *env, jobject field, jobject instance) {
     jclass field_cls = env->FindClass(OBF("java/lang/reflect/Field"));
@@ -158,7 +158,7 @@ static jobject ResolveLoaderWithPathList(JNIEnv *env, jobject context) {
     return nullptr;
 }
 
-static jobject WaitForApplication(JNIEnv *env) {
+jobject WaitForApplication(JNIEnv *env) {
     jclass at = env->FindClass(OBF("android/app/ActivityThread"));
     jmethodID current_app = env->GetStaticMethodID(at, OBF("currentApplication"), OBF("()Landroid/app/Application;"));
     if (!current_app) return nullptr;
