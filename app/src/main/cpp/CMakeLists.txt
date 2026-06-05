@@ -47,7 +47,6 @@ set(LIEN_QUAN_SOURCES
     LienQuan/Hook/Hook.cpp
     LienQuan/Hook/EspHelper.cpp
     LienQuan/Hook/EspRuntime.cpp
-    LienQuan/Hook/EspIconView.cpp
     LienQuan/Hook/SkinUnlock.cpp
     LienQuan/Hook/Bypass/AntiCheat.cpp
     LienQuan/Config/Config.cpp

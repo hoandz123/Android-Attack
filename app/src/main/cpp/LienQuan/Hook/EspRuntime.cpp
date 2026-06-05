@@ -3,7 +3,6 @@
 #include "../Data/HeroIcon/HeroIcon.h"
 #include "SDK/ActorManager.h"
 #include "SDK/CBattleSystem.h"
-#include "SDK/KyriosFramework.h"
 #include "SDK/LActorRoot.h"
 #include "SDK/LGameActorMgr.h"
 #include "SDK/LBattleLogic.h"
@@ -16,6 +15,7 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <cmath>
 #include <cstring>
 #include <mutex>
 #include <string>
@@ -23,24 +23,15 @@
 
 #include <stb_image.h>
 
-#define LOGGER_TAG "ATTACK_EspRuntime"
-#include <Includes/Logger.h>
-
 namespace lienquan {
 namespace EspRuntime {
 namespace {
 
-constexpr float kStripSz = 44.f;
 struct Frame {
     bool hasMyWorld = false;
-    int myCamp = -1;
-    int myEnemyCamp = -1;
     int targetCount = 0;
-    unsigned int dbgHostPid = 0;
-    unsigned int dbgMetaPid = 0;
     Vector3 myWorld{};
     Vector3 targetWorld[kMaxTargets]{};
-    int targetCamp[kMaxTargets]{};
     unsigned int targetObjId[kMaxTargets]{};
 };
 
@@ -58,9 +49,7 @@ std::mutex gSnapMutex;
 std::mutex gIconMutex;
 std::unordered_map<std::string, IconCache> gIcons;
 EspGUI::PosSmoother gSmoother;
-uint32_t gSeq = 0;
 int64_t gLastMs = 0;
-int gUpdateLogCount = 0;
 
 int64_t NowMs() {
     using namespace std::chrono;
@@ -101,8 +90,7 @@ unsigned int LinkerObjId(Object *linker) {
 }
 
 const HeroIcon::Entry *LookupEmbeddedIcon(const std::string &displayName) {
-    if (displayName.empty()) return nullptr;
-    return HeroIcon::FindByDisplayName(displayName.c_str());
+    return HeroIcon::FindByNameLoose(displayName.c_str());
 }
 
 bool DecodeEmbeddedIcon(const HeroIcon::Entry &entry, std::vector<uint8_t> &rgba, int &width, int &height) {
@@ -110,8 +98,7 @@ bool DecodeEmbeddedIcon(const HeroIcon::Entry &entry, std::vector<uint8_t> &rgba
     width = height = 0;
     if (!entry.iconBytes || entry.iconSize == 0) return false;
     int w = 0, h = 0, ch = 0;
-    unsigned char *px =
-        stbi_load_from_memory(entry.iconBytes, static_cast<int>(entry.iconSize), &w, &h, &ch, 4);
+    unsigned char *px = stbi_load_from_memory(entry.iconBytes, static_cast<int>(entry.iconSize), &w, &h, &ch, 4);
     if (!px || w <= 0 || h <= 0) return false;
     rgba.assign(px, px + static_cast<size_t>(w) * h * 4);
     stbi_image_free(px);
@@ -139,17 +126,9 @@ void EnsureIconPixels(const char *fieldKey, const HeroIcon::Entry &entry) {
     cache.height = h;
     cache.rgba.swap(rgba);
     ++cache.version;
-
-    static int loadLogCount = 0;
-    if (loadLogCount < 24) {
-        ++loadLogCount;
-        LOGI(OBF("embedded icon ok key=%s name=%s %dx%d"),
-             fieldKey, entry.displayName ? entry.displayName : "?", cache.width, cache.height);
-    }
 }
 
-void CollectHero(Frame &f, float dt, Object *root, unsigned int hostPlayerId, int hostCamp,
-                 int hostEnemyCamp, unsigned int hostObjId, bool myFromHost, unsigned int *seen, int &seenN) {
+void CollectHero(Frame &f, float dt, Object *root, unsigned int hostPlayerId, int hostEnemyCamp, unsigned int hostObjId, bool myFromHost, unsigned int *seen, int &seenN) {
     if (!root) return;
     const unsigned int objId = LActorRoot::GetObjID(root);
     if (objId && HasObjId(objId, seen, seenN)) return;
@@ -173,9 +152,6 @@ void CollectHero(Frame &f, float dt, Object *root, unsigned int hostPlayerId, in
     const bool sameTeam = teamKnown && enemyCamp == hostEnemyCamp;
     if (gLQConfig.esp.enemiesOnly && sameTeam) return;
     if (f.targetCount >= kMaxTargets) return;
-    int camp = -1;
-    if (teamKnown) camp = sameTeam ? hostCamp : hostEnemyCamp;
-    f.targetCamp[f.targetCount] = camp;
     f.targetObjId[f.targetCount] = objId;
     f.targetWorld[f.targetCount++] = pos;
     if (objId && seenN < kMaxTargets) seen[seenN++] = objId;
@@ -184,12 +160,9 @@ void CollectHero(Frame &f, float dt, Object *root, unsigned int hostPlayerId, in
 bool BuildFrame(Frame &f, float dt, Object *gameActorMgr) {
     f = {};
     gSmoother.tick(dt);
-    const int hostCamp = KyriosFramework::GetHostPlayerCamp();
     const unsigned int hostPlayerId = LBattleLogic::GetHostPlayerId();
     const int heroN = gameActorMgr ? LGameActorMgr::HeroCount(gameActorMgr) : 0;
     if (!gameActorMgr || heroN <= 0) return false;
-    f.myCamp = hostCamp;
-    f.dbgHostPid = hostPlayerId;
 
     unsigned int hostObjId = 0;
     int hostEnemyCamp = -1;
@@ -200,16 +173,13 @@ bool BuildFrame(Frame &f, float dt, Object *gameActorMgr) {
         f.myWorld = gSmoother.get(gSmoother.keyFor(hostObjId), LActorRoot::GetWorldPosition(hostRoot), dt);
         f.hasMyWorld = true;
         hostEnemyCamp = LActorRoot::GetEnemyCamp(hostRoot);
-        f.myEnemyCamp = hostEnemyCamp;
-        f.dbgMetaPid = LActorRoot::GetActorPlayerId(hostRoot);
         myFromHost = true;
     }
 
     unsigned int seen[kMaxTargets]{};
     int seenN = 0;
     for (int i = 0; i < heroN; ++i) {
-        CollectHero(f, dt, LActorRoot::HeroAt(i, gameActorMgr), hostPlayerId, hostCamp, hostEnemyCamp,
-                    hostObjId, myFromHost, seen, seenN);
+        CollectHero(f, dt, LActorRoot::HeroAt(i, gameActorMgr), hostPlayerId, hostEnemyCamp, hostObjId, myFromHost, seen, seenN);
     }
     return f.hasMyWorld || f.targetCount > 0;
 }
@@ -233,22 +203,28 @@ float MarginFor(MinimapSys::EMapType mode) {
     return mode == MinimapSys::EMapType::Big ? 48.f : 24.f;
 }
 
-bool WorldToMinimap(const Vector3 &world, Object *minimap, float screenW, float screenH,
-                    float &outX, float &outY, MinimapSys::EMapType &mode) {
+const char *IconKeyForObj(const Snapshot &snap, unsigned int objId) {
+    if (!objId) return nullptr;
+    for (int i = 0; i < snap.iconCount && i < kMaxHeroIcons; ++i) {
+        const IconItem &icon = snap.icons[i];
+        if (icon.valid && icon.objId == objId && icon.key[0]) return icon.key;
+    }
+    return nullptr;
+}
+
+bool WorldToMinimap(const Vector3 &world, Object *minimap, float screenW, float screenH, float &outX, float &outY, MinimapSys::EMapType &mode) {
     outX = outY = 0.f;
     mode = MinimapSys::CurMapType(minimap);
     if (mode == MinimapSys::EMapType::None) return false;
     const bool bMiniMap = MinimapSys::IsMiniMapMode(mode);
     const float margin = MarginFor(mode);
     float sx = 0.f, sy = 0.f;
-    if (MiniMapSysUT::WorldToScreenPoint(world, bMiniMap, screenH, sx, sy) &&
-        InRect(sx, sy, screenW, screenH, margin)) {
+    if (MiniMapSysUT::WorldToScreenPoint(world, bMiniMap, screenH, sx, sy) && InRect(sx, sy, screenW, screenH, margin)) {
         outX = sx;
         outY = sy;
         return true;
     }
-    if (TryCvtAnchor(world, CBattleSystem::GetInstance(), minimap, bMiniMap, sx, sy) &&
-        InRect(sx, sy, screenW, screenH, margin)) {
+    if (TryCvtAnchor(world, CBattleSystem::GetInstance(), minimap, bMiniMap, sx, sy) && InRect(sx, sy, screenW, screenH, margin)) {
         outX = sx;
         outY = sy;
         return true;
@@ -262,13 +238,10 @@ bool WorldToMinimap(const Vector3 &world, Object *minimap, float screenW, float 
 }
 
 void AddIcon(Snapshot &snap, int idx, unsigned int objId, const HeroIcon::Entry &entry) {
-    if (idx < 0 || idx >= kMaxStripIcons || !entry.fieldName) return;
+    if (idx < 0 || idx >= kMaxHeroIcons || !entry.fieldName) return;
     IconItem &item = snap.icons[idx];
     item.valid = true;
     item.objId = objId;
-    item.size = kStripSz;
-    item.x = 12.f + idx * (kStripSz + 6.f) + kStripSz * .5f;
-    item.y = snap.screenH - kStripSz - 12.f + kStripSz * .5f;
     CopyText(item.key, sizeof(item.key), entry.fieldName);
     EnsureIconPixels(entry.fieldName, entry);
 }
@@ -277,32 +250,17 @@ void RefreshHeroIcons(Snapshot &snap, Object *kyriosMgr) {
     if (!kyriosMgr || !gLQConfig.esp.showHeroIcons) return;
     snap.iconCount = 0;
     const int linkerN = ActorManager::HeroCount(kyriosMgr);
-    static int missLogCount = 0;
-    for (int i = 0; i < linkerN && snap.iconCount < kMaxStripIcons; ++i) {
+    for (int i = 0; i < linkerN && snap.iconCount < kMaxHeroIcons; ++i) {
         Object *linker = ActorManager::HeroLinkerAt(i, kyriosMgr);
         uint32_t configId = 0, skinId = 0;
-        if (!LinkerOk(linker) || !CBattleSystem::ReadLinkerMeta(linker, configId, skinId)) {
-            if (missLogCount < 12) {
-                ++missLogCount;
-                LOGW(OBF("kyrios hero meta missing i=%d linker=%p"), i, linker);
-            }
-            continue;
-        }
-
-        const unsigned int objId = LinkerObjId(linker);
-        if (!objId) continue;
+        if (!LinkerOk(linker) || !CBattleSystem::ReadLinkerMeta(linker, configId, skinId)) continue;
 
         const std::string displayName = CBattleSystem::GetHeroName(configId);
         const HeroIcon::Entry *entry = LookupEmbeddedIcon(displayName);
-        if (!entry) {
-            if (missLogCount < 24) {
-                ++missLogCount;
-                LOGW(OBF("no embedded icon i=%d cfg=%u name='%s'"), i, configId,
-                     displayName.empty() ? "?" : displayName.c_str());
-            }
-            continue;
-        }
+        if (!entry) continue;
 
+        unsigned int objId = LinkerObjId(linker);
+        if (!objId) objId = configId;
         AddIcon(snap, snap.iconCount++, objId, *entry);
     }
 }
@@ -314,12 +272,11 @@ void BuildSnapshot(Snapshot &snap, Object *minimap, float dt, Object *gameActorM
         prev = gBuffers[gActive.load(std::memory_order_acquire)];
     }
     const int prevIconCount = prev.iconCount;
-    IconItem prevIcons[kMaxStripIcons]{};
+    IconItem prevIcons[kMaxHeroIcons]{};
     if (prevIconCount > 0)
         std::memcpy(prevIcons, prev.icons, sizeof(prevIcons));
 
     snap = {};
-    snap.seq = ++gSeq;
     snap.screenW = static_cast<float>(GameViewport::width());
     snap.screenH = static_cast<float>(GameViewport::height());
     if (snap.screenW < 1.f || snap.screenH < 1.f) return;
@@ -328,18 +285,9 @@ void BuildSnapshot(Snapshot &snap, Object *minimap, float dt, Object *gameActorM
     if (!BuildFrame(frame, dt, gameActorMgr)) return;
     snap.valid = true;
     snap.hasMyWorld = frame.hasMyWorld;
-    snap.myCamp = frame.myCamp;
-    snap.myEnemyCamp = frame.myEnemyCamp;
-    snap.dbgHostPid = frame.dbgHostPid;
-    snap.dbgMetaPid = frame.dbgMetaPid;
     snap.targetCount = frame.targetCount;
-    snap.mapMode = MinimapSys::CurMapType(minimap);
 
     for (int i = 0; i < frame.targetCount && i < kMaxTargets; ++i) {
-        snap.targetWorld[i] = frame.targetWorld[i];
-        snap.targetCamp[i] = frame.targetCamp[i];
-        snap.targetObjId[i] = frame.targetObjId[i];
-
         if (frame.hasMyWorld) {
             float a[2]{}, b[2]{};
             if (EspGUI::projectSegment(frame.myWorld, frame.targetWorld[i], snap.screenW, snap.screenH, a, b)) {
@@ -351,15 +299,17 @@ void BuildSnapshot(Snapshot &snap, Object *minimap, float dt, Object *gameActorM
             }
         }
 
-        MinimapSys::EMapType mode = MinimapSys::EMapType::None;
-        float mx = 0.f, my = 0.f;
-        if (WorldToMinimap(frame.targetWorld[i], minimap, snap.screenW, snap.screenH, mx, my, mode)) {
-            snap.mapItems[i].valid = true;
-            snap.mapItems[i].objId = frame.targetObjId[i];
-            snap.mapItems[i].camp = frame.targetCamp[i];
-            snap.mapItems[i].x = mx;
-            snap.mapItems[i].y = my;
-            snap.mapMode = mode;
+        if (gLQConfig.esp.showHeroIcons) {
+            MinimapSys::EMapType mode = MinimapSys::EMapType::None;
+            float mx = 0.f, my = 0.f;
+            if (WorldToMinimap(frame.targetWorld[i], minimap, snap.screenW, snap.screenH, mx, my, mode)) {
+                const char *key = IconKeyForObj(prev, frame.targetObjId[i]);
+                snap.mapItems[i].valid = true;
+                snap.mapItems[i].objId = frame.targetObjId[i];
+                snap.mapItems[i].x = mx;
+                snap.mapItems[i].y = my;
+                if (key) CopyText(snap.mapItems[i].key, sizeof(snap.mapItems[i].key), key);
+            }
         }
     }
 
@@ -390,8 +340,7 @@ void OnActorManagerUpdate(Object *kyriosMgr) {
 
 void OnGameUpdate(Object *gameActorMgr) {
     if (!il2cpp_loaded.load(std::memory_order_acquire)) return;
-    if (!gLQConfig.esp.enabled && !gLQConfig.esp.minimapDot && !gLQConfig.esp.showHeroIcons &&
-        !gLQConfig.esp.showDebug) {
+    if (!gLQConfig.esp.enabled && !gLQConfig.esp.showHeroIcons) {
         Snapshot empty{};
         Publish(empty);
         return;
@@ -399,11 +348,6 @@ void OnGameUpdate(Object *gameActorMgr) {
 
     Snapshot snap{};
     BuildSnapshot(snap, MinimapSys::Get(), SampleDeltaTime(), gameActorMgr);
-    if (gUpdateLogCount < 20 && snap.seq % 30 == 1) {
-        ++gUpdateLogCount;
-        LOGI(OBF("update seq=%u valid=%d targets=%d icons=%d map=%d"),
-             snap.seq, snap.valid ? 1 : 0, snap.targetCount, snap.iconCount, static_cast<int>(snap.mapMode));
-    }
     Publish(snap);
 }
 

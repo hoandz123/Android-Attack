@@ -21,10 +21,10 @@ ESP: `LBattleLogic` → `LGameActorMgr` → `LActorRoot` pos logic.
 
 - `UI/Tab/Esp.cpp` — getter SDK mỗi frame, không snapshot.
 
-## ESP minimap (`esp.minimapDot`)
+## ESP hero icon (`esp.showHeroIcons`)
 
-- `Hook/EspHelper` — `Logic::Build` (LActorRoot), `Minimap::WorldToScreen` (SDK minimap), `Draw::Overlay`.
-- Vị trí world từ `LActorRoot` (cùng pipeline ESP line).
+- `Hook/EspRuntime` dựng snapshot từ `LActorRoot`, `MinimapSys`, `MiniMapSysUT`.
+- `Hook/EspHelper` render line và icon minimap; không còn ESP chấm minimap.
 
 ## Anti-cheat bypass
 

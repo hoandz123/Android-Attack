@@ -124,17 +124,12 @@ Object *HeroAt(int index, Object *gameActorMgr) {
 
 bool ReadActorConfigMeta(Object *root, uint32_t &configId, uint32_t &skinId) {
     configId = skinId = 0;
-    const size_t actorCfgFieldOff =
-        GET_FIELD("Project.Plugins_d.dll", "NucleusDrive.Logic", "LActorRoot", "actorConfig");
+    const size_t actorCfgFieldOff = GET_FIELD("Project.Plugins_d.dll", "NucleusDrive.Logic", "LActorRoot", "actorConfig");
     Object *actorConfig = nullptr;
-    if (actorCfgFieldOff != static_cast<size_t>(-1))
-        std::memcpy(&actorConfig, reinterpret_cast<const char *>(root) + actorCfgFieldOff,
-                    sizeof(actorConfig));
+    if (actorCfgFieldOff != static_cast<size_t>(-1)) std::memcpy(&actorConfig, reinterpret_cast<const char *>(root) + actorCfgFieldOff, sizeof(actorConfig));
     if (!actorConfig || !actorConfig->get_class()) return false;
-    const size_t cfgOff =
-        GET_FIELD("Project.Plugins_d.dll", "NucleusDrive.Logic", "ActorConfigData", "ConfigID");
-    const size_t skinOff =
-        GET_FIELD("Project.Plugins_d.dll", "NucleusDrive.Logic", "ActorConfigData", "SkinID");
+    const size_t cfgOff = GET_FIELD("Project.Plugins_d.dll", "NucleusDrive.Logic", "ActorConfigData", "ConfigID");
+    const size_t skinOff = GET_FIELD("Project.Plugins_d.dll", "NucleusDrive.Logic", "ActorConfigData", "SkinID");
     int cfg = 0;
     if (cfgOff != static_cast<size_t>(-1))
         std::memcpy(&cfg, reinterpret_cast<const char *>(actorConfig) + cfgOff, sizeof(cfg));
@@ -150,20 +145,16 @@ bool ReadActorMeta(Object *root, uint32_t &configId, uint32_t &skinId) {
 
     if (ReadActorConfigMeta(root, configId, skinId)) return true;
 
-    const size_t metaOff =
-        GET_FIELD("Project.Plugins_d.dll", "NucleusDrive.Logic", "LActorRoot", "TheActorMeta");
+    const size_t metaOff = GET_FIELD("Project.Plugins_d.dll", "NucleusDrive.Logic", "LActorRoot", "TheActorMeta");
     if (metaOff != static_cast<size_t>(-1)) {
         const char *base = reinterpret_cast<const char *>(root) + metaOff;
         if (ReadMetaStruct(base, configId, skinId)) return true;
     }
 
-    const size_t staticOff =
-        GET_FIELD("Project.Plugins_d.dll", "NucleusDrive.Logic", "LActorRoot", "TheStaticData");
-    const size_t staticMetaOff =
-        GET_FIELD("Project.Plugins_d.dll", "", "ActorStaticData", "TheActorMeta");
+    const size_t staticOff = GET_FIELD("Project.Plugins_d.dll", "NucleusDrive.Logic", "LActorRoot", "TheStaticData");
+    const size_t staticMetaOff = GET_FIELD("Project.Plugins_d.dll", "", "ActorStaticData", "TheActorMeta");
     if (staticOff != static_cast<size_t>(-1) && staticMetaOff != static_cast<size_t>(-1)) {
-        const char *base =
-            reinterpret_cast<const char *>(root) + staticOff + staticMetaOff;
+        const char *base = reinterpret_cast<const char *>(root) + staticOff + staticMetaOff;
         if (ReadMetaStruct(base, configId, skinId)) return true;
     }
     return false;

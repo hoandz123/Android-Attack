@@ -35,10 +35,11 @@ void to_json(nlohmann::json &j, const LQConfig::EspConfig &cfg) {
         {OBF("enabled"), cfg.enabled},
         {OBF("enemiesOnly"), cfg.enemiesOnly},
         {OBF("lineThickness"), cfg.lineThickness},
-        {OBF("showDebug"), cfg.showDebug},
-        {OBF("minimapDot"), cfg.minimapDot},
-        {OBF("minimapDotRadius"), cfg.minimapDotRadius},
+        {OBF("lineColor"), nlohmann::json{cfg.lineColor[0], cfg.lineColor[1], cfg.lineColor[2], cfg.lineColor[3]}},
         {OBF("showHeroIcons"), cfg.showHeroIcons},
+        {OBF("miniMapIconSize"), cfg.miniMapIconSize},
+        {OBF("iconBorderColor"), nlohmann::json{cfg.iconBorderColor[0], cfg.iconBorderColor[1], cfg.iconBorderColor[2], cfg.iconBorderColor[3]}},
+        {OBF("iconShadowColor"), nlohmann::json{cfg.iconShadowColor[0], cfg.iconShadowColor[1], cfg.iconShadowColor[2], cfg.iconShadowColor[3]}},
     };
 }
 
@@ -46,10 +47,23 @@ void from_json(const nlohmann::json &j, LQConfig::EspConfig &cfg) {
     if (j.contains(OBF("enabled"))) j[OBF("enabled")].get_to(cfg.enabled);
     if (j.contains(OBF("enemiesOnly"))) j[OBF("enemiesOnly")].get_to(cfg.enemiesOnly);
     if (j.contains(OBF("lineThickness"))) j[OBF("lineThickness")].get_to(cfg.lineThickness);
-    if (j.contains(OBF("showDebug"))) j[OBF("showDebug")].get_to(cfg.showDebug);
-    if (j.contains(OBF("minimapDot"))) j[OBF("minimapDot")].get_to(cfg.minimapDot);
-    if (j.contains(OBF("minimapDotRadius"))) j[OBF("minimapDotRadius")].get_to(cfg.minimapDotRadius);
+    if (j.contains(OBF("lineColor"))) {
+        const auto &a = j[OBF("lineColor")];
+        if (a.is_array() && a.size() >= 4)
+            for (int i = 0; i < 4; ++i) cfg.lineColor[i] = a[i].get<float>();
+    }
     if (j.contains(OBF("showHeroIcons"))) j[OBF("showHeroIcons")].get_to(cfg.showHeroIcons);
+    if (j.contains(OBF("miniMapIconSize"))) j[OBF("miniMapIconSize")].get_to(cfg.miniMapIconSize);
+    if (j.contains(OBF("iconBorderColor"))) {
+        const auto &a = j[OBF("iconBorderColor")];
+        if (a.is_array() && a.size() >= 4)
+            for (int i = 0; i < 4; ++i) cfg.iconBorderColor[i] = a[i].get<float>();
+    }
+    if (j.contains(OBF("iconShadowColor"))) {
+        const auto &a = j[OBF("iconShadowColor")];
+        if (a.is_array() && a.size() >= 4)
+            for (int i = 0; i < 4; ++i) cfg.iconShadowColor[i] = a[i].get<float>();
+    }
 }
 
 void to_json(nlohmann::json &j, const LQConfig &cfg) {
