@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SDK/LActorRoot.h"
 #include <API/Il2CppApi.h>
 #include <cstdint>
 #include <vector>
@@ -10,6 +11,8 @@ namespace EspRuntime {
 constexpr int kMaxTargets = 16;
 constexpr int kMaxHeroIcons = 10;
 constexpr int kKeyLen = 48;
+constexpr int kInfoTextLen = 80;
+constexpr int64_t kSnapshotStaleMs = 2000;
 
 struct LineItem {
     bool valid = false;
@@ -29,8 +32,28 @@ struct IconItem {
     char key[kKeyLen]{}; // HeroIcon::Entry::fieldName
 };
 
+struct InfoItem {
+    bool valid = false;
+    float x = 0.f, y = 0.f;
+    char text[kInfoTextLen]{};
+    bool hasHp = false;
+    int hp = 0;
+    int maxHp = 0;
+    bool isDead = false;
+    bool lowHp = false;
+    bool hasCooldowns = false;
+    LActorRoot::SkillCooldownSlot cooldownSlots[LActorRoot::kSkillCooldownSlots]{};
+};
+
+struct ArrowItem {
+    bool valid = false;
+    float x = 0.f, y = 0.f;
+    float angle = 0.f;
+};
+
 struct Snapshot {
     bool valid = false;
+    int64_t updatedMs = 0;
     float screenW = 0.f, screenH = 0.f;
     bool hasMyWorld = false;
     int targetCount = 0;
@@ -38,6 +61,8 @@ struct Snapshot {
     MapItem mapItems[kMaxTargets]{};
     int iconCount = 0;
     IconItem icons[kMaxHeroIcons]{};
+    InfoItem infoItems[kMaxTargets]{};
+    ArrowItem arrows[kMaxTargets]{};
 };
 
 // gameActorMgr: LGameActorMgr instance from UpdateLogic hook (HeroActors + logic state).

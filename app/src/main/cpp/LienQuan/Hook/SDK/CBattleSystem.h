@@ -17,7 +17,5 @@ bool ReadLinkerMeta(Object *linker, uint32_t &configId, uint32_t &skinId);
 // CHeroInfo.GetHeroName(heroId) — dump 0x763b834; heroId = ActorMeta.ConfigId
 std::string GetHeroName(uint32_t configId);
 
-Object *GetActorLinkerByObjId(unsigned int objId);
-
 }
 }

@@ -26,6 +26,11 @@ ESP: `LBattleLogic` → `LGameActorMgr` → `LActorRoot` pos logic.
 - `Hook/EspRuntime` dựng snapshot từ `LActorRoot`, `MinimapSys`, `MiniMapSysUT`.
 - `Hook/EspHelper` render line và icon minimap; không còn ESP chấm minimap.
 
+
+### ESP cooldown (hiển thị)
+
+- `LActorRoot::ReadSkillSlot` / `ReadSkillCooldowns` qua `SkillControl.GetSkillSlot` — chỉ dùng cho ESP `showCooldowns`, không auto cast.
+
 ## Anti-cheat bypass
 
 `Hook/Bypass/*` — xem `libanogs-deep-analysis.md`.
@@ -36,5 +41,5 @@ ESP: `LBattleLogic` → `LGameActorMgr` → `LActorRoot` pos logic.
 LienQuan/
   Hook/SDK/KyriosFramework.cpp, LBattleLogic.cpp, LGameActorMgr.cpp, LActorRoot.cpp
   Hook/Hook.cpp, Hook/EspHelper.cpp, Bypass/*
-  Config/, UI/Tab/Esp.cpp (UI only)
+  Config/, UI/Tab/Esp.cpp
 ```

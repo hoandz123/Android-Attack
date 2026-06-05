@@ -10,6 +10,7 @@
 #include <jni.h>
 #include <android/log.h>
 #include <Includes/obfuscate.h>
+#include <Includes/LoggerFile.h>
 
 enum LogType {
     oDEBUG = 3,
@@ -26,16 +27,16 @@ enum LogType {
 #define LOG_TAG OBF(LOGGER_TAG)
 #endif
 
-#if defined(NDEBUG) && !defined(FORCE_LOG)
+#if defined(NDEBUG) && !defined(FORCE_LOG) && !defined(LOG_TO_FILE)
 #define LOGD(...) ((void)0)
 #define LOGE(...) ((void)0)
 #define LOGI(...) ((void)0)
 #define LOGW(...) ((void)0)
 #else
-#define LOGD(...) do { _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wformat-security\"") (void)__android_log_print(oDEBUG, LOG_TAG, __VA_ARGS__); _Pragma("clang diagnostic pop") } while(0)
-#define LOGE(...) do { _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wformat-security\"") (void)__android_log_print(oERROR, LOG_TAG, __VA_ARGS__); _Pragma("clang diagnostic pop") } while(0)
-#define LOGI(...) do { _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wformat-security\"") (void)__android_log_print(oINFO, LOG_TAG, __VA_ARGS__); _Pragma("clang diagnostic pop") } while(0)
-#define LOGW(...) do { _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wformat-security\"") (void)__android_log_print(oWARN, LOG_TAG, __VA_ARGS__); _Pragma("clang diagnostic pop") } while(0)
+#define LOGD(...) do { _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wformat-security\"") (void)__android_log_print(oDEBUG, LOG_TAG, __VA_ARGS__); LoggerFileAppend(oDEBUG, LOG_TAG, __VA_ARGS__); _Pragma("clang diagnostic pop") } while(0)
+#define LOGE(...) do { _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wformat-security\"") (void)__android_log_print(oERROR, LOG_TAG, __VA_ARGS__); LoggerFileAppend(oERROR, LOG_TAG, __VA_ARGS__); _Pragma("clang diagnostic pop") } while(0)
+#define LOGI(...) do { _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wformat-security\"") (void)__android_log_print(oINFO, LOG_TAG, __VA_ARGS__); LoggerFileAppend(oINFO, LOG_TAG, __VA_ARGS__); _Pragma("clang diagnostic pop") } while(0)
+#define LOGW(...) do { _Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wformat-security\"") (void)__android_log_print(oWARN, LOG_TAG, __VA_ARGS__); LoggerFileAppend(oWARN, LOG_TAG, __VA_ARGS__); _Pragma("clang diagnostic pop") } while(0)
 #endif
 
 #endif /* Logger_h */

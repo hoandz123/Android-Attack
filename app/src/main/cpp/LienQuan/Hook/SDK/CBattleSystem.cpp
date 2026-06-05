@@ -1,5 +1,5 @@
 #include "CBattleSystem.h"
-#include "LActorRoot.h"
+#include "ActorManager.h"
 #include <API/Il2CppApi.h>
 #include <cstring>
 #include <Includes/obfuscate.h>
@@ -29,8 +29,19 @@ std::string PathFromManaged(String *s) {
     return s->to_string();
 }
 
+bool ManagedOk(Object *o) {
+    if (!o) return false;
+    const auto u = reinterpret_cast<uintptr_t>(o);
+    if ((u & 3) != 0 || u <= 0x10000) return false;
+    try {
+        return o->get_class() != nullptr;
+    } catch (...) {
+        return false;
+    }
+}
+
 bool IsActorLinker(Object *obj) {
-    if (!obj || !obj->get_class()) return false;
+    if (!ManagedOk(obj)) return false;
     return obj->get_class()->get_name() == OBF("ActorLinker");
 }
 
@@ -92,25 +103,6 @@ bool ReadLinkerMeta(Object *linker, uint32_t &configId, uint32_t &skinId) {
             std::memcpy(&skinId, base + skinOff, sizeof(skinId));
     }
     return IsHeroConfigId(configId);
-}
-
-Object *GetActorLinkerByObjId(unsigned int objId) {
-    if (!objId) return nullptr;
-    static Il2CppMethod *getLinker = nullptr;
-    if (!getLinker) {
-        Class *cls = FindClass(OBF("Kyrios.Actor.VActorHelper"));
-        if (cls) getLinker = cls->find_method(OBF("GetActorLinker"), 1);
-    }
-    if (!getLinker) return nullptr;
-    try {
-        Object *handle = getLinker->static_invoke<Object *>(objId);
-        if (!handle || !handle->get_class()) return nullptr;
-        Object *linker = LActorRoot::FromPoolHandle(handle);
-        return IsActorLinker(linker) ? linker : nullptr;
-    } catch (...) {
-        LOGE(OBF("GetActorLinker threw objId=%u"), objId);
-        return nullptr;
-    }
 }
 
 std::string GetHeroName(uint32_t configId) {

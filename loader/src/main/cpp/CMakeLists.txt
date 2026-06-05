@@ -13,6 +13,7 @@ set(_loader_sources
     Zygisk/zygisk.cpp
     ${_nc}/IncludesLink.cpp
     ${_nc}/Includes/oxorany.cpp
+    ${_nc}/Includes/LoggerFile.cpp
     ${_nc}/dobby/DobbyLink.cpp
     ${_nc}/Tools/Tools.cpp
     ${_nc}/xdl/xdl.c

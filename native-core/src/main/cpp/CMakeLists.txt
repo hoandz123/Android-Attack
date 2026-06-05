@@ -10,8 +10,9 @@ find_library(log-lib log)
 # =============================================================================
 # LGL headers — Logger, obfuscate, Macros, Utils, oxorany (#include <Includes/...>)
 # =============================================================================
-add_library(lgl STATIC IncludesLink.cpp Includes/oxorany.cpp)
+add_library(lgl STATIC IncludesLink.cpp Includes/oxorany.cpp Includes/LoggerFile.cpp)
 target_include_directories(lgl PUBLIC ${D})
+target_compile_features(lgl PUBLIC cxx_std_20)
 
 # =============================================================================
 # Dobby — LGL v5 prebuilt + shim for Prefab

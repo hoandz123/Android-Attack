@@ -12,15 +12,19 @@ Class *KyriosFrameworkClass() {
     return cached;
 }
 
+} // namespace
+
 Object *LinkerFromPoolHandle(Object *poolHandle) {
     if (!poolHandle) return nullptr;
-    Object *linker = poolHandle->get_field_object<Object *>(OBF("_handleObj"));
-    if (!linker || !linker->get_class()) return nullptr;
-    if (linker->get_class()->get_name() != OBF("ActorLinker")) return nullptr;
-    return linker;
+    try {
+        Object *linker = poolHandle->get_field_object<Object *>(OBF("_handleObj"));
+        if (!linker || !linker->get_class()) return nullptr;
+        if (linker->get_class()->get_name() != OBF("ActorLinker")) return nullptr;
+        return linker;
+    } catch (...) {
+        return nullptr;
+    }
 }
-
-} // namespace
 
 Object *GetInstance() {
     Class *cls = KyriosFrameworkClass();
